@@ -1,0 +1,14 @@
+server:
+  port: 8086
+
+hadoop:
+  fs:
+    defaultFS: hdfs://localhost:9000
+  conf:
+    dfs:
+      replication: 1
+
+kafka:
+  bootstrap-servers: localhost:9092
+  topic: vehicle-signal
+  group-id: service-bigdata

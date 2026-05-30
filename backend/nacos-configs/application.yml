@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/vrd?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root123
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      database: 0
+
+storage:
+  type: LOCAL
+  local:
+    base-path: /data/vrd/storage
+    base-url: http://localhost:8080/storage
+  aliyun-oss:
+    endpoint: https://oss-cn-hangzhou.aliyuncs.com
+    access-key-id: your-access-key-id
+    access-key-secret: your-access-key-secret
+    bucket-name: your-bucket-name
+    base-url: https://your-bucket-name.oss-cn-hangzhou.aliyuncs.com
+  huawei-obs:
+    endpoint: https://obs.cn-north-4.myhuaweicloud.com
+    access-key-id: your-access-key-id
+    secret-access-key: your-secret-access-key
+    bucket-name: your-bucket-name
+    base-url: https://your-bucket-name.obs.cn-north-4.myhuaweicloud.com
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket-name: your-bucket-name
+    base-url: http://localhost:9000/your-bucket-name

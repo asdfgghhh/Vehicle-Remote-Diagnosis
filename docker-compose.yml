@@ -77,6 +77,28 @@ services:
     networks:
       - vrd-network
 
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: vrd-nacos
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos_config
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=root123
+      - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
+    volumes:
+      - nacos_data:/home/nacos/data
+    depends_on:
+      - mysql
+    networks:
+      - vrd-network
+
   service-register:
     build:
       context: ./backend/service-register
@@ -98,10 +120,11 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER_ADDR=nacos:8848
     networks:
       - vrd-network
     depends_on:
-      - service-register
+      - nacos
       - redis
 
   service-auth:
@@ -113,10 +136,11 @@ services:
       - "8081:8081"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER_ADDR=nacos:8848
     networks:
       - vrd-network
     depends_on:
-      - service-register
+      - nacos
       - mysql
       - redis
 
@@ -129,12 +153,13 @@ services:
       - "8082:8082"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER_ADDR=nacos:8848
     volumes:
       - /data/vrd/uploads:/data/vrd/uploads
     networks:
       - vrd-network
     depends_on:
-      - service-register
+      - nacos
       - mysql
       - kafka
 
@@ -147,12 +172,13 @@ services:
       - "8083:8083"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER_ADDR=nacos:8848
     volumes:
       - /data/vrd/logs:/data/vrd/logs
     networks:
       - vrd-network
     depends_on:
-      - service-register
+      - nacos
       - mysql
 
   service-dbc:
@@ -164,12 +190,13 @@ services:
       - "8084:8084"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER_ADDR=nacos:8848
     volumes:
       - /data/vrd/dbc:/data/vrd/dbc
     networks:
       - vrd-network
     depends_on:
-      - service-register
+      - nacos
       - mysql
 
   service-signal:
@@ -181,12 +208,13 @@ services:
       - "8085:8085"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER_ADDR=nacos:8848
     volumes:
       - /data/vrd/signals:/data/vrd/signals
     networks:
       - vrd-network
     depends_on:
-      - service-register
+      - nacos
       - mysql
       - mosquitto
 
@@ -199,12 +227,13 @@ services:
       - "8086:8086"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - NACOS_SERVER_ADDR=nacos:8848
     volumes:
       - /data/vrd/data:/vrd/data
     networks:
       - vrd-network
     depends_on:
-      - service-register
+      - nacos
       - kafka
       - hadoop
 
@@ -223,6 +252,7 @@ volumes:
   redis_data:
   mosquitto_data:
   mosquitto_logs:
+  nacos_data:
 
 networks:
   vrd-network:

@@ -1,0 +1,47 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: service-auth
+          uri: lb://service-auth
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=2
+        - id: service-vehicle
+          uri: lb://service-vehicle
+          predicates:
+            - Path=/api/vehicle/**
+          filters:
+            - StripPrefix=2
+        - id: service-ecu-log
+          uri: lb://service-ecu-log
+          predicates:
+            - Path=/api/ecu-log/**
+          filters:
+            - StripPrefix=2
+        - id: service-dbc
+          uri: lb://service-dbc
+          predicates:
+            - Path=/api/dbc/**
+          filters:
+            - StripPrefix=2
+        - id: service-signal
+          uri: lb://service-signal
+          predicates:
+            - Path=/api/signal/**
+          filters:
+            - StripPrefix=2
+        - id: service-bigdata
+          uri: lb://service-bigdata
+          predicates:
+            - Path=/api/bigdata/**
+          filters:
+            - StripPrefix=2
