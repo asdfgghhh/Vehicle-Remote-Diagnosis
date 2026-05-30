@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.vrd.common.exception.BusinessException;
+import com.vrd.common.storage.StorageService;
+import com.vrd.common.storage.StorageType;
 import com.vrd.dbc.entity.DbcFile;
 import com.vrd.dbc.entity.DispatchLog;
 import com.vrd.dbc.mapper.DbcFileMapper;
@@ -19,6 +21,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -30,7 +33,10 @@ public class DbcFileServiceImpl extends ServiceImpl<DbcFileMapper, DbcFile> impl
     @Autowired
     private DispatchLogMapper dispatchLogMapper;
 
-    @Value("${file.dbc.upload-path}")
+    @Autowired(required = false)
+    private StorageService storageService;
+
+    @Value("${file.dbc.upload-path:/data/vrd/dbc}")
     private String uploadPath;
 
     @Override
@@ -49,17 +55,24 @@ public class DbcFileServiceImpl extends ServiceImpl<DbcFileMapper, DbcFile> impl
     @Override
     public DbcFile uploadAndParse(MultipartFile file, String version, String description) {
         try {
-            String dateStr = LocalDate.now().toString();
-            String uploadDir = uploadPath + File.separator + dateStr;
-            File dir = new File(uploadDir);
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-            
+            String dateStr = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
             String originalFilename = file.getOriginalFilename();
-            String filePath = uploadDir + File.separator + originalFilename;
-            File destFile = new File(filePath);
-            file.transferTo(destFile);
+            String filePath;
+            
+            if (storageService != null && storageService.getStorageType() != StorageType.LOCAL) {
+                String key = "dbc/" + dateStr + "/" + originalFilename;
+                filePath = storageService.upload(key, file.getInputStream(), file.getSize());
+            } else {
+                String uploadDir = uploadPath + File.separator + dateStr;
+                File dir = new File(uploadDir);
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                
+                filePath = uploadDir + File.separator + originalFilename;
+                File destFile = new File(filePath);
+                file.transferTo(destFile);
+            }
             
             String parseResult = parseDbcFile(filePath);
             
@@ -88,9 +101,31 @@ public class DbcFileServiceImpl extends ServiceImpl<DbcFileMapper, DbcFile> impl
     @Override
     public String parseDbcFile(String filePath) {
         StringBuilder parseResult = new StringBuilder();
+        String localFilePath = filePath;
+        
+        if (storageService != null && storageService.getStorageType() != StorageType.LOCAL) {
+            try {
+                String tempDir = System.getProperty("java.io.tmpdir") + "/dbc";
+                File dir = new File(tempDir);
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                
+                String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
+                localFilePath = tempDir + File.separator + fileName;
+                File tempFile = new File(localFilePath);
+                
+                try (OutputStream outputStream = new FileOutputStream(tempFile)) {
+                    String key = filePath.replace(storageService.getUrl(""), "").replaceFirst("^/", "");
+                    storageService.download(key, outputStream);
+                }
+            } catch (IOException e) {
+                throw new BusinessException("从云存储下载DBC文件失败: " + e.getMessage());
+            }
+        }
         
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8))) {
+                new InputStreamReader(new FileInputStream(localFilePath), StandardCharsets.UTF_8))) {
             
             String line;
             while ((line = reader.readLine()) != null) {

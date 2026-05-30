@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.vrd.common.exception.BusinessException;
+import com.vrd.common.storage.StorageService;
+import com.vrd.common.storage.StorageType;
 import com.vrd.ecu.entity.EcuLogFile;
 import com.vrd.ecu.entity.UploadChunk;
 import com.vrd.ecu.mapper.EcuLogFileMapper;
@@ -17,8 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -29,10 +35,13 @@ public class EcuLogServiceImpl extends ServiceImpl<EcuLogFileMapper, EcuLogFile>
     @Autowired
     private UploadChunkMapper uploadChunkMapper;
 
-    @Value("${file.log.upload-path}")
+    @Autowired(required = false)
+    private StorageService storageService;
+
+    @Value("${file.log.upload-path:/data/vrd/logs/upload}")
     private String uploadPath;
 
-    @Value("${file.log.temp-path}")
+    @Value("${file.log.temp-path:/data/vrd/logs/temp}")
     private String tempPath;
 
     @Override
@@ -120,36 +129,56 @@ public class EcuLogServiceImpl extends ServiceImpl<EcuLogFileMapper, EcuLogFile>
                 throw new BusinessException("没有找到分片文件");
             }
             
-            String dateStr = LocalDateTime.now().toString().substring(0, 10);
-            String uploadDir = uploadPath + File.separator + dateStr;
-            File uploadDirFile = new File(uploadDir);
-            if (!uploadDirFile.exists()) {
-                uploadDirFile.mkdirs();
-            }
+            String dateStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+            String finalKey = "logs/" + dateStr + "/" + fileName;
+            String finalFilePath;
+            long fileSize = 0;
             
-            String finalFilePath = uploadDir + File.separator + fileName;
-            File finalFile = new File(finalFilePath);
-            
-            try (OutputStream outputStream = new FileOutputStream(finalFile)) {
+            if (storageService != null && storageService.getStorageType() != StorageType.LOCAL) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 for (UploadChunk chunk : chunks) {
                     File chunkFile = new File(chunk.getChunkPath());
                     if (chunkFile.exists()) {
-                        FileUtils.copyFile(chunkFile, outputStream);
+                        FileUtils.copyFile(chunkFile, baos);
+                        fileSize += chunkFile.length();
                         chunkFile.delete();
                     }
                 }
+                
+                finalFilePath = storageService.upload(finalKey, new ByteArrayInputStream(baos.toByteArray()), baos.size());
+            } else {
+                String uploadDir = uploadPath + File.separator + dateStr;
+                File uploadDirFile = new File(uploadDir);
+                if (!uploadDirFile.exists()) {
+                    uploadDirFile.mkdirs();
+                }
+                
+                finalFilePath = uploadDir + File.separator + fileName;
+                File finalFile = new File(finalFilePath);
+                
+                try (OutputStream outputStream = new FileOutputStream(finalFile)) {
+                    for (UploadChunk chunk : chunks) {
+                        File chunkFile = new File(chunk.getChunkPath());
+                        if (chunkFile.exists()) {
+                            FileUtils.copyFile(chunkFile, outputStream);
+                            chunkFile.delete();
+                        }
+                    }
+                }
+                
+                fileSize = new File(finalFilePath).length();
             }
             
             EcuLogFile logFile = new EcuLogFile();
             logFile.setFileName(fileName);
             logFile.setFilePath(finalFilePath);
-            logFile.setFileSize(finalFile.length());
+            logFile.setFileSize(fileSize);
             logFile.setMd5(fileMd5);
             logFile.setVehicleId(vehicleId);
             logFile.setVin(vin);
             logFile.setEcuType(ecuType);
             logFile.setUploadStatus(2);
-            logFile.setUploadedSize(finalFile.length());
+            logFile.setUploadedSize(fileSize);
             logFile.setDeleted(0);
             logFile.setCreateTime(LocalDateTime.now());
             logFile.setUpdateTime(LocalDateTime.now());
@@ -175,12 +204,33 @@ public class EcuLogServiceImpl extends ServiceImpl<EcuLogFileMapper, EcuLogFile>
             throw new BusinessException("文件不存在");
         }
         
-        File file = new File(logFile.getFilePath());
-        if (!file.exists()) {
-            throw new BusinessException("文件已被删除");
-        }
+        String filePath = logFile.getFilePath();
         
-        return file;
+        if (storageService != null && storageService.getStorageType() != StorageType.LOCAL) {
+            try {
+                String fileName = logFile.getFileName();
+                File tempFile = new File(tempPath, fileName);
+                
+                if (!tempFile.getParentFile().exists()) {
+                    tempFile.getParentFile().mkdirs();
+                }
+                
+                try (OutputStream outputStream = new FileOutputStream(tempFile)) {
+                    String key = filePath.replace(storageService.getUrl(""), "").replaceFirst("^/", "");
+                    storageService.download(key, outputStream);
+                }
+                
+                return tempFile;
+            } catch (IOException e) {
+                throw new BusinessException("从云存储下载文件失败: " + e.getMessage());
+            }
+        } else {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                throw new BusinessException("文件已被删除");
+            }
+            return file;
+        }
     }
 
     @Override
