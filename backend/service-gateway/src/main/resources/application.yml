@@ -1,0 +1,78 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: service-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: service-auth
+          uri: lb://service-auth
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        - id: service-vehicle
+          uri: lb://service-vehicle
+          predicates:
+            - Path=/api/vehicle/**
+          filters:
+            - StripPrefix=1
+        - id: service-ecu-log
+          uri: lb://service-ecu-log
+          predicates:
+            - Path=/api/ecu-log/**
+          filters:
+            - StripPrefix=1
+        - id: service-dbc
+          uri: lb://service-dbc
+          predicates:
+            - Path=/api/dbc/**
+          filters:
+            - StripPrefix=1
+        - id: service-signal
+          uri: lb://service-signal
+          predicates:
+            - Path=/api/signal/**
+          filters:
+            - StripPrefix=1
+        - id: service-bigdata
+          uri: lb://service-bigdata
+          predicates:
+            - Path=/api/bigdata/**
+          filters:
+            - StripPrefix=1
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 3000ms
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG

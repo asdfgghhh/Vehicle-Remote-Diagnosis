@@ -1,0 +1,31 @@
+{
+  "name": "vehicle-remote-diagnosis",
+  "version": "1.0.0",
+  "description": "车辆远程诊断系统 - Vehicle Remote Diagnosis System",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "node src/index.js",
+    "test": "jest",
+    "lint": "eslint src/",
+    "build": "npm run clean && mkdir -p dist && cp -r src/* dist/",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "vehicle",
+    "diagnosis",
+    "remote",
+    "iot",
+    "automotive"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  }
+}

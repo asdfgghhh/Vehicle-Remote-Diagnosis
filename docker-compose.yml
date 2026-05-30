@@ -1,0 +1,229 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: vrd-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: vrd_auth
+      MYSQL_USER: vrd
+      MYSQL_PASSWORD: vrd123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - vrd-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: vrd-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - vrd-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: vrd-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - vrd-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: vrd-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - vrd-network
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: vrd-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    networks:
+      - vrd-network
+
+  hadoop:
+    image: sequenceiq/hadoop-docker:2.7.1
+    container_name: vrd-hadoop
+    ports:
+      - "9000:9000"
+      - "50070:50070"
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"
+    networks:
+      - vrd-network
+
+  service-register:
+    build:
+      context: ./backend/service-register
+      dockerfile: Dockerfile
+    container_name: vrd-service-register
+    ports:
+      - "8761:8761"
+    networks:
+      - vrd-network
+    depends_on:
+      - mysql
+
+  service-gateway:
+    build:
+      context: ./backend/service-gateway
+      dockerfile: Dockerfile
+    container_name: vrd-service-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - vrd-network
+    depends_on:
+      - service-register
+      - redis
+
+  service-auth:
+    build:
+      context: ./backend/service-auth
+      dockerfile: Dockerfile
+    container_name: vrd-service-auth
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - vrd-network
+    depends_on:
+      - service-register
+      - mysql
+      - redis
+
+  service-vehicle:
+    build:
+      context: ./backend/service-vehicle
+      dockerfile: Dockerfile
+    container_name: vrd-service-vehicle
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    volumes:
+      - /data/vrd/uploads:/data/vrd/uploads
+    networks:
+      - vrd-network
+    depends_on:
+      - service-register
+      - mysql
+      - kafka
+
+  service-ecu-log:
+    build:
+      context: ./backend/service-ecu-log
+      dockerfile: Dockerfile
+    container_name: vrd-service-ecu-log
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    volumes:
+      - /data/vrd/logs:/data/vrd/logs
+    networks:
+      - vrd-network
+    depends_on:
+      - service-register
+      - mysql
+
+  service-dbc:
+    build:
+      context: ./backend/service-dbc
+      dockerfile: Dockerfile
+    container_name: vrd-service-dbc
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    volumes:
+      - /data/vrd/dbc:/data/vrd/dbc
+    networks:
+      - vrd-network
+    depends_on:
+      - service-register
+      - mysql
+
+  service-signal:
+    build:
+      context: ./backend/service-signal
+      dockerfile: Dockerfile
+    container_name: vrd-service-signal
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    volumes:
+      - /data/vrd/signals:/data/vrd/signals
+    networks:
+      - vrd-network
+    depends_on:
+      - service-register
+      - mysql
+      - mosquitto
+
+  service-bigdata:
+    build:
+      context: ./backend/service-bigdata
+      dockerfile: Dockerfile
+    container_name: vrd-service-bigdata
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    volumes:
+      - /data/vrd/data:/vrd/data
+    networks:
+      - vrd-network
+    depends_on:
+      - service-register
+      - kafka
+      - hadoop
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vrd-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - vrd-network
+
+volumes:
+  mysql_data:
+  redis_data:
+  mosquitto_data:
+  mosquitto_logs:
+
+networks:
+  vrd-network:
+    driver: bridge
