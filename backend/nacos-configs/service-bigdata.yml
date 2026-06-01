@@ -1,14 +1,75 @@
 server:
   port: 8086
 
-hadoop:
-  fs:
-    defaultFS: hdfs://localhost:9000
-  conf:
-    dfs:
-      replication: 1
+spring:
+  application:
+    name: service-bigdata
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DORIS_HOST:localhost}:${DORIS_FE_QUERY_PORT:9030}/vrd_bigdata?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: ${DORIS_USER:root}
+    password: ${DORIS_PASSWORD:}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: bigdata-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-kafka:
-  bootstrap-servers: localhost:9092
-  topic: vehicle-signal
-  group-id: service-bigdata
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+hadoop:
+  namenode: ${HADOOP_NAMENODE:hdfs://localhost:9000}
+  user: hadoop
+  temp:
+    dir: /tmp/vrd
+
+doris:
+  host: ${DORIS_HOST:localhost}
+  fe:
+    query-port: ${DORIS_FE_QUERY_PORT:9030}
+    http-port: ${DORIS_FE_HTTP_PORT:8030}
+  be:
+    heartbeat-port: ${DORIS_BE_HEARTBEAT_PORT:9050}
+  query:
+    timeout: ${DORIS_QUERY_TIMEOUT:60}
+    max-execution-time: ${DORIS_MAX_EXECUTION_TIME:300}
+
+bigdata:
+  sync:
+    doris:
+      enabled: ${DORIS_SYNC_ENABLED:true}
+  storage:
+    base-path: /vrd/data
+    partitions:
+      - name: vehicle_signals
+        path: /vrd/data/signals
+      - name: ecu_logs
+        path: /vrd/data/logs
+      - name: diagnostics
+        path: /vrd/data/diagnostics
+  kafka:
+    topics:
+      - vehicle-signals
+      - ecu-logs
+      - diagnostics
+
+logging:
+  level:
+    com.vrd.bigdata: DEBUG
+    org.springframework.kafka: INFO
