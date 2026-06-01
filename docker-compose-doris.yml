@@ -7,23 +7,17 @@ services:
     ports:
       - "8030:8030"
       - "9030:9030"
-    environment:
-      - FE_CONF_http_port=8030
-      - FE_CONF_query_port=9030
-      - FE_CONF_edit_log_port=9010
     volumes:
       - doris_fe_data:/opt/apache-doris/fe/doris-meta
       - doris_fe_log:/opt/apache-doris/fe/log
-      - ./init-doris.sh:/init-doris.sh
-    command: ["/bin/bash", "-c", "tail -f /dev/null"]
     networks:
       - vrd-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8030/api/bootstrap"]
       interval: 30s
       timeout: 20s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 120s
 
   doris-be:
     image: apache/doris:2.0.0-be
@@ -34,11 +28,8 @@ services:
       - "9060:9060"
       - "9070:9070"
     environment:
-      - BE_CONF_be_port=9050
-      - BE_CONF_webserver_port=8040
-      - BE_CONF_heartbeat_service_port=9050
-      - BE_CONF_be_rpc_port=9060
-      - BE_CONF_storage_root_path=/opt/apache-doris/be/storage
+      - FE_HOST=doris-fe
+      - FE_PORT=9010
     volumes:
       - doris_be_data:/opt/apache-doris/be/storage
       - doris_be_log:/opt/apache-doris/be/log
@@ -46,27 +37,12 @@ services:
       - doris-fe
     networks:
       - vrd-network
-    command: ["sleep", "infinity"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8040/api/health"]
       interval: 30s
       timeout: 20s
-      retries: 3
-      start_period: 60s
-
-  doris-init:
-    image: mysql:8.0
-    container_name: vrd-doris-init
-    depends_on:
-      doris-fe:
-        condition: service_healthy
-      doris-be:
-        condition: service_started
-    volumes:
-      - ./init-doris.sh:/init.sh
-    entrypoint: ["/bin/bash", "/init.sh"]
-    networks:
-      - vrd-network
+      retries: 5
+      start_period: 120s
 
 volumes:
   doris_fe_data:
@@ -77,4 +53,3 @@ volumes:
 networks:
   vrd-network:
     name: vrd-network
-    external: false

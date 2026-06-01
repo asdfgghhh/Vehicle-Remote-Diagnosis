@@ -1,231 +1,218 @@
-# Apache Doris 大数据查询方案
+# Apache Doris 大数据查询服务
 
 ## 概述
 
-本项目采用 **Apache Doris** 作为OLAP查询引擎，配合 **Kafka** 实现实时数据同步，提供高速的大数据查询能力。
+车辆远程诊断系统 - Doris OLAP查询引擎，提供海量数据的快速查询和分析能力。
 
-## 架构设计
+## 架构
 
 ```
-┌─────────────┐
-│   Kafka     │
-│  数据流     │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────┐
-│       service-bigdata           │
-│  ┌───────────────────────────┐  │
-│  │   Kafka Data Consumer     │  │
-│  └───────────┬───────────────┘  │
-│              │                  │
-│      ┌───────┴───────┐          │
-│      ▼               ▼          │
-│  ┌────────┐    ┌─────────┐      │
-│  │  HDFS  │    │  Doris  │      │
-│  │ (原始) │    │ (查询)  │      │
-│  └────────┘    └─────────┘      │
-└─────────────────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────┐
-│       DorisQueryService         │
-│  ┌───────────────────────────┐  │
-│  │ 毫秒级查询 API            │  │
-│  │ - 车辆信号查询            │  │
-│  │ - ECU日志查询             │  │
-│  │ - 健康报告生成            │  │
-│  └───────────────────────────┘  │
-└─────────────────────────────────┘
+Kafka (实时数据流
+    │
+    ├─► service-bigdata (消费
+    │    │
+    │    ├─► HDFS (原始数据存储
+    │    │
+    │    └─► Doris (OLAP查询引擎 ← 本项目
+    │
+    └─► 查询 API (查询结果)
 ```
 
-## 核心特性
+## 快速开始
 
-### 1. 实时数据同步
-- Kafka消费者自动将数据同步到Doris
-- 支持信号数据、日志数据、诊断数据
-- 可通过配置开关控制同步功能
+### 前置条件
 
-### 2. 高速查询
-- 百亿级数据秒级响应
-- 支持多维度聚合查询
-- 内置物化视图加速统计
+- Docker 20.10+
+- Docker Compose 2.0+
+- 足够的磁盘空间（建议至少 10GB+
 
-### 3. 分区管理
-- 按日期分区存储
-- 支持动态分区管理
-- 冷热数据分离
+### 启动Doris
 
-## 快速启动
-
-### 1. 启动Doris服务
+#### 1. 启动Doris服务
 
 ```bash
-# 启动Doris服务
-cd /workspace
-docker-compose -f docker-compose-doris.yml up -d
-
-# 查看日志
-docker-compose -f docker-compose-doris.yml logs -f
+# 在项目根目录下执行
+./scripts/start-doris.sh
 ```
 
-### 2. 初始化Doris表结构
+#### 2. 等待Doris启动完成
+需要等待1-2分钟，查看日志：
+```bash
+# 查看Doris FE日志
+docker logs -f vrd-doris-fe
+```
+
+#### 3. 初始化数据库
+等待FE完全启动后（看到 "start to work" 日志），执行：
+```bash
+./scripts/init-doris-db.sh
+```
+
+#### 4. 访问Web控制台
+打开浏览器访问：
+http://localhost:8030
+
+### 停止Doris
 
 ```bash
-# 等待初始化完成
-docker-compose -f docker-compose-doris.yml logs -f doris-init
-
-# 手动初始化（如需要）
-docker exec -it vrd-doris-fe mysql -h localhost -P 9030 -u root < doris/sql/01_create_database.sql
+./scripts/stop-doris.sh
 ```
 
-### 3. 验证Doris状态
+## Doris服务访问
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| FE Web | http://localhost:8030 | Web控制台 |
+| FE MySQL | localhost:9030 | MySQL协议端口 |
+| BE Web | http://localhost:8040 | BE Web管理 |
+| BE Heartbeat | localhost:9050 | BE心跳端口 |
+| BE RPC | localhost:9060 | BE RPC端口 |
+
+### 数据库连接
 
 ```bash
-# 连接Doris
-docker exec -it vrd-doris-fe mysql -h localhost -P 9030 -u root
-
-# 查看数据库
-mysql> SHOW DATABASES;
-mysql> USE vrd_bigdata;
-mysql> SHOW TABLES;
+# 使用MySQL客户端连接
+mysql -h localhost -P 9030 -u root
 ```
 
-### 4. 启动大数据服务
+数据库连接信息：
+- 数据库: vrd_bigdata
+- 用户名: root
+- 密码: (空)
+
+## 数据表说明
+
+### vehicle_signals - 车辆信号表
+
+存储车辆实时信号数据，包含：
+- 信号名称、值、单位
+- 位置信息
+- 时间戳
+- 按日期分区
+- 车辆ID分桶
+
+### ecu_logs - ECU日志表
+
+存储ECU故障和诊断日志，包含：
+- 故障码、错误级别
+- 错误描述和日志内容
+- 位置和状态信息
+
+### diagnostics - 诊断数据表
+
+存储车辆健康诊断报告，包含：
+- 健康评分
+- 故障和警告统计
+- 诊断详情
+
+## 查询接口
+
+### API端点
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /bigdata/signals | 查询车辆信号 |
+| GET | /bigdata/logs | 查询ECU日志 |
+| GET | /bigdata/diagnostics | 查询诊断数据 |
+| GET | /bigdata/aggregate | 聚合统计 |
+| GET | /bigdata/trend | 信号趋势 |
+| GET | /bigdata/health-report | 健康报告 |
+| GET | /bigdata/top-errors | 故障码排行 |
+| GET | /bigdata/dates | 可用数据日期 |
+| GET | /bigdata/statistics | 数据统计 |
+
+### 示例查询
 
 ```bash
-cd /workspace/backend
-mvn clean package -DskipTests
-cd /workspace
-docker-compose up -d service-bigdata
+# 查询车辆信号
+curl "http://localhost:8086/bigdata/signals?vehicle_id=1&start_time=2026-01-01&end_time=2026-12-31"
+
+# 车辆健康报告
+curl "http://localhost:8086/bigdata/health-report?vehicle_id=1&start_time=2026-01-01&end_time=2026-12-31"
+
+# 故障码排行
+curl "http://localhost:8086/bigdata/top-errors?start_time=2026-01-01&end_time=2026-12-31"
 ```
 
-## API接口
+## SQL查询示例
 
-### 1. 车辆信号查询
-```bash
-GET /bigdata/signals?vehicleId=1&startTime=2026-05-01&endTime=2026-05-30&signalName=battery_voltage
-```
-
-### 2. ECU日志查询
-```bash
-GET /bigdata/logs?vehicleId=1&startTime=2026-05-01&endTime=2026-05-30&ecuType=ECM
-```
-
-### 3. 诊断数据查询
-```bash
-GET /bigdata/diagnostics?vehicleId=1&startTime=2026-05-01&endTime=2026-05-30
-```
-
-### 4. 信号趋势分析
-```bash
-GET /bigdata/trend?vehicleId=1&signalName=battery_voltage&startTime=2026-05-01&endTime=2026-05-30
-```
-
-### 5. 车辆健康报告
-```bash
-GET /bigdata/health-report?vehicleId=1&startTime=2026-05-01&endTime=2026-05-30
-```
-
-### 6. Top错误码统计
-```bash
-GET /bigdata/top-errors?startTime=2026-05-01&endTime=2026-05-30&limit=10
-```
-
-### 7. 聚合统计
-```bash
-GET /bigdata/aggregate?vehicleId=1&signalName=battery_voltage&startTime=2026-05-01&endTime=2026-05-30
-```
-
-### 8. 可用数据日期
-```bash
-GET /bigdata/dates?dataType=signals
-```
-
-## 性能优化
-
-### 1. 查询优化
 ```sql
--- 利用分区裁剪
-SELECT * FROM vehicle_signals 
-WHERE dt = '2026-05-15'  -- 只扫描该分区
+-- 信号数据统计
+SELECT 
+    signal_name,
+    COUNT(*) AS count,
+    AVG(CAST(signal_value AS DOUBLE)) AS avg_value
+FROM vrd_bigdata.vehicle_signals
+WHERE dt = '2026-06-01'
+GROUP BY signal_name;
 
--- 创建物化视图
-CREATE MATERIALIZED VIEW mv_hourly AS
-SELECT vehicle_id, dt, dt_hour, AVG(signal_value)
-FROM vehicle_signals
-GROUP BY vehicle_id, dt, dt_hour;
-```
-
-### 2. 数据导入优化
-```sql
--- 批量导入
-INSERT INTO vehicle_signals VALUES (...);
-
--- Stream Load
-curl --location-trusted -u root: -T data.json -H "format: json" \
-  http://doris-fe:8030/api/vrd_bigdata/vehicle_signals/_stream_load
+-- 健康评分趋势
+SELECT 
+    dt,
+    AVG(overall_health_score) AS avg_score,
+    COUNT(*) AS diagnostic_count
+FROM vrd_bigdata.diagnostics
+WHERE dt BETWEEN '2026-05-01' AND '2026-06-01'
+GROUP BY dt
+ORDER BY dt;
 ```
 
 ## 配置说明
 
-### Doris连接配置
+### Doris配置
+
 ```yaml
+# service-bigdata的配置
 spring:
   datasource:
-    url: jdbc:mysql://doris-fe:9030/vrd_bigdata
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:9030/vrd_bigdata
     username: root
-    password: 
+    password: ''
 ```
 
-### Kafka同步开关
+### Kafka同步配置
+
 ```yaml
 bigdata:
   sync:
     doris:
-      enabled: true  # true-启用 false-禁用
+      enabled: true  # true=启用Kafka到Doris的实时同步
 ```
 
-## 监控与运维
+## 常见问题
 
-### Doris Web控制台
-- 地址: http://localhost:8030
-- 查看FE/BE状态
-- 查看查询日志
-
-### 常用运维命令
+### FE无法启动
+检查日志：
 ```bash
-# 查看FE状态
-mysql> SHOW FRONTENDS;
-
-# 查看BE状态
-mysql> SHOW BACKENDS;
-
-# 查看tablet分布
-mysql> SHOW TABLETS FROM vrd_bigdata.vehicle_signals;
-
-# 查看正在执行的查询
-mysql> SHOW PROC '/frontends/127.0.0.1_9030/running_queries';
+docker logs vrd-doris-fe
+docker logs vrd-doris-be
 ```
 
-## 注意事项
-
-1. **首次启动**: Doris首次启动需要等待BE节点添加到集群并完成数据迁移
-2. **资源配置**: 生产环境建议FE配置4核8G，BE配置8核16G
-3. **数据备份**: 定期备份Doris的doris_fe_data和doris_be_data卷
-4. **监控告警**: 建议配置FE/BE的CPU、内存、磁盘监控
-
-## 故障排除
-
-### BE节点未添加
+### BE无法加入集群
+确保BE容器能访问FE：
 ```bash
-mysql -h doris-fe -P 9030 -u root -e "ALTER SYSTEM ADD BACKEND 'doris-be:9050';"
+docker exec vrd-doris-be ping doris-fe
 ```
 
 ### 查询超时
-调整 `doris.query.timeout` 配置或SQL中增加 `timeout` 设置
+增加查询超时时间：
+```yaml
+doris:
+  query:
+    timeout: 120
+```
 
-### 数据不同步
-1. 检查Kafka消费者日志
-2. 确认 `bigdata.sync.doris.enabled=true`
-3. 验证Doris连接配置正确
+### 分区管理
+定期清理旧分区：
+```sql
+ALTER TABLE vrd_bigdata.vehicle_signals
+DROP PARTITION p_2024_01;
+```
+
+## 性能优化建议
+
+1. 分区裁剪：总是在WHERE条件中包含dt字段
+2. 物化视图：预聚合统计查询
+3. 数据保留策略：定期清理过期数据
+4. 分桶优化：调整BUCKETS数量适配数据规模
