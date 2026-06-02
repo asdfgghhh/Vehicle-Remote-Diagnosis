@@ -1,0 +1,13 @@
+# 本地开发（profile=dev）Nacos 配置，在 bootstrap 阶段生效
+spring:
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: 124.221.104.56:8848
+        namespace: vrd-test
+        group: DEFAULT_GROUP
+        fail-fast: false
+      config:
+        enabled: false

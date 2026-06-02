@@ -1,0 +1,14 @@
+# 本地开发（profile=dev）Nacos 注册中心配置
+spring:
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: 124.221.104.56:8848
+        namespace: vrd-test
+        group: DEFAULT_GROUP
+        register-enabled: true
+        fail-fast: false
+      config:
+        enabled: false
