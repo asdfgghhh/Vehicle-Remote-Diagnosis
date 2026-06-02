@@ -21,10 +21,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-        </dependency>
-        <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
         </dependency>
@@ -45,9 +41,8 @@
         </dependency>
         
         <dependency>
-            <groupId>com.huaweicloud</groupId>
+            <groupId>com.huaweicloud.sdk</groupId>
             <artifactId>huaweicloud-sdk-obs</artifactId>
-            <version>3.22.2</version>
         </dependency>
         
         <dependency>

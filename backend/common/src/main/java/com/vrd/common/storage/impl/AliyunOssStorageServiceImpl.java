@@ -2,6 +2,7 @@ package com.vrd.common.storage.impl;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PutObjectRequest;
 import com.vrd.common.exception.BusinessException;
 import com.vrd.common.storage.StorageService;
@@ -41,10 +42,11 @@ public class AliyunOssStorageServiceImpl implements StorageService {
     @Override
     public String upload(String key, InputStream inputStream, long size, String contentType) {
         try {
-            PutObjectRequest request = new PutObjectRequest(bucketName, key, inputStream);
+            ObjectMetadata metadata = new ObjectMetadata();
             if (contentType != null) {
-                request.setContentType(contentType);
+                metadata.setContentType(contentType);
             }
+            PutObjectRequest request = new PutObjectRequest(bucketName, key, inputStream, metadata);
             getOssClient().putObject(request);
             return baseUrl + "/" + key;
         } catch (Exception e) {

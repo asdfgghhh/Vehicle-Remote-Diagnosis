@@ -30,6 +30,8 @@ coverage
 dist
 build
 out
+target/
+*.class
 
 # IDEs
 .vscode/

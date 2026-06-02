@@ -13,7 +13,6 @@
     <description>车辆远程诊断系统</description>
 
     <modules>
-        <module>service-register</module>
         <module>service-gateway</module>
         <module>service-auth</module>
         <module>service-vehicle</module>
@@ -22,6 +21,7 @@
         <module>service-signal</module>
         <module>service-bigdata</module>
         <module>common</module>
+        <module>common-db</module>
     </modules>
 
     <properties>
@@ -39,6 +39,8 @@
         <kafka.version>3.6.0</kafka.version>
         <hadoop.version>3.3.6</hadoop.version>
         <spark.version>3.5.0</spark.version>
+        <huaweicloud-sdk.version>3.1.154</huaweicloud-sdk.version>
+        <clickhouse.version>0.4.6</clickhouse.version>
     </properties>
 
     <dependencyManagement>
@@ -104,23 +106,32 @@
                 <artifactId>hadoop-client</artifactId>
                 <version>${hadoop.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.clickhouse</groupId>
+                <artifactId>clickhouse-jdbc</artifactId>
+                <version>${clickhouse.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.huaweicloud.sdk</groupId>
+                <artifactId>huaweicloud-sdk-obs</artifactId>
+                <version>${huaweicloud-sdk.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>repackage</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -129,6 +140,7 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
+                        <encoding>${project.build.sourceEncoding}</encoding>
                     </configuration>
                 </plugin>
             </plugins>

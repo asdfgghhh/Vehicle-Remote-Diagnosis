@@ -14,13 +14,12 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
+  datasource:
+    clickhouse:
+      url: jdbc:clickhouse://localhost:8123/vrd_bigdata
+      username: default
+      password:
+      driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
 
 hadoop:
   namenode: hdfs://localhost:9000
@@ -30,6 +29,7 @@ hadoop:
 
 bigdata:
   storage:
+    type: clickhouse
     base-path: /vrd/data
     partitions:
       - name: vehicle_signals
@@ -38,6 +38,14 @@ bigdata:
         path: /vrd/data/logs
       - name: diagnostics
         path: /vrd/data/diagnostics
+    clickhouse:
+      host: localhost
+      port: 8123
+      database: vrd_bigdata
+      username: default
+      password:
+      connection-timeout: 30000
+      socket-timeout: 60000
   kafka:
     topics:
       - vehicle-signals

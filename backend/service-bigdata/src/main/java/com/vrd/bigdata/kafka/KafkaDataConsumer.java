@@ -3,6 +3,7 @@ package com.vrd.bigdata.kafka;
 import com.alibaba.fastjson2.JSON;
 import com.vrd.bigdata.service.HdfsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 

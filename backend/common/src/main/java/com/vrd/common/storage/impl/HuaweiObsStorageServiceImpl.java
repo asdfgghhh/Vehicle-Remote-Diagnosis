@@ -2,14 +2,17 @@ package com.vrd.common.storage.impl;
 
 import com.huaweicloud.sdk.core.auth.BasicCredentials;
 import com.huaweicloud.sdk.core.auth.ICredential;
-import com.huaweicloud.sdk.obs.v2.ObsClient;
-import com.huaweicloud.sdk.obs.v2.model.PutObjectRequest;
+import com.huaweicloud.sdk.core.exception.ServiceResponseException;
+import com.huaweicloud.sdk.obs.v1.ObsClient;
+import com.huaweicloud.sdk.obs.v1.model.DeleteObjectRequest;
+import com.huaweicloud.sdk.obs.v1.model.GetObjectMetadataRequest;
+import com.huaweicloud.sdk.obs.v1.model.GetObjectRequest;
+import com.huaweicloud.sdk.obs.v1.model.PutObjectRequest;
 import com.vrd.common.exception.BusinessException;
 import com.vrd.common.storage.StorageService;
 import com.vrd.common.storage.StorageType;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -48,13 +51,10 @@ public class HuaweiObsStorageServiceImpl implements StorageService {
     @Override
     public String upload(String key, InputStream inputStream, long size, String contentType) {
         try {
-            PutObjectRequest request = new PutObjectRequest();
-            request.setBucketName(bucketName);
-            request.setObjectKey(key);
-            request.setSourceStream(inputStream);
-            if (contentType != null) {
-                request.setContentType(contentType);
-            }
+            PutObjectRequest request = new PutObjectRequest()
+                    .withBucketName(bucketName)
+                    .withObjectKey(key);
+            request.setUploadStream(inputStream);
             getObsClient().putObject(request);
             return baseUrl + "/" + key;
         } catch (Exception e) {
@@ -70,9 +70,18 @@ public class HuaweiObsStorageServiceImpl implements StorageService {
     @Override
     public void download(String key, OutputStream outputStream) {
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            getObsClient().getObject(bucketName, key).getObjectContent().transferTo(baos);
-            outputStream.write(baos.toByteArray());
+            GetObjectRequest request = new GetObjectRequest()
+                    .withBucketName(bucketName)
+                    .withObjectKey(key);
+            getObsClient().getObject(request).consumeDownloadStream(inputStream -> {
+                try {
+                    inputStream.transferTo(outputStream);
+                } catch (Exception e) {
+                    throw new BusinessException("华为云OBS下载失败: " + e.getMessage());
+                }
+            });
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             throw new BusinessException("华为云OBS下载失败: " + e.getMessage());
         }
@@ -81,7 +90,10 @@ public class HuaweiObsStorageServiceImpl implements StorageService {
     @Override
     public boolean delete(String key) {
         try {
-            getObsClient().deleteObject(bucketName, key);
+            DeleteObjectRequest request = new DeleteObjectRequest()
+                    .withBucketName(bucketName)
+                    .withObjectKey(key);
+            getObsClient().deleteObject(request);
             return true;
         } catch (Exception e) {
             throw new BusinessException("华为云OBS删除失败: " + e.getMessage());
@@ -91,7 +103,16 @@ public class HuaweiObsStorageServiceImpl implements StorageService {
     @Override
     public boolean exists(String key) {
         try {
-            return getObsClient().doesObjectExist(bucketName, key);
+            GetObjectMetadataRequest request = new GetObjectMetadataRequest()
+                    .withBucketName(bucketName)
+                    .withObjectKey(key);
+            getObsClient().getObjectMetadata(request);
+            return true;
+        } catch (ServiceResponseException e) {
+            if (e.getHttpStatusCode() == 404) {
+                return false;
+            }
+            throw new BusinessException("华为云OBS检查失败: " + e.getMessage());
         } catch (Exception e) {
             throw new BusinessException("华为云OBS检查失败: " + e.getMessage());
         }

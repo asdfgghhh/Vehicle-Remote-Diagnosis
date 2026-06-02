@@ -13,14 +13,6 @@ spring:
     multipart:
       max-file-size: 500MB
       max-request-size: 500MB
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
-
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
