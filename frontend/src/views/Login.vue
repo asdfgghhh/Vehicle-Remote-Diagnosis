@@ -26,6 +26,10 @@
             @keyup.enter="handleLogin"
           />
         </el-form-item>
+
+        <el-form-item class="remember-item">
+          <el-checkbox v-model="rememberMe">记住账号密码</el-checkbox>
+        </el-form-item>
         
         <el-form-item>
           <el-button 
@@ -38,24 +42,25 @@
           </el-button>
         </el-form-item>
       </el-form>
-      
-      <div class="register-link">
-        <el-link type="primary" @click="goToRegister">还没有账号？立即注册</el-link>
-      </div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { login } from '@/api/auth'
 
+const REMEMBER_KEY = 'vrd_login_remember'
+const USERNAME_KEY = 'vrd_login_username'
+const PASSWORD_KEY = 'vrd_login_password'
+
 const router = useRouter()
 const loginFormRef = ref(null)
 const loading = ref(false)
+const rememberMe = ref(false)
 
 const loginForm = reactive({
   username: '',
@@ -67,27 +72,57 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
-const handleLogin = async () => {
-  await loginFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        const response = await login(loginForm)
-        localStorage.setItem('token', response.data.token)
-        localStorage.setItem('userInfo', JSON.stringify(response.data))
-        ElMessage.success('登录成功')
-        router.push('/dashboard')
-      } catch (error) {
-        ElMessage.error(error.message || '登录失败')
-      } finally {
-        loading.value = false
-      }
-    }
-  })
+const saveRememberedCredentials = () => {
+  if (rememberMe.value) {
+    localStorage.setItem(REMEMBER_KEY, '1')
+    localStorage.setItem(USERNAME_KEY, loginForm.username)
+    localStorage.setItem(PASSWORD_KEY, loginForm.password)
+    return
+  }
+  localStorage.removeItem(REMEMBER_KEY)
+  localStorage.removeItem(USERNAME_KEY)
+  localStorage.removeItem(PASSWORD_KEY)
 }
 
-const goToRegister = () => {
-  router.push('/register')
+const loadRememberedCredentials = () => {
+  if (localStorage.getItem(REMEMBER_KEY) !== '1') {
+    return
+  }
+  rememberMe.value = true
+  loginForm.username = localStorage.getItem(USERNAME_KEY) || ''
+  loginForm.password = localStorage.getItem(PASSWORD_KEY) || ''
+}
+
+onMounted(() => {
+  loadRememberedCredentials()
+})
+
+const handleLogin = async () => {
+  if (!loginFormRef.value) return
+
+  try {
+    await loginFormRef.value.validate()
+  } catch {
+    return
+  }
+
+  loading.value = true
+  try {
+    const res = await login(loginForm)
+    const loginData = res.data
+    if (!loginData?.token) {
+      throw new Error('登录响应异常，未获取到 token')
+    }
+    localStorage.setItem('token', loginData.token)
+    localStorage.setItem('userInfo', JSON.stringify(loginData))
+    saveRememberedCredentials()
+    ElMessage.success('登录成功')
+    await router.replace('/dashboard')
+  } catch (error) {
+    ElMessage.error(error.message || '登录失败')
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -121,8 +156,11 @@ const goToRegister = () => {
   font-size: 14px;
 }
 
-.register-link {
-  text-align: center;
-  margin-top: 16px;
+.remember-item {
+  margin-bottom: 8px;
+}
+
+.remember-item :deep(.el-form-item__content) {
+  line-height: 1;
 }
 </style>

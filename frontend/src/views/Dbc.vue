@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="header-actions">
-          <span>DBC文件管理</span>
+          <span>配置信息</span>
           <el-button type="primary" @click="uploadDialogVisible = true">
             <el-icon><Upload /></el-icon>
             上传DBC文件

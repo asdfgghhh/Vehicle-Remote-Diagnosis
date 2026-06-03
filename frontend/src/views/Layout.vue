@@ -28,23 +28,31 @@
           
           <el-menu-item index="/ecu-log">
             <el-icon><Document /></el-icon>
-            <span>ECU日志</span>
+            <span>日志分析</span>
           </el-menu-item>
           
           <el-menu-item index="/dbc">
             <el-icon><FolderOpened /></el-icon>
-            <span>DBC文件</span>
+            <span>配置信息</span>
           </el-menu-item>
           
-          <el-menu-item index="/signal">
-            <el-icon><DataLine /></el-icon>
-            <span>信号监控</span>
-          </el-menu-item>
-          
-          <el-menu-item index="/bigdata">
-            <el-icon><Storage /></el-icon>
-            <span>大数据</span>
-          </el-menu-item>
+          <el-sub-menu index="/signal">
+            <template #title>
+              <el-icon><DataLine /></el-icon>
+              <span>主动监控</span>
+            </template>
+            <el-menu-item index="/signal/fault">故障监控</el-menu-item>
+            <el-menu-item index="/signal/playback">信号回放</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="/settings">
+            <template #title>
+              <el-icon><Setting /></el-icon>
+              <span>系统设置</span>
+            </template>
+            <el-menu-item index="/settings/user">账号管理</el-menu-item>
+            <el-menu-item index="/settings/role">权限管理</el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </el-aside>
       
@@ -90,7 +98,7 @@ import {
   Document,
   FolderOpened,
   DataLine,
-  Storage,
+  Setting,
   User
 } from '@element-plus/icons-vue'
 
@@ -105,10 +113,12 @@ const currentRoute = computed(() => {
     '/dashboard': '仪表盘',
     '/vehicle/model': '车型管理',
     '/vehicle/list': '车辆列表',
-    '/ecu-log': 'ECU日志',
-    '/dbc': 'DBC文件',
-    '/signal': '信号监控',
-    '/bigdata': '大数据'
+    '/ecu-log': '日志分析',
+    '/dbc': '配置信息',
+    '/signal/fault': '主动监控 / 故障监控',
+    '/signal/playback': '主动监控 / 信号回放',
+    '/settings/user': '账号管理',
+    '/settings/role': '权限管理'
   }
   return routeMap[route.path]
 })

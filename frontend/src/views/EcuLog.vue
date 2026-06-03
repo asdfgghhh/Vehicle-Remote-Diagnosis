@@ -2,7 +2,7 @@
   <div class="ecu-log">
     <el-card>
       <template #header>
-        <span>ECU日志管理</span>
+        <span>日志分析</span>
       </template>
       
       <el-form :inline="true" :model="queryForm" class="search-form">

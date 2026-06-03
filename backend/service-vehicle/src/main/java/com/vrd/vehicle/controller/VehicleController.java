@@ -3,6 +3,9 @@ package com.vrd.vehicle.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.vrd.common.result.Result;
 import com.vrd.vehicle.dto.VehicleDTO;
+import com.vrd.vehicle.dto.VehicleAlertLongTrendVO;
+import com.vrd.vehicle.dto.VehicleDashboardStatsVO;
+import com.vrd.vehicle.dto.VehicleOnlineTrendVO;
 import com.vrd.vehicle.dto.VehicleEcuDTO;
 import com.vrd.vehicle.entity.Vehicle;
 import com.vrd.vehicle.entity.VehicleEcu;
@@ -18,6 +21,24 @@ public class VehicleController {
 
     @Autowired
     private VehicleService vehicleService;
+
+    @GetMapping("/stats")
+    public Result<VehicleDashboardStatsVO> stats() {
+        return Result.success(vehicleService.getDashboardStats());
+    }
+
+    @GetMapping("/stats/online-trend")
+    public Result<VehicleOnlineTrendVO> onlineTrend(
+            @RequestParam(value = "granularity", defaultValue = "hour") String granularity) {
+        return Result.success(vehicleService.getOnlineTrend(granularity));
+    }
+
+    @GetMapping("/stats/alert-long-trend")
+    public Result<VehicleAlertLongTrendVO> alertLongTrend(
+            @RequestParam(value = "granularity", defaultValue = "hour") String granularity,
+            @RequestParam(value = "metric", defaultValue = "faultCount") String metric) {
+        return Result.success(vehicleService.getAlertLongTrend(granularity, metric));
+    }
 
     @GetMapping("/page")
     public Result<Page<Vehicle>> page(
@@ -100,7 +121,7 @@ public class VehicleController {
 
     @GetMapping("/{id}/ecu")
     public Result<List<VehicleEcu>> getEcus(@PathVariable Long id) {
-        List<VehicleEcu> ecus = ((VehicleServiceImpl) vehicleService).getEcusByVehicleId(id);
+        List<VehicleEcu> ecus = vehicleService.getEcusByVehicleId(id);
         return Result.success(ecus);
     }
 
@@ -114,10 +135,12 @@ public class VehicleController {
         ecu.setSoftwareVersion(dto.getSoftwareVersion());
         ecu.setSupplier(dto.getSupplier());
         ecu.setSerialNumber(dto.getSerialNumber());
-        ecu.setInstallDate(dto.getInstallDate());
+        if (dto.getInstallDate() != null) {
+            ecu.setInstallDate(dto.getInstallDate().atStartOfDay());
+        }
         ecu.setStatus(1);
         
-        ((VehicleServiceImpl) vehicleService).addEcu(ecu);
+        vehicleService.addEcu(ecu);
         return Result.success();
     }
 
@@ -131,9 +154,11 @@ public class VehicleController {
         ecu.setSoftwareVersion(dto.getSoftwareVersion());
         ecu.setSupplier(dto.getSupplier());
         ecu.setSerialNumber(dto.getSerialNumber());
-        ecu.setInstallDate(dto.getInstallDate());
+        if (dto.getInstallDate() != null) {
+            ecu.setInstallDate(dto.getInstallDate().atStartOfDay());
+        }
         
-        ((VehicleServiceImpl) vehicleService).updateEcu(ecu);
+        vehicleService.updateEcu(ecu);
         return Result.success();
     }
 }

@@ -12,5 +12,5 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 kafka:
-  bootstrap-servers: localhost:9092
+  bootstrap-servers: 124.221.104.56:9092
   topic: vehicle-signal

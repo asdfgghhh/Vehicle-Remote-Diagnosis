@@ -1,5 +1,6 @@
 package com.vrd.bigdata.service.impl;
 
+import com.alibaba.fastjson2.JSON;
 import com.vrd.bigdata.service.HdfsService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -12,6 +13,7 @@ import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class HdfsServiceImpl implements HdfsService {
@@ -68,6 +70,31 @@ public class HdfsServiceImpl implements HdfsService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to read from HDFS: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void writeJsonToHdfs(String path, Map<String, Object> data) {
+        saveToHdfs(JSON.toJSONString(data), path);
+    }
+
+    @Override
+    public Object readJsonFromHdfs(String path) {
+        if (!exists(path)) {
+            return null;
+        }
+        List<String> files = listFiles(path);
+        if (!files.isEmpty()) {
+            List<Object> results = new ArrayList<>();
+            for (String file : files) {
+                String json = readFromHdfs(file);
+                if (json != null && !json.isBlank()) {
+                    results.add(JSON.parse(json));
+                }
+            }
+            return results;
+        }
+        String json = readFromHdfs(path);
+        return json != null ? JSON.parse(json) : null;
     }
 
     @Override

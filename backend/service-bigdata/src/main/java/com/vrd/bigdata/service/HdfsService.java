@@ -1,13 +1,16 @@
 package com.vrd.bigdata.service;
 
-import org.apache.hadoop.fs.FileStatus;
-
 import java.util.List;
+import java.util.Map;
 
 public interface HdfsService {
     void saveToHdfs(String data, String path);
     
     String readFromHdfs(String path);
+    
+    void writeJsonToHdfs(String path, Map<String, Object> data);
+    
+    Object readJsonFromHdfs(String path);
     
     List<String> listFiles(String directory);
     

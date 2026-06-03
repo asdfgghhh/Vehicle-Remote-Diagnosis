@@ -1,8 +1,8 @@
 <template>
-  <div class="signal-monitoring">
+  <div class="signal-playback">
     <el-card>
       <template #header>
-        <span>信号监控</span>
+        <span>信号回放</span>
       </template>
       
       <el-form :inline="true" :model="queryForm" class="search-form">
@@ -65,7 +65,7 @@
 import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
-import { getSignalTimeline, getSignalByName } from '@/api/signal'
+import { getSignalTimeline } from '@/api/signal'
 import { getVehiclePage } from '@/api/vehicle'
 
 const vehicles = ref([])
@@ -84,7 +84,6 @@ const queryForm = reactive({
 
 onMounted(() => {
   loadVehicles()
-  
   const now = new Date()
   const start = new Date(now.getTime() - 3600000)
   dateRange.value = [start, now]
@@ -119,22 +118,18 @@ const handleQuery = async () => {
     ElMessage.warning('请选择车辆')
     return
   }
-  
   if (!dateRange.value || dateRange.value.length !== 2) {
     ElMessage.warning('请选择时间范围')
     return
   }
-  
   try {
     const params = {
       vehicleId: queryForm.vehicleId,
       startTime: dateRange.value[0].toISOString(),
       endTime: dateRange.value[1].toISOString()
     }
-    
     const res = await getSignalTimeline(params)
     signalData.value = res.data.signals || []
-    
     if (activeTab.value === 'timeline') {
       initTimelineChart()
     }
@@ -145,28 +140,22 @@ const handleQuery = async () => {
 
 const initTimelineChart = () => {
   if (!timelineChartRef.value) return
-  
   if (timelineChart) timelineChart.dispose()
   timelineChart = echarts.init(timelineChartRef.value)
-  
   const categories = [...new Set(signalData.value.map(s => s.signalName))]
   const series = categories.map(name => {
     const data = signalData.value
       .filter(s => s.signalName === name)
       .map(s => [s.signalTime, parseFloat(s.signalValue) || 0])
-    
     return { name, type: 'line', data }
   })
-  
-  const option = {
+  timelineChart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { data: categories },
     xAxis: { type: 'time', boundaryGap: false },
     yAxis: { type: 'value' },
     series
-  }
-  
-  timelineChart.setOption(option)
+  })
 }
 
 watch(activeTab, (newVal) => {
@@ -180,31 +169,22 @@ watch(activeTab, (newVal) => {
 
 const initSignalChart = () => {
   if (!signalChartRef.value || !selectedSignal.value) return
-  
   if (signalChart) signalChart.dispose()
   signalChart = echarts.init(signalChartRef.value)
-  
   const data = signalData.value
     .filter(s => s.signalName === selectedSignal.value.signalName)
     .map(s => [s.signalTime, parseFloat(s.signalValue) || 0])
-  
-  const option = {
+  signalChart.setOption({
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'time', boundaryGap: false },
     yAxis: { type: 'value' },
-    series: [{
-      type: 'line',
-      data,
-      areaStyle: { opacity: 0.3 }
-    }]
-  }
-  
-  signalChart.setOption(option)
+    series: [{ type: 'line', data, areaStyle: { opacity: 0.3 } }]
+  })
 }
 </script>
 
 <style scoped>
-.signal-monitoring {
+.signal-playback {
   padding: 20px;
 }
 

@@ -1,5 +1,17 @@
 import request from '@/utils/request'
 
+export const getVehicleDashboardStats = () => {
+  return request.get('/vehicle/stats')
+}
+
+export const getVehicleOnlineTrend = (params) => {
+  return request.get('/vehicle/stats/online-trend', { params })
+}
+
+export const getVehicleAlertLongTrend = (params) => {
+  return request.get('/vehicle/stats/alert-long-trend', { params })
+}
+
 export const getVehicleModelPage = (params) => {
   return request.get('/vehicle/model/page', { params })
 }

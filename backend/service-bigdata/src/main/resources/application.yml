@@ -5,7 +5,7 @@ spring:
   application:
     name: service-bigdata
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: 124.221.104.56:9092
     consumer:
       group-id: bigdata-group
       auto-offset-reset: earliest
