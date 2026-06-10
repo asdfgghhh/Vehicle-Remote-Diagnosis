@@ -1,0 +1,13 @@
+# dev 环境：远程 Nacos，关闭配置中心（使用本地 application-dev.yml）
+spring:
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: 124.221.104.56:8848
+        namespace: 57f964ac-059c-4e2b-8138-47bba2b9afb0
+        group: DEFAULT_GROUP
+        fail-fast: false
+      config:
+        enabled: false

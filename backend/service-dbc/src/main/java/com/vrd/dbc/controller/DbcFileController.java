@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/dbc")
@@ -56,6 +57,15 @@ public class DbcFileController {
         }
         List<String> messages = dbcFileService.getMessageNames(dbcFile.getParseResult());
         return Result.success(messages);
+    }
+
+    @GetMapping("/{id}/signals")
+    public Result<List<Map<String, String>>> getSignals(@PathVariable Long id) {
+        DbcFile dbcFile = dbcFileService.getById(id);
+        if (dbcFile == null) {
+            return Result.error("DBC文件不存在");
+        }
+        return Result.success(dbcFileService.getSignalDefinitions(dbcFile.getParseResult()));
     }
 
     @GetMapping("/{id}/download")

@@ -3,8 +3,12 @@ package com.vrd.common.storage.config;
 import com.vrd.common.storage.StorageType;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.stereotype.Component;
 
 @Data
+@Component
+@RefreshScope
 @ConfigurationProperties(prefix = "storage")
 public class StorageConfig {
 

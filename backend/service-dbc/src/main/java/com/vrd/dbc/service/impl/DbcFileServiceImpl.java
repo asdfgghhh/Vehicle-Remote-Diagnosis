@@ -23,7 +23,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -157,6 +159,36 @@ public class DbcFileServiceImpl extends ServiceImpl<DbcFileMapper, DbcFile> impl
         }
         
         return messages;
+    }
+
+    @Override
+    public List<Map<String, String>> getSignalDefinitions(String parseResult) {
+        List<Map<String, String>> signals = new ArrayList<>();
+        if (parseResult == null || parseResult.isEmpty()) {
+            return signals;
+        }
+
+        String currentMessage = "";
+        Pattern messagePattern = Pattern.compile("MESSAGE:\\s*BO_\\s*\\d+\\s+(\\w+):");
+        Pattern signalPattern = Pattern.compile("SIGNAL:\\s+SG_\\s+(\\w+)");
+
+        for (String line : parseResult.split("\n")) {
+            Matcher messageMatcher = messagePattern.matcher(line);
+            if (messageMatcher.find()) {
+                currentMessage = messageMatcher.group(1);
+                continue;
+            }
+
+            Matcher signalMatcher = signalPattern.matcher(line);
+            if (signalMatcher.find()) {
+                Map<String, String> signal = new HashMap<>();
+                signal.put("name", signalMatcher.group(1));
+                signal.put("messageName", currentMessage);
+                signals.add(signal);
+            }
+        }
+
+        return signals;
     }
 
     private int countMessages(String parseResult) {

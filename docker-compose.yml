@@ -209,33 +209,30 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - NACOS_SERVER_ADDR=nacos:8848
-    volumes:
-      - /data/vrd/signals:/data/vrd/signals
     networks:
       - vrd-network
     depends_on:
       - nacos
-      - mysql
-      - mosquitto
 
-  service-bigdata:
+  service-access:
     build:
-      context: ./backend/service-bigdata
+      context: ./backend/service-access
       dockerfile: Dockerfile
-    container_name: vrd-service-bigdata
+    container_name: vrd-service-access
     ports:
       - "8086:8086"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - NACOS_SERVER_ADDR=nacos:8848
     volumes:
-      - /data/vrd/data:/vrd/data
+      - /data/vrd/logs:/data/vrd/logs
+      - /data/vrd/storage:/data/vrd/storage
     networks:
       - vrd-network
     depends_on:
       - nacos
       - kafka
-      - hadoop
+      - mosquitto
 
   frontend:
     build:

@@ -6,6 +6,7 @@ import com.vrd.dbc.entity.DbcFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 public interface DbcFileService extends IService<DbcFile> {
     Page<DbcFile> page(Integer current, Integer size, String keyword);
@@ -15,6 +16,8 @@ public interface DbcFileService extends IService<DbcFile> {
     String parseDbcFile(String filePath);
     
     List<String> getMessageNames(String parseResult);
+
+    List<Map<String, String>> getSignalDefinitions(String parseResult);
     
     void dispatchToVehicle(Long dbcFileId, Long vehicleId);
     

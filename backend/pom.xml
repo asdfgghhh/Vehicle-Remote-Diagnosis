@@ -19,7 +19,7 @@
         <module>service-ecu-log</module>
         <module>service-dbc</module>
         <module>service-signal</module>
-        <module>service-bigdata</module>
+        <module>service-access</module>
         <module>common</module>
         <module>common-db</module>
     </modules>
@@ -115,6 +115,7 @@
                 <groupId>com.clickhouse</groupId>
                 <artifactId>clickhouse-jdbc</artifactId>
                 <version>${clickhouse.version}</version>
+                <classifier>all</classifier>
             </dependency>
             <dependency>
                 <groupId>com.huaweicloud.sdk</groupId>
@@ -137,6 +138,9 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                    <configuration>
+                        <fork>true</fork>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -146,6 +150,7 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <encoding>${project.build.sourceEncoding}</encoding>
+                        <parameters>true</parameters>
                     </configuration>
                 </plugin>
             </plugins>

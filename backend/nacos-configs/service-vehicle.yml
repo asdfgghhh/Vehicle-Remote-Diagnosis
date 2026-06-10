@@ -11,6 +11,20 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-kafka:
-  bootstrap-servers: 124.221.104.56:9092
-  topic: vehicle-signal
+spring:
+  kafka:
+    bootstrap-servers: 124.221.104.56:9092
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+vrd:
+  vehicle:
+    kafka:
+      consumer-topic: vehicle-data
+      producer-topic: vehicle-data
+      consumer-group-id: vehicle-processor

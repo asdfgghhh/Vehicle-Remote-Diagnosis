@@ -4,34 +4,16 @@ server:
 spring:
   application:
     name: service-signal
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/vrd_signal?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: root123
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
-  global-config:
-    db-config:
-      id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
 
-mqtt:
-  url: tcp://localhost:1883
-  username: admin
-  password: public
-  client-id: vrd-signal-client
-  topic: vehicle/signal/+
-  qos: 1
-
-file:
-  signal:
-    data-path: /data/vrd/signals
+clickhouse:
+  enabled: true
+  host: localhost
+  port: 8123
+  database: vrd_bigdata
+  username: default
+  password:
+  connection-timeout: 10000
+  socket-timeout: 30000
+  query-timeout-seconds: 10
+  max-page-size: 500
+  insert-batch-size: 500

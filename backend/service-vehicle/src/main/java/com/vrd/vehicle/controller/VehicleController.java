@@ -42,22 +42,22 @@ public class VehicleController {
 
     @GetMapping("/page")
     public Result<Page<Vehicle>> page(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long modelId) {
+            @RequestParam(value = "current", defaultValue = "1") Integer current,
+            @RequestParam(value = "size", defaultValue = "10") Integer size,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "modelId", required = false) Long modelId) {
         Page<Vehicle> page = vehicleService.page(current, size, keyword, modelId);
         return Result.success(page);
     }
 
     @GetMapping("/{id}")
-    public Result<Vehicle> getById(@PathVariable Long id) {
+    public Result<Vehicle> getById(@PathVariable("id") Long id) {
         Vehicle vehicle = vehicleService.getById(id);
         return Result.success(vehicle);
     }
 
     @GetMapping("/vin/{vin}")
-    public Result<Vehicle> getByVin(@PathVariable String vin) {
+    public Result<Vehicle> getByVin(@PathVariable("vin") String vin) {
         Vehicle vehicle = vehicleService.lambdaQuery()
                 .eq(Vehicle::getVin, vin)
                 .one();
@@ -74,6 +74,7 @@ public class VehicleController {
         vehicle.setProductionYear(dto.getProductionYear());
         vehicle.setEngineNumber(dto.getEngineNumber());
         vehicle.setBodyNumber(dto.getBodyNumber());
+        vehicle.setConfigWord(dto.getConfigWord());
         vehicle.setCurrentEcuVersion(dto.getCurrentEcuVersion());
         
         Vehicle result = vehicleService.create(vehicle);
@@ -81,7 +82,7 @@ public class VehicleController {
     }
 
     @PutMapping("/{id}")
-    public Result<Vehicle> update(@PathVariable Long id, @RequestBody VehicleDTO dto) {
+    public Result<Vehicle> update(@PathVariable("id") Long id, @RequestBody VehicleDTO dto) {
         Vehicle vehicle = new Vehicle();
         vehicle.setId(id);
         vehicle.setVin(dto.getVin());
@@ -91,6 +92,7 @@ public class VehicleController {
         vehicle.setProductionYear(dto.getProductionYear());
         vehicle.setEngineNumber(dto.getEngineNumber());
         vehicle.setBodyNumber(dto.getBodyNumber());
+        vehicle.setConfigWord(dto.getConfigWord());
         vehicle.setCurrentEcuVersion(dto.getCurrentEcuVersion());
         
         Vehicle result = vehicleService.update(vehicle);
@@ -98,7 +100,7 @@ public class VehicleController {
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable("id") Long id) {
         Vehicle vehicle = vehicleService.getById(id);
         if (vehicle != null) {
             vehicle.setDeleted(1);
@@ -114,19 +116,19 @@ public class VehicleController {
     }
 
     @PostMapping("/sync/api")
-    public Result<Void> syncFromApi(@RequestParam String apiUrl) {
+    public Result<Void> syncFromApi(@RequestParam(value = "apiUrl") String apiUrl) {
         vehicleService.syncFromApi(apiUrl);
         return Result.success();
     }
 
     @GetMapping("/{id}/ecu")
-    public Result<List<VehicleEcu>> getEcus(@PathVariable Long id) {
+    public Result<List<VehicleEcu>> getEcus(@PathVariable("id") Long id) {
         List<VehicleEcu> ecus = vehicleService.getEcusByVehicleId(id);
         return Result.success(ecus);
     }
 
     @PostMapping("/{id}/ecu")
-    public Result<Void> addEcu(@PathVariable Long id, @RequestBody VehicleEcuDTO dto) {
+    public Result<Void> addEcu(@PathVariable("id") Long id, @RequestBody VehicleEcuDTO dto) {
         VehicleEcu ecu = new VehicleEcu();
         ecu.setVehicleId(id);
         ecu.setEcuType(dto.getEcuType());
@@ -145,7 +147,7 @@ public class VehicleController {
     }
 
     @PutMapping("/ecu/{ecuId}")
-    public Result<Void> updateEcu(@PathVariable Long ecuId, @RequestBody VehicleEcuDTO dto) {
+    public Result<Void> updateEcu(@PathVariable("ecuId") Long ecuId, @RequestBody VehicleEcuDTO dto) {
         VehicleEcu ecu = new VehicleEcu();
         ecu.setId(ecuId);
         ecu.setEcuType(dto.getEcuType());

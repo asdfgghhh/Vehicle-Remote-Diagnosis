@@ -23,11 +23,12 @@ import com.vrd.vehicle.mapper.VehicleEcuMapper;
 import com.vrd.vehicle.mapper.VehicleMapper;
 import com.vrd.vehicle.entity.VehicleAlert;
 import com.vrd.vehicle.entity.VehicleFault;
+import com.vrd.vehicle.config.VehicleKafkaProperties;
 import com.vrd.vehicle.service.VehicleModelService;
 import com.vrd.vehicle.service.VehicleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> implements VehicleService {
 
     @Autowired
@@ -67,13 +69,14 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
+    @Autowired
+    private VehicleKafkaProperties vehicleKafkaProperties;
+
     private static final DateTimeFormatter HOUR_LABEL_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DAY_LABEL_FORMAT = DateTimeFormatter.ofPattern("MM-dd");
     private static final DateTimeFormatter WEEK_LABEL_FORMAT = DateTimeFormatter.ofPattern("MM-dd");
     private static final DateTimeFormatter MONTH_LABEL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM");
     private static final DateTimeFormatter ALERT_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    private static final String VEHICLE_TOPIC = "vehicle-data";
 
     @Override
     public VehicleDashboardStatsVO getDashboardStats() {
@@ -369,43 +372,62 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
     }
 
     @Override
-    @Async
-    @KafkaListener(topics = VEHICLE_TOPIC, groupId = "vehicle-processor")
     public void syncFromKafka() {
+        log.info("车辆 Kafka 同步已启用，消费主题: {}", vehicleKafkaProperties.getConsumerTopic());
     }
 
+    @Override
     public void processKafkaMessage(String message) {
+        SyncLog syncLog = new SyncLog();
+        syncLog.setSyncType("KAFKA");
+        syncLog.setSource(vehicleKafkaProperties.getConsumerTopic());
+        syncLog.setTarget("database");
+        syncLog.setStartTime(LocalDateTime.now());
+        syncLog.setCreateTime(LocalDateTime.now());
+        syncLog.setStatus("PROCESSING");
+        syncLog.setPayload(message);
+        syncLog.setRecordCount(0);
+
         try {
             JSONObject jsonObject = JSON.parseObject(message);
             String action = jsonObject.getString("action");
             JSONObject data = jsonObject.getJSONObject("data");
-            
-            SyncLog syncLog = new SyncLog();
-            syncLog.setSyncType("KAFKA");
-            syncLog.setSource("kafka");
-            syncLog.setTarget("database");
-            syncLog.setStartTime(LocalDateTime.now());
-            syncLog.setStatus("PROCESSING");
-            
+            syncLog.setAction(action);
+
+            if (data == null) {
+                throw new BusinessException("同步数据缺少 data 字段");
+            }
+
             if ("CREATE".equals(action)) {
                 Vehicle vehicle = data.toJavaObject(Vehicle.class);
+                if (vehicle.getVin() == null || vehicle.getVin().isBlank()) {
+                    throw new BusinessException("VIN码不能为空");
+                }
+                syncLog.setVin(vehicle.getVin());
                 vehicle.setDataSource(2);
                 vehicle.setDeleted(0);
                 vehicle.setCreateTime(LocalDateTime.now());
                 vehicle.setUpdateTime(LocalDateTime.now());
                 save(vehicle);
+                syncLog.setRecordCount(1);
             } else if ("UPDATE".equals(action)) {
                 Vehicle vehicle = data.toJavaObject(Vehicle.class);
+                syncLog.setVin(vehicle.getVin());
                 vehicle.setUpdateTime(LocalDateTime.now());
                 updateById(vehicle);
+                syncLog.setRecordCount(1);
+            } else {
+                throw new BusinessException("不支持的同步动作: " + action);
             }
-            
+
             syncLog.setStatus("SUCCESS");
-            syncLog.setEndTime(LocalDateTime.now());
-            syncLog.setCreateTime(LocalDateTime.now());
-            syncLogMapper.insert(syncLog);
         } catch (Exception e) {
-            throw new BusinessException("处理Kafka消息失败: " + e.getMessage());
+            syncLog.setStatus("FAILED");
+            syncLog.setMessage(e.getMessage());
+            log.warn("处理 Kafka 车辆同步消息失败: {}", e.getMessage());
+        } finally {
+            syncLog.setEndTime(LocalDateTime.now());
+            syncLogMapper.insert(syncLog);
         }
     }
 
@@ -416,25 +438,29 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
         syncLog.setSyncType("API");
         syncLog.setSource(apiUrl);
         syncLog.setTarget("database");
+        syncLog.setAction("BATCH");
         syncLog.setStartTime(LocalDateTime.now());
         syncLog.setStatus("PROCESSING");
         syncLog.setCreateTime(LocalDateTime.now());
-        
+        syncLog.setRecordCount(0);
+
+        String response = null;
         try {
-            String response = WebClient.create(apiUrl)
+            response = WebClient.create(apiUrl)
                     .get()
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
-            
+
+            syncLog.setPayload(response);
             List<Vehicle> vehicles = JSON.parseArray(response, Vehicle.class);
-            
+
             for (Vehicle vehicle : vehicles) {
                 Vehicle exist = lambdaQuery()
                         .eq(Vehicle::getVin, vehicle.getVin())
                         .one();
-                
+
                 if (exist == null) {
                     vehicle.setDataSource(3);
                     vehicle.setDeleted(0);
@@ -447,14 +473,18 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
                     updateById(vehicle);
                 }
             }
-            
+
             syncLog.setRecordCount(vehicles.size());
             syncLog.setStatus("SUCCESS");
         } catch (Exception e) {
             syncLog.setStatus("FAILED");
             syncLog.setMessage(e.getMessage());
+            if (response != null) {
+                syncLog.setPayload(response);
+            }
+            log.warn("API 车辆同步失败: {}", e.getMessage());
         }
-        
+
         syncLog.setEndTime(LocalDateTime.now());
         syncLogMapper.insert(syncLog);
     }
@@ -464,7 +494,7 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
         message.put("action", vehicle.getId() == null ? "CREATE" : "UPDATE");
         message.put("data", JSON.toJSON(vehicle));
         
-        kafkaTemplate.send(VEHICLE_TOPIC, vehicle.getVin(), message.toJSONString());
+        kafkaTemplate.send(vehicleKafkaProperties.getProducerTopic(), vehicle.getVin(), message.toJSONString());
     }
 
     @Override

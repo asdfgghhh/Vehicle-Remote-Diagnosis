@@ -23,6 +23,18 @@ spring:
             - Path=/api/vehicle/**
           filters:
             - StripPrefix=1
+        - id: service-ecu-log-vehicle
+          uri: lb://service-access
+          predicates:
+            - Path=/api/ecu-log/vehicle/**
+          filters:
+            - StripPrefix=1
+        - id: service-access-signal-vehicle
+          uri: lb://service-access
+          predicates:
+            - Path=/api/signal/vehicle/**
+          filters:
+            - StripPrefix=1
         - id: service-ecu-log
           uri: lb://service-ecu-log
           predicates:
@@ -39,12 +51,6 @@ spring:
           uri: lb://service-signal
           predicates:
             - Path=/api/signal/**
-          filters:
-            - StripPrefix=1
-        - id: service-bigdata
-          uri: lb://service-bigdata
-          predicates:
-            - Path=/api/bigdata/**
           filters:
             - StripPrefix=1
       globalcors:

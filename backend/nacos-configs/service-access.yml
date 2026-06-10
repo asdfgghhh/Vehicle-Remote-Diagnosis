@@ -1,0 +1,21 @@
+server:
+  port: 8086
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+
+mqtt:
+  url: tcp://localhost:1883
+  username: admin
+  password: public
+  client-id: vrd-access-client
+  topic: vehicle/signal/+
+  qos: 1
+
+clickhouse:
+  host: localhost
+  port: 8123
+  database: vrd_bigdata
+  username: default
+  password:

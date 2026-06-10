@@ -28,6 +28,8 @@ public class Vehicle {
 
     private String bodyNumber;
 
+    private String configWord;
+
     private Integer status;
 
     private String currentEcuVersion;

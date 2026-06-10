@@ -1,0 +1,12 @@
+# 本地开发（profile=dev）
+clickhouse:
+  host: 124.221.104.56
+  port: 8123
+  database: vrd_bigdata
+  username: default
+  password: ${CLICKHOUSE_PASSWORD:Wl12345}
+  connection-timeout: 10000
+  socket-timeout: 30000
+  query-timeout-seconds: 10
+  max-page-size: 500
+  insert-batch-size: 500

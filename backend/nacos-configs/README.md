@@ -73,19 +73,39 @@ echo "配置导入完成！"
 
 ## 配置热更新
 
-1. 在Nacos控制台修改配置后，点击「发布」
+### 方式一：Nacos 控制台（推荐，修改后自动生效）
 
-2. 使用了 `@RefreshScope` 注解的Bean会自动刷新配置
+1. 在 Nacos 控制台修改 `application.yml` 或 `service-xxx.yml` 后点击「发布」
+2. 各服务会自动收到配置变更并刷新（`refresh-enabled: true`）
+3. 使用了 `@RefreshScope` 的配置 Bean 会立即生效，**无需重启服务**
 
-3. 对于没有使用 `@RefreshScope` 的配置，可以通过以下方式刷新：
-   ```bash
-   # 调用actuator端点刷新配置（需要引入spring-boot-starter-actuator）
-   curl -X POST http://localhost:8080/actuator/refresh
-   ```
+适用配置示例：`storage.*`、`vrd.vehicle.kafka.*`、`bigdata.storage.*` 等。
 
-## 注意事项
+### 方式二：手动触发刷新
 
-1. **配置优先级**：服务配置 > 公共配置 > 本地配置
+若修改后未自动生效，可调用对应服务的 actuator 端点：
+
+```bash
+# 车辆服务（8082）
+curl -X POST http://localhost:8082/actuator/refresh
+
+# 网关（8080）
+curl -X POST http://localhost:8080/actuator/refresh
+
+# 认证服务（8081）
+curl -X POST http://localhost:8081/actuator/refresh
+```
+
+### 本地开发说明
+
+- `profile=dev` 时已启用 Nacos 配置中心（`bootstrap-dev.yml`）
+- 数据库等仍可在各服务本地 `application.yml` / `application-dev.yml` 中配置
+- Nacos 公共配置 `application.yml` 仅包含存储、上传等通用项，**不含数据库连接**，避免覆盖本地数据源
+- **Kafka 消费主题、MQTT 等运行时连接**变更后，部分组件可能仍需重启才能完全生效
+
+### 注意事项
+
+1. **配置优先级**：Nacos 服务配置 > Nacos 公共配置 > 本地 application.yml
 
 2. **命名空间**：如需使用命名空间，需要在bootstrap.yml中配置 `spring.cloud.nacos.config.namespace`
 

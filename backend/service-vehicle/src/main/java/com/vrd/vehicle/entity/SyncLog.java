@@ -20,11 +20,17 @@ public class SyncLog {
 
     private String target;
 
+    private String vin;
+
+    private String action;
+
     private Integer recordCount;
 
     private String status;
 
     private String message;
+
+    private String payload;
 
     private LocalDateTime startTime;
 

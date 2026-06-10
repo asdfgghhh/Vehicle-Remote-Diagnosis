@@ -12,13 +12,20 @@ spring:
   kafka:
     bootstrap-servers: 124.221.104.56:9092
     consumer:
-      group-id: vehicle-group
+      group-id: vehicle-processor
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+vrd:
+  vehicle:
+    kafka:
+      consumer-topic: vehicle-data
+      producer-topic: vehicle-data
+      consumer-group-id: vehicle-processor
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true

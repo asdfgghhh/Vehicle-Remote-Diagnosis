@@ -1,20 +1,20 @@
 package com.vrd.ecu.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.vrd.common.result.Result;
-import com.vrd.ecu.entity.EcuLogFile;
+import com.vrd.ecu.dto.EcuLogRecord;
+import com.vrd.ecu.dto.PageResult;
 import com.vrd.ecu.service.EcuLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/ecu-log")
@@ -24,75 +24,30 @@ public class EcuLogController {
     private EcuLogService ecuLogService;
 
     @GetMapping("/page")
-    public Result<Page<EcuLogFile>> page(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long vehicleId) {
-        Page<EcuLogFile> page = ecuLogService.page(current, size, keyword, vehicleId);
+    public Result<PageResult<EcuLogRecord>> page(
+            @RequestParam(value = "current", defaultValue = "1") Integer current,
+            @RequestParam(value = "size", defaultValue = "10") Integer size,
+            @RequestParam(value = "vin", required = false) String vin,
+            @RequestParam(value = "ecuType", required = false) String ecuType,
+            @RequestParam(value = "startTime", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
+            @RequestParam(value = "endTime", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
+        PageResult<EcuLogRecord> page = ecuLogService.page(current, size, vin, ecuType, startTime, endTime);
         return Result.success(page);
     }
 
-    @GetMapping("/{id}")
-    public Result<EcuLogFile> getById(@PathVariable Long id) {
-        EcuLogFile logFile = ecuLogService.getById(id);
-        return Result.success(logFile);
-    }
-
-    @PostMapping("/init-upload")
-    public Result<String> initUpload(
-            @RequestParam String fileName,
-            @RequestParam Long fileSize,
-            @RequestParam String md5,
-            @RequestParam Long vehicleId,
-            @RequestParam String vin,
-            @RequestParam String ecuType) {
-        String chunkId = ecuLogService.initUpload(fileName, fileSize, md5, vehicleId, vin, ecuType);
-        return Result.success(chunkId);
-    }
-
-    @PostMapping("/upload-chunk")
-    public Result<String> uploadChunk(
-            @RequestParam String chunkId,
-            @RequestParam String fileMd5,
-            @RequestParam Integer chunkNumber,
-            @RequestParam Long chunkSize,
-            @RequestParam("file") MultipartFile file) {
-        try {
-            String result = ecuLogService.uploadChunk(chunkId, fileMd5, chunkNumber, chunkSize, file.getInputStream());
-            return Result.success(result);
-        } catch (IOException e) {
-            return Result.error("上传失败: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/merge-chunks")
-    public Result<EcuLogFile> mergeChunks(
-            @RequestParam String fileMd5,
-            @RequestParam String fileName,
-            @RequestParam Long vehicleId,
-            @RequestParam String vin,
-            @RequestParam String ecuType) {
-        EcuLogFile result = ecuLogService.mergeChunks(fileMd5, fileName, vehicleId, vin, ecuType);
-        return Result.success(result);
-    }
-
-    @GetMapping("/check-upload")
-    public Result<EcuLogService.CheckUploadResult> checkUpload(@RequestParam String fileMd5) {
-        EcuLogService.CheckUploadResult result = ecuLogService.checkUpload(fileMd5);
-        return Result.success(result);
-    }
-
     @GetMapping("/download/{id}")
-    public ResponseEntity<Resource> download(@PathVariable Long id) {
+    public ResponseEntity<Resource> download(@PathVariable("id") Long id) {
         try {
+            EcuLogRecord record = ecuLogService.getById(id);
+            if (record == null) {
+                return ResponseEntity.notFound().build();
+            }
             File file = ecuLogService.downloadLog(id);
             Resource resource = new FileSystemResource(file);
-            
-            EcuLogFile logFile = ecuLogService.getById(id);
-            
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + logFile.getFileName() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + record.getFileName() + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .contentLength(file.length())
                     .body(resource);

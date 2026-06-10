@@ -24,6 +24,7 @@
             </template>
             <el-menu-item index="/vehicle/model">车型管理</el-menu-item>
             <el-menu-item index="/vehicle/list">车辆列表</el-menu-item>
+            <el-menu-item index="/vehicle/sync-record">同步记录</el-menu-item>
           </el-sub-menu>
           
           <el-menu-item index="/ecu-log">
@@ -109,10 +110,14 @@ const activeMenu = computed(() => route.path)
 const username = ref('Admin')
 
 const currentRoute = computed(() => {
+  if (route.path.startsWith('/vehicle/detail')) {
+    return '车辆详情'
+  }
   const routeMap = {
     '/dashboard': '仪表盘',
     '/vehicle/model': '车型管理',
     '/vehicle/list': '车辆列表',
+    '/vehicle/sync-record': '同步记录',
     '/ecu-log': '日志分析',
     '/dbc': '配置信息',
     '/signal/fault': '主动监控 / 故障监控',

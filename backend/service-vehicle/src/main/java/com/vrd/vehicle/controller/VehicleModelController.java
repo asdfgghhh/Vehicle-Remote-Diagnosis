@@ -19,15 +19,15 @@ public class VehicleModelController {
 
     @GetMapping("/page")
     public Result<Page<VehicleModel>> page(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(value = "current", defaultValue = "1") Integer current,
+            @RequestParam(value = "size", defaultValue = "10") Integer size,
+            @RequestParam(value = "keyword", required = false) String keyword) {
         Page<VehicleModel> page = vehicleModelService.page(current, size, keyword);
         return Result.success(page);
     }
 
     @GetMapping("/{id}")
-    public Result<VehicleModel> getById(@PathVariable Long id) {
+    public Result<VehicleModel> getById(@PathVariable("id") Long id) {
         VehicleModel model = vehicleModelService.getById(id);
         return Result.success(model);
     }
@@ -56,7 +56,7 @@ public class VehicleModelController {
     }
 
     @PutMapping("/{id}")
-    public Result<VehicleModel> update(@PathVariable Long id, @RequestBody VehicleModelDTO dto) {
+    public Result<VehicleModel> update(@PathVariable("id") Long id, @RequestBody VehicleModelDTO dto) {
         VehicleModel model = vehicleModelService.getById(id);
         if (model == null) {
             return Result.error("车型不存在");
@@ -80,7 +80,7 @@ public class VehicleModelController {
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable("id") Long id) {
         VehicleModel model = vehicleModelService.getById(id);
         if (model != null) {
             model.setDeleted(1);

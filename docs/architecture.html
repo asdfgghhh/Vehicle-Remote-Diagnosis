@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VRD 系统架构图</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: #eef2f7;
+      color: #2c3e50;
+      padding: 40px 48px 64px;
+    }
+
+    h1 { font-size: 22px; font-weight: 600; color: #1a237e; margin-bottom: 6px; }
+
+    .subtitle {
+      font-size: 13px; color: #78909c; margin-bottom: 32px; line-height: 1.7;
+    }
+
+    .arch-wrap {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      max-width: 1160px;
+    }
+
+    /* ── 主架构柱 ── */
+    .arch {
+      flex: 1;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.07);
+      padding: 32px 32px 28px;
+    }
+
+    .layer {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 0 16px;
+    }
+
+    /* 左侧层名：正常水平文字，从上到下阅读 */
+    .layer-tag {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.5;
+      letter-spacing: 1px;
+      padding: 8px 4px;
+      text-align: center;
+    }
+
+    .layer-tag .num {
+      font-size: 11px;
+      opacity: .85;
+      font-weight: 400;
+      margin-bottom: 2px;
+    }
+
+    .layer-panel {
+      border: 2px solid;
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      min-height: 68px;
+    }
+
+    /* 层间箭头 */
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      margin: 5px 0 5px 88px;
+      gap: 8px;
+      font-size: 11px;
+      color: #90a4ae;
+    }
+
+    .flow-arrow.up { color: #0277bd; }
+
+    .flow-arrow svg { flex-shrink: 0; }
+
+    /* 配色 */
+    .t-present .layer-tag  { background: #00897b; }
+    .t-present .layer-panel { border-color: #00897b; background: #e0f2f1; }
+
+    .t-gateway .layer-tag  { background: #ef6c00; }
+    .t-gateway .layer-panel { border-color: #ef6c00; background: #fff3e0; }
+
+    .t-service .layer-tag  { background: #e65100; }
+    .t-service .layer-panel { border-color: #e65100; background: #fbe9e7; }
+
+    .t-data .layer-tag  { background: #6a1b9a; }
+    .t-data .layer-panel { border-color: #6a1b9a; background: #f3e5f5; }
+
+    .t-mid .layer-tag  { background: #2e7d32; }
+    .t-mid .layer-panel { border-color: #2e7d32; background: #e8f5e9; }
+
+    .t-access .layer-tag  { background: #00838f; }
+    .t-access .layer-panel { border-color: #00838f; background: #e0f7fa; }
+
+    .t-edge .layer-tag  { background: #1565c0; }
+    .t-edge .layer-panel { border-color: #1565c0; background: #e3f2fd; }
+
+    /* 组件 */
+    .box {
+      background: #fff;
+      border: 1.5px solid rgba(0,0,0,.14);
+      border-radius: 6px;
+      padding: 9px 14px;
+      text-align: center;
+      min-width: 108px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    }
+
+    .box .name { font-size: 13px; font-weight: 600; color: #263238; }
+    .box .desc { font-size: 11px; color: #90a4ae; margin-top: 2px; }
+    .box.key { border-color: #ef6c00; border-width: 2px; }
+
+    .db {
+      background: linear-gradient(160deg, #f3e5f5, #fff 55%);
+      border: 1.5px solid #8e24aa;
+      border-radius: 6px 6px 12px 12px;
+      padding: 9px 12px;
+      text-align: center;
+      min-width: 88px;
+    }
+    .db .name { font-size: 12px; font-weight: 600; color: #4a148c; }
+    .db .desc { font-size: 10px; color: #ab47bc; margin-top: 2px; }
+
+    .access-pair {
+      display: flex; gap: 16px; width: 100%; justify-content: center; flex-wrap: wrap;
+    }
+
+    .access-box {
+      flex: 1; min-width: 200px; max-width: 280px;
+      background: rgba(255,255,255,.75);
+      border: 1.5px dashed #00838f;
+      border-radius: 8px;
+      padding: 12px 14px;
+      text-align: center;
+    }
+    .access-box .title { font-size: 12px; font-weight: 600; color: #006064; margin-bottom: 6px; }
+    .access-box .path { font-size: 11px; color: #546e7a; line-height: 1.9; }
+
+    /* ── Nacos 侧栏（不在主链路中） ── */
+    .nacos-side {
+      width: 148px;
+      flex-shrink: 0;
+      background: #fff;
+      border: 2px dashed #1565c0;
+      border-radius: 12px;
+      padding: 20px 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 118px; /* 与网关层对齐 */
+    }
+
+    .nacos-side .side-title {
+      font-size: 12px; font-weight: 600; color: #1565c0;
+      writing-mode: horizontal-tb;
+      text-align: center;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .nacos-side .box { min-width: 0; width: 100%; border-color: #1565c0; }
+
+    .nacos-side .side-note {
+      margin-top: 14px;
+      font-size: 11px;
+      color: #78909c;
+      line-height: 1.8;
+      text-align: center;
+    }
+
+    .dash-line {
+      width: 100%;
+      border-top: 1.5px dashed #90caf9;
+      margin: 10px 0;
+    }
+
+    /* 矩阵 */
+    .matrix {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #eceff1;
+    }
+
+    .matrix h3 { font-size: 13px; color: #546e7a; margin-bottom: 10px; }
+
+    .matrix table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+    .matrix th {
+      background: #f5f5f5; color: #546e7a; font-weight: 600;
+      padding: 6px 8px; border: 1px solid #e0e0e0; text-align: center;
+    }
+
+    .matrix td {
+      padding: 6px 8px; border: 1px solid #e0e0e0;
+      text-align: center; color: #37474f;
+    }
+
+    .matrix td:first-child {
+      text-align: left; font-weight: 600; background: #fafafa;
+    }
+
+    .dot {
+      display: inline-block; width: 9px; height: 9px;
+      border-radius: 50%; background: #7b1fa2;
+    }
+
+    .legend { margin-top: 12px; font-size: 11px; color: #90a4ae; line-height: 1.8; }
+  </style>
+</head>
+<body>
+
+  <h1>车辆远程诊断系统 · 系统架构图</h1>
+  <p class="subtitle">
+    自上而下：管理端 → 网关 → 微服务 → 数据 / 中间件；车端从底部经接入层上行。<br>
+    Nacos 独立侧栏，不参与业务主链路。
+  </p>
+
+  <div class="arch-wrap">
+
+    <!-- ═══ 主架构（上→下） ═══ -->
+    <div class="arch">
+
+      <!-- ① 展现层 -->
+      <div class="layer t-present">
+        <div class="layer-tag"><span class="num">①</span>展现层</div>
+        <div class="layer-panel">
+          <div class="box key">
+            <div class="name">frontend</div>
+            <div class="desc">Vue3 管理端</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">
+        <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0 L10 16 M5 11 L10 19 L15 11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        管理端请求下行
+      </div>
+
+      <!-- ② 网关层 -->
+      <div class="layer t-gateway">
+        <div class="layer-tag"><span class="num">②</span>网关层</div>
+        <div class="layer-panel">
+          <div class="box key">
+            <div class="name">service-gateway</div>
+            <div class="desc">路由 · JWT 鉴权</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">
+        <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0 L10 16 M5 11 L10 19 L15 11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        按服务名转发
+      </div>
+
+      <!-- ③ 微服务层 -->
+      <div class="layer t-service">
+        <div class="layer-tag"><span class="num">③</span>服务层</div>
+        <div class="layer-panel">
+          <div class="box"><div class="name">service-auth</div><div class="desc">认证授权</div></div>
+          <div class="box"><div class="name">service-vehicle</div><div class="desc">车辆管理</div></div>
+          <div class="box"><div class="name">service-ecu-log</div><div class="desc">ECU 日志</div></div>
+          <div class="box"><div class="name">service-dbc</div><div class="desc">DBC 配置</div></div>
+          <div class="box"><div class="name">service-signal</div><div class="desc">信号采集</div></div>
+          <div class="box"><div class="name">service-bigdata</div><div class="desc">大数据</div></div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">
+        <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0 L10 16 M5 11 L10 19 L15 11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        读写持久化 / 消息
+      </div>
+
+      <!-- ④ 数据层 -->
+      <div class="layer t-data">
+        <div class="layer-tag"><span class="num">④</span>数据层</div>
+        <div class="layer-panel">
+          <div class="db"><div class="name">MySQL</div><div class="desc">业务库</div></div>
+          <div class="db"><div class="name">Redis</div><div class="desc">缓存</div></div>
+          <div class="db"><div class="name">ClickHouse</div><div class="desc">日志 / 时序</div></div>
+          <div class="db"><div class="name">对象存储</div><div class="desc">文件</div></div>
+          <div class="db"><div class="name">HDFS</div><div class="desc">大数据文件</div></div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">
+        <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 0 L10 16 M5 11 L10 19 L15 11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        异步 / 物联网通道
+      </div>
+
+      <!-- ⑤ 中间件层 -->
+      <div class="layer t-mid">
+        <div class="layer-tag"><span class="num">⑤</span>中间件</div>
+        <div class="layer-panel">
+          <div class="box"><div class="name">Kafka</div><div class="desc">消息队列</div></div>
+          <div class="box"><div class="name">MQTT Broker</div><div class="desc">物联网 Broker</div></div>
+        </div>
+      </div>
+
+      <div class="flow-arrow up">
+        <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 22 L10 6 M5 11 L10 3 L15 11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        车端数据上行
+      </div>
+
+      <!-- ⑥ 接入层 -->
+      <div class="layer t-access">
+        <div class="layer-tag"><span class="num">⑥</span>接入层</div>
+        <div class="layer-panel" style="flex-direction:column;">
+          <div class="access-pair">
+            <div class="access-box">
+              <div class="title">HTTP · 日志上报</div>
+              <div class="path">车载网关 → service-gateway → service-ecu-log</div>
+            </div>
+            <div class="access-box">
+              <div class="title">MQTT · 实时信号</div>
+              <div class="path">车载网关 → MQTT Broker → service-signal</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow up">
+        <svg width="20" height="22" viewBox="0 0 20 22"><path d="M10 22 L10 6 M5 11 L10 3 L15 11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        采集与上报
+      </div>
+
+      <!-- ⑦ 车端（最底） -->
+      <div class="layer t-edge">
+        <div class="layer-tag"><span class="num">⑦</span>车端</div>
+        <div class="layer-panel">
+          <div class="box key">
+            <div class="name">ECU 控制器</div>
+            <div class="desc">各部件日志 / 信号</div>
+          </div>
+          <div style="font-size:18px;color:#90a4ae;">↔</div>
+          <div class="box key">
+            <div class="name">车载网关</div>
+            <div class="desc">汇聚 · HTTP / MQTT 上报</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 归属矩阵 -->
+      <div class="matrix">
+        <h3>服务与数据归属</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>微服务</th><th>MySQL</th><th>Redis</th><th>ClickHouse</th>
+              <th>对象存储</th><th>Kafka</th><th>MQTT</th><th>HDFS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>service-auth</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>service-vehicle</td><td><span class="dot"></span></td><td></td><td></td><td></td><td><span class="dot"></span></td><td></td><td></td></tr>
+            <tr><td>service-ecu-log</td><td></td><td></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td></td><td></td><td></td></tr>
+            <tr><td>service-dbc</td><td><span class="dot"></span></td><td></td><td></td><td><span class="dot"></span></td><td></td><td></td><td></td></tr>
+            <tr><td>service-signal</td><td><span class="dot"></span></td><td></td><td></td><td></td><td></td><td><span class="dot"></span></td><td></td></tr>
+            <tr><td>service-bigdata</td><td></td><td></td><td><span class="dot"></span></td><td></td><td><span class="dot"></span></td><td></td><td><span class="dot"></span></td></tr>
+          </tbody>
+        </table>
+        <div class="legend">
+          主链路方向：管理端自上而下；车端自下而上经接入层进入平台。<br>
+          ecu-log 元数据在 ClickHouse，文件在对象存储；signal 当前写 MySQL。
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ Nacos 侧栏 ═══ -->
+    <div class="nacos-side">
+      <div class="side-title">注册中心层<br><small style="font-weight:400;color:#78909c">（独立，虚线关联）</small></div>
+      <div class="box">
+        <div class="name">Nacos</div>
+        <div class="desc">服务注册与发现</div>
+      </div>
+      <div class="dash-line"></div>
+      <div class="side-note">
+        网关<br>↓<br>微服务<br><br>
+        启动注册<br>
+        运行时发现<br>
+        负载均衡
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

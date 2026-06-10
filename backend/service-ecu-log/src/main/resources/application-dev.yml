@@ -1,0 +1,33 @@
+# 本地开发（profile=dev）
+spring:
+  devtools:
+    restart:
+      log-condition-evaluation-delta: false
+
+file:
+  log:
+    temp-path: D:/demo/Vehicle-Remote-Diagnosis/data/logs/temp
+
+storage:
+  type: LOCAL
+  local:
+    base-path: D:/demo/Vehicle-Remote-Diagnosis/data/storage
+    base-url: http://localhost:8080/storage
+  # 生产环境可切换为 ALIYUN_OSS / HUAWEI_OBS / MINIO
+  # type: MINIO
+  # minio:
+  #   endpoint: http://124.221.104.56:9000
+  #   access-key: minioadmin
+  #   secret-key: minioadmin
+  #   bucket-name: vrd-logs
+  #   base-url: http://124.221.104.56:9000/vrd-logs
+
+clickhouse:
+  host: 124.221.104.56
+  port: 8123
+  database: vrd_bigdata
+  username: default
+  password: ${CLICKHOUSE_PASSWORD:Wl12345}
+  connection-timeout: 10000
+  socket-timeout: 30000
+  query-timeout-seconds: 10

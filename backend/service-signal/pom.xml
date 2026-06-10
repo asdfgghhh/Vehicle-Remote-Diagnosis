@@ -13,21 +13,12 @@
 
     <artifactId>service-signal</artifactId>
     <name>Signal Service</name>
-    <description>信号采集服务</description>
+    <description>信号查询服务</description>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.33</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.integration</groupId>
-            <artifactId>spring-integration-mqtt</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -36,7 +27,7 @@
         </dependency>
         <dependency>
             <groupId>com.vrd</groupId>
-            <artifactId>common-db</artifactId>
+            <artifactId>common</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

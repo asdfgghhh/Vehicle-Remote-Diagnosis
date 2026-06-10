@@ -11,5 +11,6 @@ public class VehicleDTO {
     private Integer productionYear;
     private String engineNumber;
     private String bodyNumber;
+    private String configWord;
     private String currentEcuVersion;
 }

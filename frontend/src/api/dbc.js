@@ -18,6 +18,10 @@ export const getDbcMessages = (id) => {
   return request.get(`/dbc/${id}/messages`)
 }
 
+export const getDbcSignals = (id) => {
+  return request.get(`/dbc/${id}/signals`)
+}
+
 export const downloadDbcFile = (id) => {
   return request.get(`/dbc/${id}/download`, { responseType: 'blob' })
 }

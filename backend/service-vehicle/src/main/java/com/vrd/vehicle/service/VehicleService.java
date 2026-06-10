@@ -24,6 +24,8 @@ public interface VehicleService extends IService<Vehicle> {
     Vehicle update(Vehicle vehicle);
     
     void syncFromKafka();
+
+    void processKafkaMessage(String message);
     
     void syncFromApi(String apiUrl);
 

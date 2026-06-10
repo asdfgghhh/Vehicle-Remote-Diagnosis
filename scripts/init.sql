@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS vehicle (
     production_year INT,
     engine_number VARCHAR(50),
     body_number VARCHAR(50),
+    config_word VARCHAR(255) COMMENT '配置字',
     status INT DEFAULT 1,
     current_ecu_version VARCHAR(50),
     data_source INT DEFAULT 1 COMMENT '1-手动 2-Kafka 3-API',
@@ -95,6 +96,8 @@ CREATE TABLE IF NOT EXISTS vehicle (
     INDEX idx_model_id (model_id),
     INDEX idx_plate_number (plate_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 已有库升级: ALTER TABLE vehicle ADD COLUMN config_word VARCHAR(255) COMMENT '配置字' AFTER body_number;
 
 CREATE TABLE IF NOT EXISTS vehicle_ecu (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -311,18 +314,45 @@ INSERT INTO vehicle_alert_trend_stat (stat_time, stat_granularity, fault_count, 
 
 CREATE TABLE IF NOT EXISTS sync_log (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    sync_type VARCHAR(50),
-    source VARCHAR(255),
-    target VARCHAR(255),
+    sync_type VARCHAR(50) COMMENT 'KAFKA/API',
+    source VARCHAR(255) COMMENT 'Kafka主题或API地址',
+    target VARCHAR(255) DEFAULT 'database',
+    vin VARCHAR(50) COMMENT '同步车辆VIN',
+    action VARCHAR(20) COMMENT 'CREATE/UPDATE/BATCH',
     record_count INT DEFAULT 0,
-    status VARCHAR(20),
-    message TEXT,
+    status VARCHAR(20) COMMENT 'SUCCESS/FAILED/PROCESSING',
+    message TEXT COMMENT '失败原因或备注',
+    payload TEXT COMMENT '原始同步车辆信息(JSON)',
     start_time DATETIME,
     end_time DATETIME,
     create_time DATETIME,
     INDEX idx_sync_type (sync_type),
-    INDEX idx_status (status)
+    INDEX idx_status (status),
+    INDEX idx_vin (vin),
+    INDEX idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 已有库升级:
+-- ALTER TABLE sync_log ADD COLUMN vin VARCHAR(50) COMMENT '同步车辆VIN' AFTER target;
+-- ALTER TABLE sync_log ADD COLUMN action VARCHAR(20) COMMENT 'CREATE/UPDATE/BATCH' AFTER vin;
+-- ALTER TABLE sync_log ADD COLUMN payload TEXT COMMENT '原始同步车辆信息(JSON)' AFTER message;
+
+INSERT INTO sync_log (sync_type, source, target, vin, action, record_count, status, message, payload, start_time, end_time, create_time) VALUES
+('KAFKA', 'vehicle-data', 'database', 'LSVAG4189ES123456', 'CREATE', 1, 'SUCCESS', NULL,
+ '{"action":"CREATE","data":{"vin":"LSVAG4189ES123456","modelId":1,"plateNumber":"沪A12345","color":"白","productionYear":2024,"configWord":"A1B2C3D4"}}',
+ DATE_SUB(NOW(), INTERVAL 2 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+('KAFKA', 'vehicle-data', 'database', 'LSVBG6189ES234567', 'UPDATE', 1, 'SUCCESS', NULL,
+ '{"action":"UPDATE","data":{"id":2,"vin":"LSVBG6189ES234567","plateNumber":"沪B67890","configWord":"E5F6G7H8"}}',
+ DATE_SUB(NOW(), INTERVAL 1 HOUR), DATE_SUB(NOW(), INTERVAL 1 HOUR), DATE_SUB(NOW(), INTERVAL 1 HOUR)),
+('KAFKA', 'vehicle-data', 'database', NULL, 'CREATE', 0, 'FAILED', 'VIN码不能为空',
+ '{"action":"CREATE","data":{"modelId":1,"color":"黑"}}',
+ DATE_SUB(NOW(), INTERVAL 30 MINUTE), DATE_SUB(NOW(), INTERVAL 30 MINUTE), DATE_SUB(NOW(), INTERVAL 30 MINUTE)),
+('API', 'http://example.com/api/vehicles', 'database', NULL, 'BATCH', 3, 'SUCCESS', NULL,
+ '[{"vin":"LSVAH4189ES345678","modelId":1,"plateNumber":"沪C11111","configWord":"11223344"},{"vin":"LSVAJ6189ES456789","modelId":1,"plateNumber":"沪D22222","configWord":"55667788"},{"vin":"LSVAK6189ES567890","modelId":1,"plateNumber":"沪E33333","configWord":"99AABBCC"}]',
+ DATE_SUB(NOW(), INTERVAL 20 MINUTE), DATE_SUB(NOW(), INTERVAL 20 MINUTE), DATE_SUB(NOW(), INTERVAL 20 MINUTE)),
+('API', 'http://example.com/api/vehicles', 'database', NULL, 'BATCH', 0, 'FAILED', 'Connection refused: connect',
+ NULL,
+ DATE_SUB(NOW(), INTERVAL 10 MINUTE), DATE_SUB(NOW(), INTERVAL 10 MINUTE), DATE_SUB(NOW(), INTERVAL 10 MINUTE));
 
 USE vrd_ecu_log;
 

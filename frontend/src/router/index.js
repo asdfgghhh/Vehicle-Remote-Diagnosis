@@ -32,6 +32,16 @@ const routes = [
         component: () => import('@/views/VehicleList.vue')
       },
       {
+        path: 'vehicle/detail/:id',
+        name: 'VehicleDetail',
+        component: () => import('@/views/VehicleDetail.vue')
+      },
+      {
+        path: 'vehicle/sync-record',
+        name: 'VehicleSyncLog',
+        component: () => import('@/views/VehicleSyncLog.vue')
+      },
+      {
         path: 'ecu-log',
         name: 'EcuLog',
         component: () => import('@/views/EcuLog.vue')

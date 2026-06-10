@@ -6,16 +6,20 @@ import com.vrd.common.storage.impl.AliyunOssStorageServiceImpl;
 import com.vrd.common.storage.impl.HuaweiObsStorageServiceImpl;
 import com.vrd.common.storage.impl.LocalStorageServiceImpl;
 import com.vrd.common.storage.impl.MinioStorageServiceImpl;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(StorageConfig.class)
 public class StorageAutoConfiguration {
 
     @Bean
+    @RefreshScope
     @ConditionalOnMissingBean
     public StorageService storageService(StorageConfig config) {
         StorageType type = config.getType();

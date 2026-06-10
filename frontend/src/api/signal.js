@@ -1,7 +1,10 @@
 import request from '@/utils/request'
 
 export const getSignalTimeline = (params) => {
-  return request.get('/signal/timeline/' + params.vehicleId, { params })
+  const { vehicleId, vin, startTime, endTime } = params
+  return request.get('/signal/timeline/' + vehicleId, {
+    params: { vin, startTime, endTime }
+  })
 }
 
 export const getSignalPage = (vehicleId, params) => {
@@ -13,5 +16,5 @@ export const getSignalByName = (vehicleId, params) => {
 }
 
 export const receiveSignal = (vin, payload) => {
-  return request.post('/signal/receive', payload, { params: { vin } })
+  return request.post('/signal/vehicle/receive', payload, { params: { vin } })
 }

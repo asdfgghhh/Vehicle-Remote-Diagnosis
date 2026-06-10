@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: 124.221.104.56:8848
+        namespace: 57f964ac-059c-4e2b-8138-47bba2b9afb0
+        group: DEFAULT_GROUP
+        fail-fast: false
+      config:
+        enabled: false

@@ -1,0 +1,53 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: service-access
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: access-ingest
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+mqtt:
+  url: tcp://localhost:1883
+  username: admin
+  password: public
+  client-id: vrd-access-client
+  topic: vehicle/signal/+
+  qos: 1
+
+kafka:
+  topics:
+    vehicle-signals: vehicle-signals
+
+clickhouse:
+  enabled: true
+  host: localhost
+  port: 8123
+  database: vrd_bigdata
+  username: default
+  password:
+  connection-timeout: 10000
+  socket-timeout: 30000
+  insert-batch-size: 500
+
+storage:
+  type: LOCAL
+  local:
+    base-path: /data/vrd/storage
+    base-url: http://localhost:8080/storage
+
+file:
+  log:
+    temp-path: /data/vrd/logs/temp

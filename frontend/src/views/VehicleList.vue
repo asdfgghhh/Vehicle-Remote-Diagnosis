@@ -4,20 +4,10 @@
       <template #header>
         <div class="header-actions">
           <span>车辆列表</span>
-          <div>
-            <el-button type="success" @click="handleSyncKafka" :loading="syncLoading">
-              <el-icon><Refresh /></el-icon>
-              Kafka同步
-            </el-button>
-            <el-button type="info" @click="handleSyncApi">
-              <el-icon><Refresh /></el-icon>
-              API同步
-            </el-button>
-            <el-button type="primary" @click="handleAdd">
-              <el-icon><Plus /></el-icon>
-              新增车辆
-            </el-button>
-          </div>
+          <el-button type="primary" @click="handleAdd">
+            <el-icon><Plus /></el-icon>
+            新增车辆
+          </el-button>
         </div>
       </template>
       
@@ -26,11 +16,17 @@
           <el-input v-model="queryForm.keyword" placeholder="VIN/车牌号" clearable />
         </el-form-item>
         <el-form-item label="车型">
-          <el-select v-model="queryForm.modelId" placeholder="请选择车型" clearable>
+          <el-select
+            v-model="queryForm.modelId"
+            class="model-select"
+            placeholder="请选择车型"
+            clearable
+            filterable
+          >
             <el-option
               v-for="model in vehicleModels"
               :key="model.id"
-              :label="model.modelName"
+              :label="formatModelLabel(model)"
               :value="model.id"
             />
           </el-select>
@@ -43,12 +39,18 @@
       
       <el-table :data="tableData" stripe v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="vin" label="VIN码" width="200" />
+        <el-table-column prop="vin" label="VIN码" width="200">
+          <template #default="{ row }">
+            <el-link type="primary" :underline="false" @click="goToDetail(row)">
+              {{ row.vin }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="plateNumber" label="车牌号" width="120" />
         <el-table-column prop="color" label="颜色" width="80" />
         <el-table-column prop="productionYear" label="生产年份" width="100" />
         <el-table-column prop="engineNumber" label="发动机号" width="150" />
-        <el-table-column prop="currentEcuVersion" label="ECU版本" width="100" />
+        <el-table-column prop="configWord" label="配置字" min-width="180" show-overflow-tooltip />
         <el-table-column prop="dataSource" label="数据来源" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.dataSource === 1" type="success">手动</el-tag>
@@ -56,9 +58,8 @@
             <el-tag v-else type="info">API</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="300" fixed="right">
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleView(row)">查看</el-button>
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
             <el-button type="primary" link @click="handleViewEcu(row)">ECU信息</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
@@ -84,11 +85,16 @@
           <el-input v-model="form.vin" :disabled="!!form.id" />
         </el-form-item>
         <el-form-item label="车型" prop="modelId">
-          <el-select v-model="form.modelId" placeholder="请选择车型">
+          <el-select
+            v-model="form.modelId"
+            class="model-select-full"
+            placeholder="请选择车型"
+            filterable
+          >
             <el-option
               v-for="model in vehicleModels"
               :key="model.id"
-              :label="model.modelName"
+              :label="formatModelLabel(model)"
               :value="model.id"
             />
           </el-select>
@@ -108,8 +114,8 @@
         <el-form-item label="车架号" prop="bodyNumber">
           <el-input v-model="form.bodyNumber" />
         </el-form-item>
-        <el-form-item label="ECU版本" prop="currentEcuVersion">
-          <el-input v-model="form.currentEcuVersion" />
+        <el-form-item label="配置字" prop="configWord">
+          <el-input v-model="form.configWord" placeholder="请输入配置字" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -142,12 +148,14 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh } from '@element-plus/icons-vue'
-import { getVehiclePage, createVehicle, updateVehicle, deleteVehicle, syncVehicleFromKafka, getVehicleModelPage, getVehicleEcus } from '@/api/vehicle'
+import { Plus } from '@element-plus/icons-vue'
+import { getVehiclePage, getVehicle, createVehicle, updateVehicle, deleteVehicle, getVehicleModelPage, getVehicleEcus } from '@/api/vehicle'
 
+const route = useRoute()
+const router = useRouter()
 const loading = ref(false)
-const syncLoading = ref(false)
 const tableData = ref([])
 const vehicleModels = ref([])
 const dialogVisible = ref(false)
@@ -177,12 +185,19 @@ const form = reactive({
   productionYear: new Date().getFullYear(),
   engineNumber: '',
   bodyNumber: '',
-  currentEcuVersion: ''
+  configWord: ''
 })
 
 const rules = {
   vin: [{ required: true, message: '请输入VIN码', trigger: 'blur' }],
   modelId: [{ required: true, message: '请选择车型', trigger: 'change' }]
+}
+
+const formatModelLabel = (model) => {
+  if (model.modelCode) {
+    return `${model.modelCode} - ${model.modelName}`
+  }
+  return model.modelName
 }
 
 const loadData = async () => {
@@ -233,16 +248,25 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
+const goToDetail = (row) => {
+  router.push(`/vehicle/detail/${row.id}`)
+}
+
 const handleEdit = (row) => {
   dialogTitle.value = '编辑车辆'
   Object.assign(form, row)
   dialogVisible.value = true
 }
 
-const handleView = (row) => {
-  Object.assign(form, row)
-  dialogTitle.value = '查看车辆'
-  dialogVisible.value = true
+const openEditById = async (id) => {
+  try {
+    const res = await getVehicle(id)
+    if (res.data) {
+      handleEdit(res.data)
+    }
+  } catch (error) {
+    ElMessage.error('加载车辆信息失败')
+  }
 }
 
 const handleViewEcu = async (row) => {
@@ -269,32 +293,6 @@ const handleDelete = (row) => {
     await deleteVehicle(row.id)
     ElMessage.success('删除成功')
     loadData()
-  })
-}
-
-const handleSyncKafka = async () => {
-  syncLoading.value = true
-  try {
-    await syncVehicleFromKafka()
-    ElMessage.success('Kafka同步已启动')
-  } catch (error) {
-    ElMessage.error('同步失败')
-  } finally {
-    syncLoading.value = false
-  }
-}
-
-const handleSyncApi = () => {
-  ElMessageBox.prompt('请输入API地址', 'API同步', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).then(async ({ value }) => {
-    try {
-      await syncVehicleFromKafka(value)
-      ElMessage.success('API同步已启动')
-    } catch (error) {
-      ElMessage.error('同步失败')
-    }
   })
 }
 
@@ -327,6 +325,9 @@ const handleCurrentChange = (current) => {
 onMounted(() => {
   loadData()
   loadVehicleModels()
+  if (route.query.editId) {
+    openEditById(route.query.editId)
+  }
 })
 </script>
 
@@ -343,5 +344,13 @@ onMounted(() => {
 
 .search-form {
   margin-bottom: 20px;
+}
+
+.model-select {
+  width: 280px;
+}
+
+.model-select-full {
+  width: 100%;
 }
 </style>
