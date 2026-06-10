@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  doris-fe:
+    image: apache/doris:2.0.0-fe
+    container_name: vrd-doris-fe
+    ports:
+      - "8030:8030"
+      - "9030:9030"
+    volumes:
+      - doris_fe_data:/opt/apache-doris/fe/doris-meta
+      - doris_fe_log:/opt/apache-doris/fe/log
+    networks:
+      - vrd-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8030/api/bootstrap"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 120s
+
+  doris-be:
+    image: apache/doris:2.0.0-be
+    container_name: vrd-doris-be
+    ports:
+      - "8040:8040"
+      - "9050:9050"
+      - "9060:9060"
+      - "9070:9070"
+    environment:
+      - FE_HOST=doris-fe
+      - FE_PORT=9010
+    volumes:
+      - doris_be_data:/opt/apache-doris/be/storage
+      - doris_be_log:/opt/apache-doris/be/log
+    depends_on:
+      - doris-fe
+    networks:
+      - vrd-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8040/api/health"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  doris_fe_data:
+  doris_fe_log:
+  doris_be_data:
+  doris_be_log:
+
+networks:
+  vrd-network:
+    name: vrd-network
