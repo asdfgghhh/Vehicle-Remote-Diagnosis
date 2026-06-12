@@ -109,6 +109,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         List<UserRole> userRoles = userRoleMapper.selectList(
                 new LambdaQueryWrapper<UserRole>()
                         .eq(UserRole::getUserId, userId)
+                        .eq(UserRole::getIsDeleted, 0)
         );
         
         if (userRoles.isEmpty()) {

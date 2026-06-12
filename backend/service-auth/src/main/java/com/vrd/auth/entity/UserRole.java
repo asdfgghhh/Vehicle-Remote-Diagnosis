@@ -18,5 +18,9 @@ public class UserRole {
 
     private Long roleId;
 
+    private Integer isDeleted;
+
     private LocalDateTime createTime;
+
+    private LocalDateTime updateTime;
 }
