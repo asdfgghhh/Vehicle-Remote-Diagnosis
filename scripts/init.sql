@@ -151,6 +151,33 @@ INSERT INTO vehicle_alert (vin, vehicle_id, component_code, ecu_type, alert_type
 ('LSVAQ6189ES123457', 11, 'EPS', 'EPS', '转向助力', '转向助力电机过温', 0, DATE_SUB(NOW(), INTERVAL 2 DAY), 0, NOW(), NOW()),
 ('LSVAR6189ES234568', 12, 'BMS', 'BMS', '充电异常', '快充接口温度过高', 1, DATE_SUB(NOW(), INTERVAL 3 DAY), 0, NOW(), NOW());
 
+CREATE TABLE IF NOT EXISTS fault_config (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    model_id BIGINT COMMENT '车型ID',
+    fault_code VARCHAR(32) NOT NULL COMMENT '故障码',
+    dtc VARCHAR(32) COMMENT 'DTC',
+    alarm_name VARCHAR(100) NOT NULL COMMENT '告警名称',
+    ecu_type VARCHAR(50) COMMENT 'ECU部件',
+    component_code VARCHAR(50) COMMENT '部件英文简称',
+    alarm_level INT DEFAULT 2 COMMENT '1-严重 2-警告 3-提示',
+    description TEXT COMMENT '说明',
+    status INT DEFAULT 1 COMMENT '1-启用 0-禁用',
+    deleted INT DEFAULT 0,
+    create_time DATETIME,
+    update_time DATETIME,
+    INDEX idx_model_id (model_id),
+    INDEX idx_fault_code (fault_code),
+    INDEX idx_dtc (dtc),
+    INDEX idx_alarm_level (alarm_level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO fault_config (model_id, fault_code, dtc, alarm_name, ecu_type, component_code, alarm_level, description, status, deleted, create_time, update_time) VALUES
+(1, 'F001', 'P0420', '催化器效率低', 'EMS', 'EMS', 2, '三元催化转化效率低于阈值', 1, 0, NOW(), NOW()),
+(1, 'F002', 'P0300', '多缸失火', 'EMS', 'EMS', 1, '检测到随机/多缸失火', 1, 0, NOW(), NOW()),
+(1, 'F003', 'C0035', '左前轮速传感器', 'ABS', 'ABS', 2, '左前轮速传感器信号异常', 1, 0, NOW(), NOW()),
+(2, 'F101', 'P0562', '系统电压过低', 'BCM', 'BCM', 3, '车身网络供电电压偏低', 1, 0, NOW(), NOW()),
+(2, 'F102', 'P0A80', '电池组更换', 'BMS', 'BMS', 1, '动力电池性能衰减需更换', 1, 0, NOW(), NOW());
+
 CREATE TABLE IF NOT EXISTS vehicle_fault (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     vin VARCHAR(50),
@@ -393,8 +420,13 @@ USE vrd_dbc;
 
 CREATE TABLE IF NOT EXISTS dbc_file (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    model_id BIGINT COMMENT '关联车型ID',
+    model_name VARCHAR(100) COMMENT '车型名称',
+    storage_key VARCHAR(500) COMMENT '对象存储key',
+    storage_address VARCHAR(1000) COMMENT '对象存储访问地址',
+    storage_type VARCHAR(32) COMMENT '存储类型',
     file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500),
+    file_path VARCHAR(500) COMMENT '兼容字段，通常与storage_key一致',
     file_size BIGINT,
     version VARCHAR(50),
     description TEXT,
@@ -405,9 +437,17 @@ CREATE TABLE IF NOT EXISTS dbc_file (
     deleted INT DEFAULT 0,
     create_time DATETIME,
     update_time DATETIME,
+    INDEX idx_model_id (model_id),
     INDEX idx_file_name (file_name),
     INDEX idx_version (version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 已有库升级:
+-- ALTER TABLE dbc_file ADD COLUMN model_id BIGINT COMMENT '关联车型ID' AFTER id;
+-- ALTER TABLE dbc_file ADD COLUMN model_name VARCHAR(100) COMMENT '车型名称' AFTER model_id;
+-- ALTER TABLE dbc_file ADD COLUMN storage_key VARCHAR(500) COMMENT '对象存储key' AFTER model_name;
+-- ALTER TABLE dbc_file ADD COLUMN storage_address VARCHAR(1000) COMMENT '对象存储访问地址' AFTER storage_key;
+-- ALTER TABLE dbc_file ADD COLUMN storage_type VARCHAR(32) COMMENT '存储类型' AFTER storage_address;
 
 CREATE TABLE IF NOT EXISTS dispatch_log (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

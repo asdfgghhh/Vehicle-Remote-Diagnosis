@@ -1,8 +1,9 @@
 package com.vrd.signal.service.impl;
 
+import com.alibaba.fastjson2.JSONObject;
+import com.vrd.common.clickhouse.ClickHouseHttpClient;
+import com.vrd.common.clickhouse.ClickHouseProperties;
 import com.vrd.common.exception.BusinessException;
-import com.vrd.signal.config.ClickHouseHttpClient;
-import com.vrd.signal.config.ClickHouseProperties;
 import com.vrd.signal.dto.SignalPageResult;
 import com.vrd.signal.entity.VehicleSignal;
 import com.vrd.signal.service.SignalClickHouseService;
@@ -11,8 +12,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -40,7 +43,7 @@ public class SignalClickHouseServiceImpl implements SignalClickHouseService {
     @Override
     public List<VehicleSignal> queryByTimeRange(String vin, Long vehicleId, LocalDateTime startTime, LocalDateTime endTime) {
         String where = buildWhereClause(vin, vehicleId, startTime, endTime, null);
-        return clickHouseHttpClient.querySignals(SELECT_COLUMNS + where + " ORDER BY signal_time ASC");
+        return querySignals(SELECT_COLUMNS + where + " ORDER BY signal_time ASC");
     }
 
     @Override
@@ -51,7 +54,7 @@ public class SignalClickHouseServiceImpl implements SignalClickHouseService {
         String where = buildWhereClause(vin, vehicleId, startTime, endTime, null);
         long total = clickHouseHttpClient.queryCount("SELECT count() FROM vehicle_signal_records" + where);
         int offset = (pageCurrent - 1) * pageSize;
-        List<VehicleSignal> records = clickHouseHttpClient.querySignals(
+        List<VehicleSignal> records = querySignals(
                 SELECT_COLUMNS + where + " ORDER BY signal_time ASC LIMIT " + pageSize + " OFFSET " + offset);
         return SignalPageResult.of(records, total, pageCurrent, pageSize);
     }
@@ -60,14 +63,53 @@ public class SignalClickHouseServiceImpl implements SignalClickHouseService {
     public List<VehicleSignal> queryBySignalName(String vin, Long vehicleId, String signalName,
                                                  LocalDateTime startTime, LocalDateTime endTime) {
         String where = buildWhereClause(vin, vehicleId, startTime, endTime, signalName);
-        return clickHouseHttpClient.querySignals(SELECT_COLUMNS + where + " ORDER BY signal_time ASC");
+        return querySignals(SELECT_COLUMNS + where + " ORDER BY signal_time ASC");
     }
 
     @Override
     public VehicleSignal getById(Long id) {
-        List<VehicleSignal> list = clickHouseHttpClient.querySignals(
+        List<VehicleSignal> list = querySignals(
                 SELECT_COLUMNS + " WHERE id = " + id + " LIMIT 1");
         return list.isEmpty() ? null : list.get(0);
+    }
+
+    private List<VehicleSignal> querySignals(String sql) {
+        String body = clickHouseHttpClient.query(sql + " FORMAT JSONEachRow");
+        if (!StringUtils.hasText(body)) {
+            return List.of();
+        }
+        List<VehicleSignal> records = new ArrayList<>();
+        for (String line : body.split("\n")) {
+            if (!StringUtils.hasText(line)) {
+                continue;
+            }
+            records.add(mapSignal(JSONObject.parseObject(line)));
+        }
+        return records;
+    }
+
+    private VehicleSignal mapSignal(JSONObject json) {
+        VehicleSignal signal = new VehicleSignal();
+        signal.setId(json.getLong("id"));
+        signal.setVin(json.getString("vin"));
+        signal.setVehicleId(json.getLong("vehicle_id"));
+        signal.setSignalName(json.getString("signal_name"));
+        signal.setSignalValue(json.getString("signal_value"));
+        signal.setNumericValue(BigDecimal.valueOf(json.getDoubleValue("numeric_value")));
+        signal.setUnit(json.getString("unit"));
+        signal.setTimestamp(json.getLong("timestamp"));
+        signal.setSignalTime(parseDateTime(json.getString("signal_time")));
+        signal.setMessageName(json.getString("message_name"));
+        signal.setMessageId(json.getInteger("message_id"));
+        signal.setCreateTime(parseDateTime(json.getString("create_time")));
+        return signal;
+    }
+
+    private LocalDateTime parseDateTime(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return LocalDateTime.parse(value.replace('T', ' ').substring(0, 19), CH_DATETIME);
     }
 
     private String buildWhereClause(String vin, Long vehicleId, LocalDateTime startTime, LocalDateTime endTime,
@@ -89,14 +131,14 @@ public class SignalClickHouseServiceImpl implements SignalClickHouseService {
             where.append(" AND ").append(vehicleFilter);
         }
         if (StringUtils.hasText(signalName)) {
-            where.append(" AND signal_name = ").append(literal(signalName.trim()));
+            where.append(" AND signal_name = ").append(ClickHouseHttpClient.literal(signalName.trim()));
         }
         return where.toString();
     }
 
     private String buildVehicleFilter(String vin, Long vehicleId) {
         if (StringUtils.hasText(vin)) {
-            return "vin = " + literal(vin.trim());
+            return "vin = " + ClickHouseHttpClient.literal(vin.trim());
         }
         if (vehicleId != null && vehicleId > 0) {
             return "vehicle_id = " + vehicleId;
@@ -105,13 +147,6 @@ public class SignalClickHouseServiceImpl implements SignalClickHouseService {
     }
 
     private String dateTimeLiteral(LocalDateTime dateTime) {
-        return "toDateTime(" + literal(dateTime.format(CH_DATETIME)) + ")";
-    }
-
-    private String literal(String value) {
-        if (value == null) {
-            return "''";
-        }
-        return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'";
+        return "toDateTime(" + ClickHouseHttpClient.literal(dateTime.format(CH_DATETIME)) + ")";
     }
 }

@@ -48,8 +48,22 @@ const routes = [
       },
       {
         path: 'dbc',
-        name: 'Dbc',
-        component: () => import('@/views/Dbc.vue')
+        redirect: '/config/can-model'
+      },
+      {
+        path: 'config/can-model',
+        name: 'CanModel',
+        component: () => import('@/views/config/CanModel.vue')
+      },
+      {
+        path: 'config/can-model/:id',
+        name: 'CanModelDetail',
+        component: () => import('@/views/config/CanModelDetail.vue')
+      },
+      {
+        path: 'config/fault',
+        name: 'FaultConfig',
+        component: () => import('@/views/config/FaultConfig.vue')
       },
       {
         path: 'signal',

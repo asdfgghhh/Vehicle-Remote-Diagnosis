@@ -5,6 +5,7 @@ import com.vrd.common.storage.impl.AliyunOssStorageServiceImpl;
 import com.vrd.common.storage.impl.HuaweiObsStorageServiceImpl;
 import com.vrd.common.storage.impl.LocalStorageServiceImpl;
 import com.vrd.common.storage.impl.MinioStorageServiceImpl;
+import com.vrd.common.storage.impl.TencentCosStorageServiceImpl;
 
 public class StorageServiceFactory {
 
@@ -12,19 +13,15 @@ public class StorageServiceFactory {
     }
 
     public static StorageService createStorageService(StorageConfig config) {
-        StorageType type = config.getType();
-        
-        switch (type) {
-            case ALIYUN_OSS:
-                return createAliyunOssService(config);
-            case HUAWEI_OBS:
-                return createHuaweiObsService(config);
-            case MINIO:
-                return createMinioService(config);
-            case LOCAL:
-            default:
-                return createLocalService(config);
-        }
+        StorageType type = config.getType() == null ? StorageType.MINIO : config.getType();
+
+        return switch (type) {
+            case ALIYUN_OSS -> createAliyunOssService(config.getAliyunOss());
+            case TENCENT_COS -> createTencentCosService(config.getTencentCos());
+            case HUAWEI_OBS -> createHuaweiObsService(config.getHuaweiObs());
+            case LOCAL -> createLocalService(config.getLocal());
+            case MINIO -> createMinioService(config.getMinio());
+        };
     }
 
     public static StorageService createLocalService(StorageConfig.Local localConfig) {
@@ -41,6 +38,16 @@ public class StorageServiceFactory {
         service.setAccessKeySecret(aliyunConfig.getAccessKeySecret());
         service.setBucketName(aliyunConfig.getBucketName());
         service.setBaseUrl(aliyunConfig.getBaseUrl());
+        return service;
+    }
+
+    public static StorageService createTencentCosService(StorageConfig.TencentCos tencentConfig) {
+        TencentCosStorageServiceImpl service = new TencentCosStorageServiceImpl();
+        service.setRegion(tencentConfig.getRegion());
+        service.setSecretId(tencentConfig.getSecretId());
+        service.setSecretKey(tencentConfig.getSecretKey());
+        service.setBucketName(tencentConfig.getBucketName());
+        service.setBaseUrl(tencentConfig.getBaseUrl());
         return service;
     }
 
@@ -62,21 +69,5 @@ public class StorageServiceFactory {
         service.setBucketName(minioConfig.getBucketName());
         service.setBaseUrl(minioConfig.getBaseUrl());
         return service;
-    }
-
-    private static LocalStorageServiceImpl createLocalService(StorageConfig config) {
-        return (LocalStorageServiceImpl) createLocalService(config.getLocal());
-    }
-
-    private static AliyunOssStorageServiceImpl createAliyunOssService(StorageConfig config) {
-        return (AliyunOssStorageServiceImpl) createAliyunOssService(config.getAliyunOss());
-    }
-
-    private static HuaweiObsStorageServiceImpl createHuaweiObsService(StorageConfig config) {
-        return (HuaweiObsStorageServiceImpl) createHuaweiObsService(config.getHuaweiObs());
-    }
-
-    private static MinioStorageServiceImpl createMinioService(StorageConfig config) {
-        return (MinioStorageServiceImpl) createMinioService(config.getMinio());
     }
 }

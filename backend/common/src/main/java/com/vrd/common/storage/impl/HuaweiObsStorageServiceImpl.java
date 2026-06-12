@@ -13,6 +13,9 @@ import com.vrd.common.storage.StorageService;
 import com.vrd.common.storage.StorageType;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -84,6 +87,28 @@ public class HuaweiObsStorageServiceImpl implements StorageService {
             throw e;
         } catch (Exception e) {
             throw new BusinessException("华为云OBS下载失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public InputStream openInputStream(String key) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            GetObjectRequest request = new GetObjectRequest()
+                    .withBucketName(bucketName)
+                    .withObjectKey(key);
+            getObsClient().getObject(request).consumeDownloadStream(inputStream -> {
+                try {
+                    inputStream.transferTo(baos);
+                } catch (IOException e) {
+                    throw new BusinessException("华为云OBS读取失败: " + e.getMessage());
+                }
+            });
+            return new ByteArrayInputStream(baos.toByteArray());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("华为云OBS读取失败: " + e.getMessage());
         }
     }
 

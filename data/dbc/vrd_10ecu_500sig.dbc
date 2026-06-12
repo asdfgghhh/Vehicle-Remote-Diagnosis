@@ -1,0 +1,826 @@
+VERSION "1.0"
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: EMS BCM ABS EPS IPC ADAS TBOX GW TCU BMS
+
+BO_ 512 EMS_Msg01: 8 EMS
+ SG_ EMS_Sig001 : 0|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig002 : 8|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig003 : 16|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig004 : 24|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig005 : 32|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig006 : 40|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig007 : 48|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig008 : 56|8@1+ (1,0) [0|255] "" EMS
+
+BO_ 520 EMS_Msg02: 8 EMS
+ SG_ EMS_Sig009 : 0|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig010 : 8|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig011 : 16|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig012 : 24|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig013 : 32|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig014 : 40|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig015 : 48|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig016 : 56|8@1+ (1,0) [0|255] "" EMS
+
+BO_ 528 EMS_Msg03: 8 EMS
+ SG_ EMS_Sig017 : 0|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig018 : 8|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig019 : 16|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig020 : 24|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig021 : 32|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig022 : 40|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig023 : 48|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig024 : 56|8@1+ (1,0) [0|255] "" EMS
+
+BO_ 536 EMS_Msg04: 8 EMS
+ SG_ EMS_Sig025 : 0|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig026 : 8|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig027 : 16|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig028 : 24|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig029 : 32|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig030 : 40|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig031 : 48|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig032 : 56|8@1+ (1,0) [0|255] "" EMS
+
+BO_ 544 EMS_Msg05: 8 EMS
+ SG_ EMS_Sig033 : 0|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig034 : 8|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig035 : 16|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig036 : 24|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig037 : 32|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig038 : 40|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig039 : 48|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig040 : 56|8@1+ (1,0) [0|255] "" EMS
+
+BO_ 552 EMS_Msg06: 8 EMS
+ SG_ EMS_Sig041 : 0|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig042 : 8|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig043 : 16|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig044 : 24|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig045 : 32|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig046 : 40|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig047 : 48|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig048 : 56|8@1+ (1,0) [0|255] "" EMS
+
+BO_ 560 EMS_Msg07: 8 EMS
+ SG_ EMS_Sig049 : 0|8@1+ (1,0) [0|255] "" EMS
+ SG_ EMS_Sig050 : 8|8@1+ (1,0) [0|255] "" EMS
+
+BO_ 640 BCM_Msg01: 8 BCM
+ SG_ BCM_Sig051 : 0|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig052 : 8|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig053 : 16|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig054 : 24|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig055 : 32|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig056 : 40|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig057 : 48|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig058 : 56|8@1+ (1,0) [0|255] "" BCM
+
+BO_ 648 BCM_Msg02: 8 BCM
+ SG_ BCM_Sig059 : 0|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig060 : 8|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig061 : 16|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig062 : 24|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig063 : 32|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig064 : 40|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig065 : 48|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig066 : 56|8@1+ (1,0) [0|255] "" BCM
+
+BO_ 656 BCM_Msg03: 8 BCM
+ SG_ BCM_Sig067 : 0|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig068 : 8|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig069 : 16|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig070 : 24|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig071 : 32|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig072 : 40|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig073 : 48|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig074 : 56|8@1+ (1,0) [0|255] "" BCM
+
+BO_ 664 BCM_Msg04: 8 BCM
+ SG_ BCM_Sig075 : 0|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig076 : 8|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig077 : 16|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig078 : 24|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig079 : 32|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig080 : 40|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig081 : 48|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig082 : 56|8@1+ (1,0) [0|255] "" BCM
+
+BO_ 672 BCM_Msg05: 8 BCM
+ SG_ BCM_Sig083 : 0|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig084 : 8|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig085 : 16|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig086 : 24|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig087 : 32|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig088 : 40|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig089 : 48|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig090 : 56|8@1+ (1,0) [0|255] "" BCM
+
+BO_ 680 BCM_Msg06: 8 BCM
+ SG_ BCM_Sig091 : 0|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig092 : 8|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig093 : 16|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig094 : 24|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig095 : 32|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig096 : 40|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig097 : 48|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig098 : 56|8@1+ (1,0) [0|255] "" BCM
+
+BO_ 688 BCM_Msg07: 8 BCM
+ SG_ BCM_Sig099 : 0|8@1+ (1,0) [0|255] "" BCM
+ SG_ BCM_Sig100 : 8|8@1+ (1,0) [0|255] "" BCM
+
+BO_ 768 ABS_Msg01: 8 ABS
+ SG_ ABS_Sig101 : 0|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig102 : 8|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig103 : 16|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig104 : 24|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig105 : 32|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig106 : 40|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig107 : 48|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig108 : 56|8@1+ (1,0) [0|255] "" ABS
+
+BO_ 776 ABS_Msg02: 8 ABS
+ SG_ ABS_Sig109 : 0|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig110 : 8|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig111 : 16|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig112 : 24|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig113 : 32|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig114 : 40|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig115 : 48|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig116 : 56|8@1+ (1,0) [0|255] "" ABS
+
+BO_ 784 ABS_Msg03: 8 ABS
+ SG_ ABS_Sig117 : 0|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig118 : 8|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig119 : 16|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig120 : 24|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig121 : 32|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig122 : 40|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig123 : 48|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig124 : 56|8@1+ (1,0) [0|255] "" ABS
+
+BO_ 792 ABS_Msg04: 8 ABS
+ SG_ ABS_Sig125 : 0|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig126 : 8|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig127 : 16|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig128 : 24|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig129 : 32|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig130 : 40|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig131 : 48|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig132 : 56|8@1+ (1,0) [0|255] "" ABS
+
+BO_ 800 ABS_Msg05: 8 ABS
+ SG_ ABS_Sig133 : 0|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig134 : 8|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig135 : 16|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig136 : 24|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig137 : 32|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig138 : 40|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig139 : 48|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig140 : 56|8@1+ (1,0) [0|255] "" ABS
+
+BO_ 808 ABS_Msg06: 8 ABS
+ SG_ ABS_Sig141 : 0|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig142 : 8|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig143 : 16|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig144 : 24|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig145 : 32|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig146 : 40|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig147 : 48|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig148 : 56|8@1+ (1,0) [0|255] "" ABS
+
+BO_ 816 ABS_Msg07: 8 ABS
+ SG_ ABS_Sig149 : 0|8@1+ (1,0) [0|255] "" ABS
+ SG_ ABS_Sig150 : 8|8@1+ (1,0) [0|255] "" ABS
+
+BO_ 896 EPS_Msg01: 8 EPS
+ SG_ EPS_Sig151 : 0|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig152 : 8|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig153 : 16|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig154 : 24|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig155 : 32|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig156 : 40|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig157 : 48|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig158 : 56|8@1+ (1,0) [0|255] "" EPS
+
+BO_ 904 EPS_Msg02: 8 EPS
+ SG_ EPS_Sig159 : 0|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig160 : 8|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig161 : 16|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig162 : 24|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig163 : 32|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig164 : 40|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig165 : 48|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig166 : 56|8@1+ (1,0) [0|255] "" EPS
+
+BO_ 912 EPS_Msg03: 8 EPS
+ SG_ EPS_Sig167 : 0|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig168 : 8|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig169 : 16|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig170 : 24|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig171 : 32|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig172 : 40|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig173 : 48|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig174 : 56|8@1+ (1,0) [0|255] "" EPS
+
+BO_ 920 EPS_Msg04: 8 EPS
+ SG_ EPS_Sig175 : 0|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig176 : 8|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig177 : 16|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig178 : 24|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig179 : 32|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig180 : 40|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig181 : 48|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig182 : 56|8@1+ (1,0) [0|255] "" EPS
+
+BO_ 928 EPS_Msg05: 8 EPS
+ SG_ EPS_Sig183 : 0|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig184 : 8|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig185 : 16|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig186 : 24|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig187 : 32|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig188 : 40|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig189 : 48|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig190 : 56|8@1+ (1,0) [0|255] "" EPS
+
+BO_ 936 EPS_Msg06: 8 EPS
+ SG_ EPS_Sig191 : 0|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig192 : 8|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig193 : 16|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig194 : 24|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig195 : 32|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig196 : 40|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig197 : 48|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig198 : 56|8@1+ (1,0) [0|255] "" EPS
+
+BO_ 944 EPS_Msg07: 8 EPS
+ SG_ EPS_Sig199 : 0|8@1+ (1,0) [0|255] "" EPS
+ SG_ EPS_Sig200 : 8|8@1+ (1,0) [0|255] "" EPS
+
+BO_ 1024 IPC_Msg01: 8 IPC
+ SG_ IPC_Sig201 : 0|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig202 : 8|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig203 : 16|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig204 : 24|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig205 : 32|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig206 : 40|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig207 : 48|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig208 : 56|8@1+ (1,0) [0|255] "" IPC
+
+BO_ 1032 IPC_Msg02: 8 IPC
+ SG_ IPC_Sig209 : 0|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig210 : 8|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig211 : 16|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig212 : 24|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig213 : 32|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig214 : 40|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig215 : 48|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig216 : 56|8@1+ (1,0) [0|255] "" IPC
+
+BO_ 1040 IPC_Msg03: 8 IPC
+ SG_ IPC_Sig217 : 0|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig218 : 8|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig219 : 16|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig220 : 24|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig221 : 32|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig222 : 40|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig223 : 48|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig224 : 56|8@1+ (1,0) [0|255] "" IPC
+
+BO_ 1048 IPC_Msg04: 8 IPC
+ SG_ IPC_Sig225 : 0|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig226 : 8|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig227 : 16|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig228 : 24|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig229 : 32|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig230 : 40|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig231 : 48|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig232 : 56|8@1+ (1,0) [0|255] "" IPC
+
+BO_ 1056 IPC_Msg05: 8 IPC
+ SG_ IPC_Sig233 : 0|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig234 : 8|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig235 : 16|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig236 : 24|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig237 : 32|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig238 : 40|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig239 : 48|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig240 : 56|8@1+ (1,0) [0|255] "" IPC
+
+BO_ 1064 IPC_Msg06: 8 IPC
+ SG_ IPC_Sig241 : 0|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig242 : 8|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig243 : 16|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig244 : 24|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig245 : 32|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig246 : 40|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig247 : 48|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig248 : 56|8@1+ (1,0) [0|255] "" IPC
+
+BO_ 1072 IPC_Msg07: 8 IPC
+ SG_ IPC_Sig249 : 0|8@1+ (1,0) [0|255] "" IPC
+ SG_ IPC_Sig250 : 8|8@1+ (1,0) [0|255] "" IPC
+
+BO_ 1152 ADAS_Msg01: 8 ADAS
+ SG_ ADAS_Sig251 : 0|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig252 : 8|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig253 : 16|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig254 : 24|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig255 : 32|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig256 : 40|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig257 : 48|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig258 : 56|8@1+ (1,0) [0|255] "" ADAS
+
+BO_ 1160 ADAS_Msg02: 8 ADAS
+ SG_ ADAS_Sig259 : 0|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig260 : 8|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig261 : 16|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig262 : 24|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig263 : 32|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig264 : 40|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig265 : 48|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig266 : 56|8@1+ (1,0) [0|255] "" ADAS
+
+BO_ 1168 ADAS_Msg03: 8 ADAS
+ SG_ ADAS_Sig267 : 0|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig268 : 8|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig269 : 16|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig270 : 24|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig271 : 32|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig272 : 40|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig273 : 48|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig274 : 56|8@1+ (1,0) [0|255] "" ADAS
+
+BO_ 1176 ADAS_Msg04: 8 ADAS
+ SG_ ADAS_Sig275 : 0|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig276 : 8|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig277 : 16|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig278 : 24|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig279 : 32|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig280 : 40|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig281 : 48|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig282 : 56|8@1+ (1,0) [0|255] "" ADAS
+
+BO_ 1184 ADAS_Msg05: 8 ADAS
+ SG_ ADAS_Sig283 : 0|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig284 : 8|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig285 : 16|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig286 : 24|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig287 : 32|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig288 : 40|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig289 : 48|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig290 : 56|8@1+ (1,0) [0|255] "" ADAS
+
+BO_ 1192 ADAS_Msg06: 8 ADAS
+ SG_ ADAS_Sig291 : 0|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig292 : 8|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig293 : 16|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig294 : 24|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig295 : 32|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig296 : 40|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig297 : 48|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig298 : 56|8@1+ (1,0) [0|255] "" ADAS
+
+BO_ 1200 ADAS_Msg07: 8 ADAS
+ SG_ ADAS_Sig299 : 0|8@1+ (1,0) [0|255] "" ADAS
+ SG_ ADAS_Sig300 : 8|8@1+ (1,0) [0|255] "" ADAS
+
+BO_ 1280 TBOX_Msg01: 8 TBOX
+ SG_ TBOX_Sig301 : 0|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig302 : 8|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig303 : 16|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig304 : 24|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig305 : 32|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig306 : 40|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig307 : 48|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig308 : 56|8@1+ (1,0) [0|255] "" TBOX
+
+BO_ 1288 TBOX_Msg02: 8 TBOX
+ SG_ TBOX_Sig309 : 0|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig310 : 8|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig311 : 16|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig312 : 24|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig313 : 32|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig314 : 40|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig315 : 48|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig316 : 56|8@1+ (1,0) [0|255] "" TBOX
+
+BO_ 1296 TBOX_Msg03: 8 TBOX
+ SG_ TBOX_Sig317 : 0|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig318 : 8|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig319 : 16|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig320 : 24|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig321 : 32|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig322 : 40|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig323 : 48|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig324 : 56|8@1+ (1,0) [0|255] "" TBOX
+
+BO_ 1304 TBOX_Msg04: 8 TBOX
+ SG_ TBOX_Sig325 : 0|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig326 : 8|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig327 : 16|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig328 : 24|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig329 : 32|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig330 : 40|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig331 : 48|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig332 : 56|8@1+ (1,0) [0|255] "" TBOX
+
+BO_ 1312 TBOX_Msg05: 8 TBOX
+ SG_ TBOX_Sig333 : 0|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig334 : 8|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig335 : 16|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig336 : 24|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig337 : 32|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig338 : 40|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig339 : 48|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig340 : 56|8@1+ (1,0) [0|255] "" TBOX
+
+BO_ 1320 TBOX_Msg06: 8 TBOX
+ SG_ TBOX_Sig341 : 0|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig342 : 8|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig343 : 16|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig344 : 24|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig345 : 32|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig346 : 40|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig347 : 48|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig348 : 56|8@1+ (1,0) [0|255] "" TBOX
+
+BO_ 1328 TBOX_Msg07: 8 TBOX
+ SG_ TBOX_Sig349 : 0|8@1+ (1,0) [0|255] "" TBOX
+ SG_ TBOX_Sig350 : 8|8@1+ (1,0) [0|255] "" TBOX
+
+BO_ 1408 GW_Msg01: 8 GW
+ SG_ GW_Sig351 : 0|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig352 : 8|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig353 : 16|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig354 : 24|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig355 : 32|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig356 : 40|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig357 : 48|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig358 : 56|8@1+ (1,0) [0|255] "" GW
+
+BO_ 1416 GW_Msg02: 8 GW
+ SG_ GW_Sig359 : 0|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig360 : 8|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig361 : 16|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig362 : 24|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig363 : 32|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig364 : 40|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig365 : 48|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig366 : 56|8@1+ (1,0) [0|255] "" GW
+
+BO_ 1424 GW_Msg03: 8 GW
+ SG_ GW_Sig367 : 0|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig368 : 8|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig369 : 16|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig370 : 24|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig371 : 32|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig372 : 40|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig373 : 48|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig374 : 56|8@1+ (1,0) [0|255] "" GW
+
+BO_ 1432 GW_Msg04: 8 GW
+ SG_ GW_Sig375 : 0|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig376 : 8|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig377 : 16|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig378 : 24|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig379 : 32|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig380 : 40|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig381 : 48|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig382 : 56|8@1+ (1,0) [0|255] "" GW
+
+BO_ 1440 GW_Msg05: 8 GW
+ SG_ GW_Sig383 : 0|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig384 : 8|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig385 : 16|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig386 : 24|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig387 : 32|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig388 : 40|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig389 : 48|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig390 : 56|8@1+ (1,0) [0|255] "" GW
+
+BO_ 1448 GW_Msg06: 8 GW
+ SG_ GW_Sig391 : 0|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig392 : 8|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig393 : 16|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig394 : 24|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig395 : 32|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig396 : 40|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig397 : 48|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig398 : 56|8@1+ (1,0) [0|255] "" GW
+
+BO_ 1456 GW_Msg07: 8 GW
+ SG_ GW_Sig399 : 0|8@1+ (1,0) [0|255] "" GW
+ SG_ GW_Sig400 : 8|8@1+ (1,0) [0|255] "" GW
+
+BO_ 1536 TCU_Msg01: 8 TCU
+ SG_ TCU_Sig401 : 0|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig402 : 8|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig403 : 16|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig404 : 24|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig405 : 32|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig406 : 40|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig407 : 48|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig408 : 56|8@1+ (1,0) [0|255] "" TCU
+
+BO_ 1544 TCU_Msg02: 8 TCU
+ SG_ TCU_Sig409 : 0|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig410 : 8|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig411 : 16|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig412 : 24|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig413 : 32|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig414 : 40|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig415 : 48|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig416 : 56|8@1+ (1,0) [0|255] "" TCU
+
+BO_ 1552 TCU_Msg03: 8 TCU
+ SG_ TCU_Sig417 : 0|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig418 : 8|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig419 : 16|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig420 : 24|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig421 : 32|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig422 : 40|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig423 : 48|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig424 : 56|8@1+ (1,0) [0|255] "" TCU
+
+BO_ 1560 TCU_Msg04: 8 TCU
+ SG_ TCU_Sig425 : 0|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig426 : 8|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig427 : 16|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig428 : 24|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig429 : 32|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig430 : 40|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig431 : 48|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig432 : 56|8@1+ (1,0) [0|255] "" TCU
+
+BO_ 1568 TCU_Msg05: 8 TCU
+ SG_ TCU_Sig433 : 0|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig434 : 8|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig435 : 16|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig436 : 24|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig437 : 32|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig438 : 40|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig439 : 48|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig440 : 56|8@1+ (1,0) [0|255] "" TCU
+
+BO_ 1576 TCU_Msg06: 8 TCU
+ SG_ TCU_Sig441 : 0|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig442 : 8|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig443 : 16|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig444 : 24|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig445 : 32|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig446 : 40|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig447 : 48|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig448 : 56|8@1+ (1,0) [0|255] "" TCU
+
+BO_ 1584 TCU_Msg07: 8 TCU
+ SG_ TCU_Sig449 : 0|8@1+ (1,0) [0|255] "" TCU
+ SG_ TCU_Sig450 : 8|8@1+ (1,0) [0|255] "" TCU
+
+BO_ 1664 BMS_Msg01: 8 BMS
+ SG_ BMS_Sig451 : 0|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig452 : 8|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig453 : 16|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig454 : 24|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig455 : 32|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig456 : 40|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig457 : 48|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig458 : 56|8@1+ (1,0) [0|255] "" BMS
+
+BO_ 1672 BMS_Msg02: 8 BMS
+ SG_ BMS_Sig459 : 0|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig460 : 8|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig461 : 16|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig462 : 24|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig463 : 32|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig464 : 40|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig465 : 48|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig466 : 56|8@1+ (1,0) [0|255] "" BMS
+
+BO_ 1680 BMS_Msg03: 8 BMS
+ SG_ BMS_Sig467 : 0|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig468 : 8|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig469 : 16|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig470 : 24|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig471 : 32|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig472 : 40|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig473 : 48|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig474 : 56|8@1+ (1,0) [0|255] "" BMS
+
+BO_ 1688 BMS_Msg04: 8 BMS
+ SG_ BMS_Sig475 : 0|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig476 : 8|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig477 : 16|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig478 : 24|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig479 : 32|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig480 : 40|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig481 : 48|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig482 : 56|8@1+ (1,0) [0|255] "" BMS
+
+BO_ 1696 BMS_Msg05: 8 BMS
+ SG_ BMS_Sig483 : 0|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig484 : 8|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig485 : 16|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig486 : 24|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig487 : 32|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig488 : 40|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig489 : 48|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig490 : 56|8@1+ (1,0) [0|255] "" BMS
+
+BO_ 1704 BMS_Msg06: 8 BMS
+ SG_ BMS_Sig491 : 0|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig492 : 8|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig493 : 16|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig494 : 24|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig495 : 32|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig496 : 40|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig497 : 48|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig498 : 56|8@1+ (1,0) [0|255] "" BMS
+
+BO_ 1712 BMS_Msg07: 8 BMS
+ SG_ BMS_Sig499 : 0|8@1+ (1,0) [0|255] "" BMS
+ SG_ BMS_Sig500 : 8|8@1+ (1,0) [0|255] "" BMS
+
+CM_ "Generated DBC: 10 controllers, 500 signals";
+
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 60000;
+BA_DEF_ SG_  "SamplePeriod" INT 0 60000;
+
+BA_ "GenMsgCycleTime" BO_ 512 10;
+BA_ "GenMsgCycleTime" BO_ 520 20;
+BA_ "GenMsgCycleTime" BO_ 528 50;
+BA_ "GenMsgCycleTime" BO_ 536 100;
+BA_ "GenMsgCycleTime" BO_ 544 200;
+BA_ "GenMsgCycleTime" BO_ 552 500;
+BA_ "GenMsgCycleTime" BO_ 560 1000;
+BA_ "GenMsgCycleTime" BO_ 640 20;
+BA_ "GenMsgCycleTime" BO_ 648 50;
+BA_ "GenMsgCycleTime" BO_ 656 100;
+BA_ "GenMsgCycleTime" BO_ 664 200;
+BA_ "GenMsgCycleTime" BO_ 672 500;
+BA_ "GenMsgCycleTime" BO_ 680 1000;
+BA_ "GenMsgCycleTime" BO_ 688 10;
+BA_ "GenMsgCycleTime" BO_ 768 50;
+BA_ "GenMsgCycleTime" BO_ 776 100;
+BA_ "GenMsgCycleTime" BO_ 784 200;
+BA_ "GenMsgCycleTime" BO_ 792 500;
+BA_ "GenMsgCycleTime" BO_ 800 1000;
+BA_ "GenMsgCycleTime" BO_ 808 10;
+BA_ "GenMsgCycleTime" BO_ 816 20;
+BA_ "GenMsgCycleTime" BO_ 896 100;
+BA_ "GenMsgCycleTime" BO_ 904 200;
+BA_ "GenMsgCycleTime" BO_ 912 500;
+BA_ "GenMsgCycleTime" BO_ 920 1000;
+BA_ "GenMsgCycleTime" BO_ 928 10;
+BA_ "GenMsgCycleTime" BO_ 936 20;
+BA_ "GenMsgCycleTime" BO_ 944 50;
+BA_ "GenMsgCycleTime" BO_ 1024 200;
+BA_ "GenMsgCycleTime" BO_ 1032 500;
+BA_ "GenMsgCycleTime" BO_ 1040 1000;
+BA_ "GenMsgCycleTime" BO_ 1048 10;
+BA_ "GenMsgCycleTime" BO_ 1056 20;
+BA_ "GenMsgCycleTime" BO_ 1064 50;
+BA_ "GenMsgCycleTime" BO_ 1072 100;
+BA_ "GenMsgCycleTime" BO_ 1152 500;
+BA_ "GenMsgCycleTime" BO_ 1160 1000;
+BA_ "GenMsgCycleTime" BO_ 1168 10;
+BA_ "GenMsgCycleTime" BO_ 1176 20;
+BA_ "GenMsgCycleTime" BO_ 1184 50;
+BA_ "GenMsgCycleTime" BO_ 1192 100;
+BA_ "GenMsgCycleTime" BO_ 1200 200;
+BA_ "GenMsgCycleTime" BO_ 1280 1000;
+BA_ "GenMsgCycleTime" BO_ 1288 10;
+BA_ "GenMsgCycleTime" BO_ 1296 20;
+BA_ "GenMsgCycleTime" BO_ 1304 50;
+BA_ "GenMsgCycleTime" BO_ 1312 100;
+BA_ "GenMsgCycleTime" BO_ 1320 200;
+BA_ "GenMsgCycleTime" BO_ 1328 500;
+BA_ "GenMsgCycleTime" BO_ 1408 10;
+BA_ "GenMsgCycleTime" BO_ 1416 20;
+BA_ "GenMsgCycleTime" BO_ 1424 50;
+BA_ "GenMsgCycleTime" BO_ 1432 100;
+BA_ "GenMsgCycleTime" BO_ 1440 200;
+BA_ "GenMsgCycleTime" BO_ 1448 500;
+BA_ "GenMsgCycleTime" BO_ 1456 1000;
+BA_ "GenMsgCycleTime" BO_ 1536 20;
+BA_ "GenMsgCycleTime" BO_ 1544 50;
+BA_ "GenMsgCycleTime" BO_ 1552 100;
+BA_ "GenMsgCycleTime" BO_ 1560 200;
+BA_ "GenMsgCycleTime" BO_ 1568 500;
+BA_ "GenMsgCycleTime" BO_ 1576 1000;
+BA_ "GenMsgCycleTime" BO_ 1584 10;
+BA_ "GenMsgCycleTime" BO_ 1664 50;
+BA_ "GenMsgCycleTime" BO_ 1672 100;
+BA_ "GenMsgCycleTime" BO_ 1680 200;
+BA_ "GenMsgCycleTime" BO_ 1688 500;
+BA_ "GenMsgCycleTime" BO_ 1696 1000;
+BA_ "GenMsgCycleTime" BO_ 1704 10;
+BA_ "GenMsgCycleTime" BO_ 1712 20;
+
+BA_ "SamplePeriod" SG_ 512 EMS_Sig001 10;
+BA_ "SamplePeriod" SG_ 520 EMS_Sig009 10;
+BA_ "SamplePeriod" SG_ 528 EMS_Sig017 25;
+BA_ "SamplePeriod" SG_ 536 EMS_Sig025 50;
+BA_ "SamplePeriod" SG_ 544 EMS_Sig033 100;
+BA_ "SamplePeriod" SG_ 552 EMS_Sig041 250;
+BA_ "SamplePeriod" SG_ 560 EMS_Sig049 500;
+BA_ "SamplePeriod" SG_ 640 BCM_Sig051 10;
+BA_ "SamplePeriod" SG_ 648 BCM_Sig059 25;
+BA_ "SamplePeriod" SG_ 656 BCM_Sig067 50;
+BA_ "SamplePeriod" SG_ 664 BCM_Sig075 100;
+BA_ "SamplePeriod" SG_ 672 BCM_Sig083 250;
+BA_ "SamplePeriod" SG_ 680 BCM_Sig091 500;
+BA_ "SamplePeriod" SG_ 688 BCM_Sig099 10;
+BA_ "SamplePeriod" SG_ 768 ABS_Sig101 25;
+BA_ "SamplePeriod" SG_ 776 ABS_Sig109 50;
+BA_ "SamplePeriod" SG_ 784 ABS_Sig117 100;
+BA_ "SamplePeriod" SG_ 792 ABS_Sig125 250;
+BA_ "SamplePeriod" SG_ 800 ABS_Sig133 500;
+BA_ "SamplePeriod" SG_ 808 ABS_Sig141 10;
+BA_ "SamplePeriod" SG_ 816 ABS_Sig149 10;
+BA_ "SamplePeriod" SG_ 896 EPS_Sig151 50;
+BA_ "SamplePeriod" SG_ 904 EPS_Sig159 100;
+BA_ "SamplePeriod" SG_ 912 EPS_Sig167 250;
+BA_ "SamplePeriod" SG_ 920 EPS_Sig175 500;
+BA_ "SamplePeriod" SG_ 928 EPS_Sig183 10;
+BA_ "SamplePeriod" SG_ 936 EPS_Sig191 10;
+BA_ "SamplePeriod" SG_ 944 EPS_Sig199 25;
+BA_ "SamplePeriod" SG_ 1024 IPC_Sig201 100;
+BA_ "SamplePeriod" SG_ 1032 IPC_Sig209 250;
+BA_ "SamplePeriod" SG_ 1040 IPC_Sig217 500;
+BA_ "SamplePeriod" SG_ 1048 IPC_Sig225 10;
+BA_ "SamplePeriod" SG_ 1056 IPC_Sig233 10;
+BA_ "SamplePeriod" SG_ 1064 IPC_Sig241 25;
+BA_ "SamplePeriod" SG_ 1072 IPC_Sig249 50;
+BA_ "SamplePeriod" SG_ 1152 ADAS_Sig251 250;
+BA_ "SamplePeriod" SG_ 1160 ADAS_Sig259 500;
+BA_ "SamplePeriod" SG_ 1168 ADAS_Sig267 10;
+BA_ "SamplePeriod" SG_ 1176 ADAS_Sig275 10;
+BA_ "SamplePeriod" SG_ 1184 ADAS_Sig283 25;
+BA_ "SamplePeriod" SG_ 1192 ADAS_Sig291 50;
+BA_ "SamplePeriod" SG_ 1200 ADAS_Sig299 100;
+BA_ "SamplePeriod" SG_ 1280 TBOX_Sig301 500;
+BA_ "SamplePeriod" SG_ 1288 TBOX_Sig309 10;
+BA_ "SamplePeriod" SG_ 1296 TBOX_Sig317 10;
+BA_ "SamplePeriod" SG_ 1304 TBOX_Sig325 25;
+BA_ "SamplePeriod" SG_ 1312 TBOX_Sig333 50;
+BA_ "SamplePeriod" SG_ 1320 TBOX_Sig341 100;
+BA_ "SamplePeriod" SG_ 1328 TBOX_Sig349 250;
+BA_ "SamplePeriod" SG_ 1408 GW_Sig351 10;
+BA_ "SamplePeriod" SG_ 1416 GW_Sig359 10;
+BA_ "SamplePeriod" SG_ 1424 GW_Sig367 25;
+BA_ "SamplePeriod" SG_ 1432 GW_Sig375 50;
+BA_ "SamplePeriod" SG_ 1440 GW_Sig383 100;
+BA_ "SamplePeriod" SG_ 1448 GW_Sig391 250;
+BA_ "SamplePeriod" SG_ 1456 GW_Sig399 500;
+BA_ "SamplePeriod" SG_ 1536 TCU_Sig401 10;
+BA_ "SamplePeriod" SG_ 1544 TCU_Sig409 25;
+BA_ "SamplePeriod" SG_ 1552 TCU_Sig417 50;
+BA_ "SamplePeriod" SG_ 1560 TCU_Sig425 100;
+BA_ "SamplePeriod" SG_ 1568 TCU_Sig433 250;
+BA_ "SamplePeriod" SG_ 1576 TCU_Sig441 500;
+BA_ "SamplePeriod" SG_ 1584 TCU_Sig449 10;
+BA_ "SamplePeriod" SG_ 1664 BMS_Sig451 25;
+BA_ "SamplePeriod" SG_ 1672 BMS_Sig459 50;
+BA_ "SamplePeriod" SG_ 1680 BMS_Sig467 100;
+BA_ "SamplePeriod" SG_ 1688 BMS_Sig475 250;
+BA_ "SamplePeriod" SG_ 1696 BMS_Sig483 500;
+BA_ "SamplePeriod" SG_ 1704 BMS_Sig491 10;
+BA_ "SamplePeriod" SG_ 1712 BMS_Sig499 10;
+
+BA_DEF_ SG_  "GenComment" STRING;
+BA_ "GenComment" SG_ 0 "Auto-generated for Vehicle Remote Diagnosis";

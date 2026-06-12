@@ -1,0 +1,39 @@
+# 统一对象存储配置（Nacos 共享配置）
+# 各服务无需重复定义，只需引用此 shared-config
+# type 可选: LOCAL / ALIYUN_OSS / HUAWEI_OBS / TENCENT_COS / MINIO
+
+storage:
+  # 存储类型（可在各服务中覆盖）
+  type: ${STORAGE_TYPE:MINIO}
+
+  local:
+    base-path: ${STORAGE_LOCAL_BASE_PATH:/data/vrd/storage}
+    base-url: ${STORAGE_LOCAL_BASE_URL:http://localhost:8080/storage}
+
+  aliyun-oss:
+    endpoint: ${ALIYUN_OSS_ENDPOINT:https://oss-cn-hangzhou.aliyuncs.com}
+    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
+    bucket-name: ${ALIYUN_OSS_BUCKET:}
+    base-url: ${ALIYUN_OSS_BASE_URL:}
+
+  huawei-obs:
+    endpoint: ${HUAWEI_OBS_ENDPOINT:https://obs.cn-north-4.myhuaweicloud.com}
+    access-key-id: ${HUAWEI_OBS_ACCESS_KEY_ID:}
+    secret-access-key: ${HUAWEI_OBS_SECRET_ACCESS_KEY:}
+    bucket-name: ${HUAWEI_OBS_BUCKET:}
+    base-url: ${HUAWEI_OBS_BASE_URL:}
+
+  tencent-cos:
+    region: ${TENCENT_COS_REGION:ap-guangzhou}
+    secret-id: ${TENCENT_COS_SECRET_ID:}
+    secret-key: ${TENCENT_COS_SECRET_KEY:}
+    bucket-name: ${TENCENT_COS_BUCKET:}
+    base-url: ${TENCENT_COS_BASE_URL:}
+
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://124.221.104.56:9010}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:Wl123456}
+    bucket-name: ${MINIO_BUCKET:vrd}
+    base-url: ${MINIO_BASE_URL:http://124.221.104.56:9010/vrd}

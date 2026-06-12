@@ -18,4 +18,6 @@ public interface RoleService extends IService<Role> {
     Role update(Long id, RoleRequest request);
 
     void delete(Long id);
+
+List<String> getRoleNamesByUserId(Long userId);
 }

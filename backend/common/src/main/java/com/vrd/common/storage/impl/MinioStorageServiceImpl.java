@@ -10,7 +10,9 @@ import io.minio.RemoveObjectArgs;
 import io.minio.StatObjectArgs;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -66,6 +68,15 @@ public class MinioStorageServiceImpl implements StorageService {
 
     @Override
     public void download(String key, OutputStream outputStream) {
+        try (InputStream inputStream = openInputStream(key)) {
+            inputStream.transferTo(outputStream);
+        } catch (IOException e) {
+            throw new BusinessException("MinIO下载失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public InputStream openInputStream(String key) {
         try {
             GetObjectArgs args = GetObjectArgs.builder()
                     .bucket(bucketName)
@@ -73,9 +84,9 @@ public class MinioStorageServiceImpl implements StorageService {
                     .build();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             getMinioClient().getObject(args).transferTo(baos);
-            outputStream.write(baos.toByteArray());
+            return new ByteArrayInputStream(baos.toByteArray());
         } catch (Exception e) {
-            throw new BusinessException("MinIO下载失败: " + e.getMessage());
+            throw new BusinessException("MinIO读取失败: " + e.getMessage());
         }
     }
 

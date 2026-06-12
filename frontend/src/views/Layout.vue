@@ -32,10 +32,14 @@
             <span>日志分析</span>
           </el-menu-item>
           
-          <el-menu-item index="/dbc">
-            <el-icon><FolderOpened /></el-icon>
-            <span>配置信息</span>
-          </el-menu-item>
+          <el-sub-menu index="/config">
+            <template #title>
+              <el-icon><FolderOpened /></el-icon>
+              <span>配置管理</span>
+            </template>
+            <el-menu-item index="/config/can-model">车辆 CAN 模型</el-menu-item>
+            <el-menu-item index="/config/fault">故障配置</el-menu-item>
+          </el-sub-menu>
           
           <el-sub-menu index="/signal">
             <template #title>
@@ -113,13 +117,17 @@ const currentRoute = computed(() => {
   if (route.path.startsWith('/vehicle/detail')) {
     return '车辆详情'
   }
+  if (route.path.startsWith('/config/can-model/') && route.params.id) {
+    return '配置管理 / 车辆 CAN 模型 / 信号详情'
+  }
   const routeMap = {
     '/dashboard': '仪表盘',
-    '/vehicle/model': '车型管理',
-    '/vehicle/list': '车辆列表',
-    '/vehicle/sync-record': '同步记录',
+    '/vehicle/model': '车辆管理 / 车型管理',
+    '/vehicle/list': '车辆管理 / 车辆列表',
+    '/vehicle/sync-record': '车辆管理 / 同步记录',
     '/ecu-log': '日志分析',
-    '/dbc': '配置信息',
+    '/config/can-model': '配置管理 / 车辆 CAN 模型',
+    '/config/fault': '配置管理 / 故障配置',
     '/signal/fault': '主动监控 / 故障监控',
     '/signal/playback': '主动监控 / 信号回放',
     '/settings/user': '账号管理',

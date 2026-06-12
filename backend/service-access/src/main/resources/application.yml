@@ -42,11 +42,9 @@ clickhouse:
   socket-timeout: 30000
   insert-batch-size: 500
 
+# 存储类型（从 Nacos shared-config 继承完整配置）
 storage:
-  type: LOCAL
-  local:
-    base-path: /data/vrd/storage
-    base-url: http://localhost:8080/storage
+  type: MINIO
 
 file:
   log:

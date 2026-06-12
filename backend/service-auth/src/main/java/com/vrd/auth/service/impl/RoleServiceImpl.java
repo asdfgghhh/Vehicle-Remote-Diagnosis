@@ -5,15 +5,24 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.vrd.auth.dto.RoleRequest;
 import com.vrd.auth.entity.Role;
+import com.vrd.auth.entity.UserRole;
 import com.vrd.auth.mapper.RoleMapper;
+import com.vrd.auth.mapper.UserRoleMapper;
 import com.vrd.auth.service.RoleService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements RoleService {
+
+    @Autowired
+    private UserRoleMapper userRoleMapper;
 
     @Override
     public Page<Role> page(Integer current, Integer size, String keyword) {
@@ -89,5 +98,35 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         role.setStatus(request.getStatus() == null ? 1 : request.getStatus());
         role.setDeleted(0);
         return role;
+    }
+
+    @Override
+    public List<String> getRoleNamesByUserId(Long userId) {
+        if (userId == null) {
+            return Collections.emptyList();
+        }
+        
+        List<UserRole> userRoles = userRoleMapper.selectList(
+                new LambdaQueryWrapper<UserRole>()
+                        .eq(UserRole::getUserId, userId)
+                        .eq(UserRole::getDeleted, 0)
+        );
+        
+        if (userRoles.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        List<Long> roleIds = userRoles.stream()
+                .map(UserRole::getRoleId)
+                .collect(Collectors.toList());
+        
+        List<Role> roles = lambdaQuery()
+                .in(Role::getId, roleIds)
+                .eq(Role::getDeleted, 0)
+                .list();
+        
+        return roles.stream()
+                .map(Role::getRoleName)
+                .collect(Collectors.toList());
     }
 }

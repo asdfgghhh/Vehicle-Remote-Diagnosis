@@ -10,6 +10,8 @@ public interface StorageService {
     String upload(String key, InputStream inputStream, long size);
     
     void download(String key, OutputStream outputStream);
+
+    InputStream openInputStream(String key);
     
     boolean delete(String key);
     

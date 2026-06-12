@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "storage")
 public class StorageConfig {
 
-    private StorageType type = StorageType.LOCAL;
+    private StorageType type;
 
     private Local local = new Local();
 
@@ -20,12 +20,14 @@ public class StorageConfig {
 
     private HuaweiObs huaweiObs = new HuaweiObs();
 
+    private TencentCos tencentCos = new TencentCos();
+
     private Minio minio = new Minio();
 
     @Data
     public static class Local {
-        private String basePath = "/data/vrd/storage";
-        private String baseUrl = "http://localhost:8080/storage";
+        private String basePath;
+        private String baseUrl;
     }
 
     @Data
@@ -42,6 +44,15 @@ public class StorageConfig {
         private String endpoint;
         private String accessKeyId;
         private String secretAccessKey;
+        private String bucketName;
+        private String baseUrl;
+    }
+
+    @Data
+    public static class TencentCos {
+        private String region;
+        private String secretId;
+        private String secretKey;
         private String bucketName;
         private String baseUrl;
     }

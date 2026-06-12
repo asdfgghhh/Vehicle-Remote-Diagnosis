@@ -14,12 +14,28 @@ export const uploadDbcFile = (formData) => {
   })
 }
 
+export const updateDbcFile = (id, params) => {
+  return request.put(`/dbc/${id}`, null, { params })
+}
+
+export const publishDbcFile = (id) => {
+  return request.post(`/dbc/${id}/publish`)
+}
+
+export const revokeDbcFile = (id) => {
+  return request.post(`/dbc/${id}/revoke`)
+}
+
 export const getDbcMessages = (id) => {
   return request.get(`/dbc/${id}/messages`)
 }
 
 export const getDbcSignals = (id) => {
   return request.get(`/dbc/${id}/signals`)
+}
+
+export const getDbcSignalDetails = (id) => {
+  return request.get(`/dbc/${id}/signal-details`)
 }
 
 export const downloadDbcFile = (id) => {

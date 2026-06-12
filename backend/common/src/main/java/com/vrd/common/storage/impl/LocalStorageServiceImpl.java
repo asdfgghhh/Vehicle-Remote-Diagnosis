@@ -48,21 +48,23 @@ public class LocalStorageServiceImpl implements StorageService {
 
     @Override
     public void download(String key, OutputStream outputStream) {
+        try (InputStream inputStream = openInputStream(key)) {
+            inputStream.transferTo(outputStream);
+        } catch (IOException e) {
+            throw new BusinessException("本地存储下载失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public InputStream openInputStream(String key) {
         try {
             Path filePath = Paths.get(basePath, key);
             if (!Files.exists(filePath)) {
                 throw new BusinessException("文件不存在");
             }
-
-            try (InputStream inputStream = Files.newInputStream(filePath)) {
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-            }
+            return Files.newInputStream(filePath);
         } catch (IOException e) {
-            throw new BusinessException("本地存储下载失败: " + e.getMessage());
+            throw new BusinessException("本地存储读取失败: " + e.getMessage());
         }
     }
 

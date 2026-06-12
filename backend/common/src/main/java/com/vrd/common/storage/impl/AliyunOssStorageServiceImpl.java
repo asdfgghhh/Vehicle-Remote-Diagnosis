@@ -9,7 +9,9 @@ import com.vrd.common.storage.StorageService;
 import com.vrd.common.storage.StorageType;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -61,12 +63,21 @@ public class AliyunOssStorageServiceImpl implements StorageService {
 
     @Override
     public void download(String key, OutputStream outputStream) {
+        try (InputStream inputStream = openInputStream(key)) {
+            inputStream.transferTo(outputStream);
+        } catch (IOException e) {
+            throw new BusinessException("阿里云OSS下载失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public InputStream openInputStream(String key) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             getOssClient().getObject(bucketName, key).getObjectContent().transferTo(baos);
-            outputStream.write(baos.toByteArray());
+            return new ByteArrayInputStream(baos.toByteArray());
         } catch (Exception e) {
-            throw new BusinessException("阿里云OSS下载失败: " + e.getMessage());
+            throw new BusinessException("阿里云OSS读取失败: " + e.getMessage());
         }
     }
 

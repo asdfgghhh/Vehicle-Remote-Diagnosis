@@ -74,3 +74,15 @@ spring:
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
+    com.vrd.gateway: DEBUG
+
+gateway:
+  auth:
+    enabled: true
+    introspect-url: http://service-auth/auth/introspect
+    timeout: 5000
+    white-list:
+      - /api/auth/login
+      - /api/auth/register
+      - /api/auth/introspect
+      - /actuator/**

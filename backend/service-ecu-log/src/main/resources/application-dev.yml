@@ -8,19 +8,9 @@ file:
   log:
     temp-path: D:/demo/Vehicle-Remote-Diagnosis/data/logs/temp
 
+# 存储类型（从 Nacos shared-config 继承完整配置）
 storage:
-  type: LOCAL
-  local:
-    base-path: D:/demo/Vehicle-Remote-Diagnosis/data/storage
-    base-url: http://localhost:8080/storage
-  # 生产环境可切换为 ALIYUN_OSS / HUAWEI_OBS / MINIO
-  # type: MINIO
-  # minio:
-  #   endpoint: http://124.221.104.56:9000
-  #   access-key: minioadmin
-  #   secret-key: minioadmin
-  #   bucket-name: vrd-logs
-  #   base-url: http://124.221.104.56:9000/vrd-logs
+  type: MINIO
 
 clickhouse:
   host: 124.221.104.56

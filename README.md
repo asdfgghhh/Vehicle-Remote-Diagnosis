@@ -9,14 +9,13 @@
 ### 后端微服务架构 (SpringCloud)
 
 ```
-├── service-register        # 服务注册中心 (Eureka)
 ├── service-gateway          # API网关服务
 ├── service-auth             # 认证服务 (JWT)
 ├── service-vehicle          # 车辆管理服务
 ├── service-ecu-log          # ECU日志服务
 ├── service-dbc              # DBC文件服务
 ├── service-signal            # 信号采集服务 (MQTT)
-├── service-bigdata          # 大数据存储服务 (Hadoop/Kafka)
+├── service-access           # 数据接入服务 (Kafka/MQTT)
 └── common                   # 公共模块
 ```
 
@@ -66,22 +65,21 @@ frontend/
 - 信号趋势分析
 - 历史数据查询
 
-### 6. 大数据存储
-- Hadoop HDFS集成
+### 6. 数据接入
+- MQTT消息接收
 - Kafka消息队列
-- 数据分区存储
-- 统计分析功能
+- ClickHouse大数据存储
 
 ## 技术栈
 
 ### 后端技术
 - **框架**: Spring Boot 3.2.0, Spring Cloud 2023.0.0
-- **注册中心**: Netflix Eureka
+- **注册配置中心**: Nacos
 - **网关**: Spring Cloud Gateway
 - **数据库**: MySQL 8.0, Redis
 - **消息队列**: Apache Kafka
 - **物联网**: MQTT (Eclipse Mosquitto)
-- **大数据**: Hadoop HDFS
+- **大数据**: ClickHouse
 - **ORM**: MyBatis-Plus 3.5.5
 - **安全**: JWT (jjwt 0.11.5)
 - **工具**: Hutool, FastJSON2
@@ -101,7 +99,7 @@ frontend/
 - **缓存**: Redis 7
 - **消息队列**: Apache Kafka 7.5.0
 - **物联网Broker**: Eclipse Mosquitto 2
-- **大数据**: Hadoop 2.7.1
+- **时序数据库**: ClickHouse
 
 ## 项目结构
 
@@ -109,14 +107,14 @@ frontend/
 Vehicle-Remote-Diagnosis/
 ├── backend/                           # 后端微服务
 │   ├── pom.xml                        # 父POM
-│   ├── service-register/             # 服务注册中心
 │   ├── service-gateway/               # API网关
 │   ├── service-auth/                  # 认证服务
 │   ├── service-vehicle/               # 车辆管理
 │   ├── service-ecu-log/               # ECU日志
 │   ├── service-dbc/                   # DBC文件
 │   ├── service-signal/                # 信号采集
-│   ├── service-bigdata/               # 大数据
+│   ├── service-access/                # 数据接入
+│   ├── nacos-configs/                 # Nacos配置文件
 │   └── common/                        # 公共模块
 ├── frontend/                          # 前端应用
 │   ├── src/
@@ -175,9 +173,9 @@ chmod +x scripts/start.sh
 docker-compose up -d
 
 # 方式三：单独启动服务
-docker-compose up -d mysql redis zookeeper kafka mosquitto hadoop
-docker-compose up -d service-register service-gateway service-auth service-vehicle
-docker-compose up -d service-ecu-log service-dbc service-signal service-bigdata
+docker-compose up -d mysql redis zookeeper kafka mosquitto clickhouse
+docker-compose up -d service-gateway service-auth service-vehicle
+docker-compose up -d service-ecu-log service-dbc service-signal service-access
 docker-compose up -d frontend
 ```
 
@@ -185,10 +183,9 @@ docker-compose up -d frontend
 
 - **前端地址**: http://localhost:3000
 - **API网关**: http://localhost:8080
-- **服务注册中心**: http://localhost:8761
 - **Kafka**: localhost:9092
 - **MQTT**: localhost:1883
-- **Hadoop**: http://localhost:50070
+- **ClickHouse**: http://localhost:8123
 
 ### 4. 停止服务
 
@@ -210,8 +207,8 @@ docker-compose down
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/vrd_vehicle
-    username: root
-    password: root123
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root123}
 ```
 
 ### Kafka配置
@@ -230,21 +227,23 @@ mqtt:
   topic: vehicle/signal/+
 ```
 
-### HDFS配置
+### ClickHouse配置
 ```yaml
-hadoop:
-  namenode: hdfs://localhost:9000
-  user: hadoop
+clickhouse:
+  host: localhost
+  port: 8123
+  database: vrd_bigdata
 ```
 
 ## API接口
 
-### 认证服务 (8081)
+### 认证服务
 - `POST /auth/login` - 用户登录
 - `POST /auth/register` - 用户注册
 - `GET /auth/validate` - 验证Token
+- `POST /auth/introspect` - Token内省（网关调用）
 
-### 车辆管理 (8082)
+### 车辆管理
 - `GET /vehicle/model/page` - 车型分页查询
 - `POST /vehicle/model` - 创建车型
 - `PUT /vehicle/model/{id}` - 更新车型
@@ -255,7 +254,7 @@ hadoop:
 - `POST /vehicle/sync/kafka` - Kafka同步
 - `POST /vehicle/sync/api` - API同步
 
-### ECU日志 (8083)
+### ECU日志
 - `GET /ecu-log/page` - 日志分页查询
 - `POST /ecu-log/init-upload` - 初始化上传
 - `POST /ecu-log/upload-chunk` - 上传分片
@@ -263,24 +262,17 @@ hadoop:
 - `GET /ecu-log/check-upload` - 检查上传状态
 - `GET /ecu-log/download/{id}` - 下载日志
 
-### DBC文件 (8084)
+### DBC文件
 - `GET /dbc/page` - 文件分页查询
 - `POST /dbc/upload` - 上传DBC文件
 - `GET /dbc/{id}/messages` - 获取消息列表
 - `POST /dbc/{id}/dispatch/{vehicleId}` - 下发到车辆
 - `GET /dbc/{id}/download` - 下载DBC文件
 
-### 信号监控 (8085)
+### 信号监控
 - `GET /signal/timeline/{vehicleId}` - 时间轴查询
 - `GET /signal/page/{vehicleId}` - 分页查询
 - `GET /signal/signal-name/{vehicleId}` - 按信号名查询
-
-### 大数据 (8086)
-- `GET /bigdata/signals` - 查询信号数据
-- `GET /bigdata/logs` - 查询日志数据
-- `GET /bigdata/aggregate` - 聚合查询
-- `GET /bigdata/dates` - 可用日期
-- `GET /bigdata/statistics` - 统计信息
 
 ## 开发指南
 
@@ -317,9 +309,9 @@ npm run preview
 ## 数据同步
 
 ### Kafka数据流
-1. 车辆数据变更 → Service-Vehicle → Kafka → Service-Bigdata → HDFS
-2. 实时信号 → Service-Signal (MQTT) → Kafka → Service-Bigdata → HDFS
-3. ECU日志 → Service-Ecu-Log → Kafka → Service-Bigdata → HDFS
+1. 车辆数据变更 → Service-Vehicle → Kafka → Service-Access → ClickHouse
+2. 实时信号 → Service-Access (MQTT) → Kafka → Service-Signal → ClickHouse
+3. ECU日志 → Service-Ecu-Log → ClickHouse
 
 ### MQTT主题
 - `vehicle/signal/+` - 车辆信号数据
@@ -329,9 +321,9 @@ npm run preview
 ## 监控运维
 
 ### 服务监控
-- Eureka Dashboard: http://localhost:8761
+- Nacos Console: http://localhost:8848
 - 查看服务注册状态
-- 查看服务健康状态
+- 查看配置管理
 
 ### Kafka监控
 - Kafka Manager: http://localhost:9000
@@ -349,7 +341,6 @@ npm run preview
 ### 数据库优化
 - 使用连接池 (HikariCP)
 - 索引优化
-- 分表分库策略
 - 读写分离
 
 ### 缓存优化
@@ -372,7 +363,7 @@ jwt:
 ```
 
 ### API网关安全
-- Token验证
+- Token验证（统一在网关层）
 - 限流策略
 - 跨域配置
 
@@ -429,7 +420,7 @@ MIT License
 
 ### v1.0.0 (2024-01-15)
 - 初始版本
-- 支持车辆管理、ECU日志、DBC文件、信号监控、大数据存储
+- 支持车辆管理、ECU日志、DBC文件、信号监控、数据接入
 - 微服务架构
 - Docker容器化部署
 
