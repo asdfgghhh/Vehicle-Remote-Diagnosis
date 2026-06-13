@@ -14,3 +14,39 @@ spring:
       port: 6379
       password:
       database: 0
+
+bigdata:
+  type: ${BIGDATA_TYPE:CLICKHOUSE}
+  clickhouse:
+    host: ${CLICKHOUSE_HOST:localhost}
+    port: ${CLICKHOUSE_PORT:8123}
+    database: ${CLICKHOUSE_DB:vrd_bigdata}
+    username: ${CLICKHOUSE_USER:default}
+    password: ${CLICKHOUSE_PASSWORD:}
+    connection-timeout: 10000
+    socket-timeout: 30000
+    max-retries: 3
+    retry-delay-ms: 1000
+    insert-batch-size: 500
+  doris:
+    host: ${DORIS_HOST:localhost}
+    port: ${DORIS_PORT:8030}
+    database: ${DORIS_DB:vrd_bigdata}
+    username: ${DORIS_USER:root}
+    password: ${DORIS_PASSWORD:}
+    connection-timeout: 10000
+    socket-timeout: 30000
+    max-retries: 3
+    retry-delay-ms: 1000
+    insert-batch-size: 500
+  tdengine:
+    host: ${TDENGINE_HOST:localhost}
+    port: ${TDENGINE_PORT:6030}
+    database: ${TDENGINE_DB:vrd_bigdata}
+    username: ${TDENGINE_USER:root}
+    password: ${TDENGINE_PASSWORD:taosdata}
+    connection-timeout: 10000
+    socket-timeout: 30000
+    max-retries: 3
+    retry-delay-ms: 1000
+    insert-batch-size: 500

@@ -3,19 +3,23 @@ package com.vrd.access.service.impl;
 import com.alibaba.fastjson2.JSONObject;
 import com.vrd.access.entity.VehicleSignal;
 import com.vrd.access.service.SignalIngestService;
-import com.vrd.common.clickhouse.ClickHouseHttpClient;
+import com.vrd.common.bigdata.BigDataClient;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class SignalIngestServiceImpl implements SignalIngestService {
 
-    private final ClickHouseHttpClient clickHouseHttpClient;
+    private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public SignalIngestServiceImpl(ClickHouseHttpClient clickHouseHttpClient) {
-        this.clickHouseHttpClient = clickHouseHttpClient;
+    private final BigDataClient bigDataClient;
+
+    public SignalIngestServiceImpl(BigDataClient bigDataClient) {
+        this.bigDataClient = bigDataClient;
     }
 
     @Override
@@ -26,7 +30,7 @@ public class SignalIngestServiceImpl implements SignalIngestService {
         
         List<JSONObject> rows = signals.stream().map(signal -> {
             JSONObject row = new JSONObject();
-            row.put("id", signal.getId() != null ? signal.getId() : ClickHouseHttpClient.generateId());
+            row.put("id", signal.getId() != null ? signal.getId() : System.currentTimeMillis() * 1000L + (int)(Math.random() * 1000));
             row.put("vin", signal.getVin() != null ? signal.getVin() : "");
             row.put("vehicle_id", signal.getVehicleId() != null ? signal.getVehicleId() : 0L);
             row.put("signal_name", signal.getSignalName() != null ? signal.getSignalName() : "");
@@ -35,13 +39,13 @@ public class SignalIngestServiceImpl implements SignalIngestService {
             row.put("unit", signal.getUnit() != null ? signal.getUnit() : "");
             row.put("timestamp", signal.getTimestamp() != null ? signal.getTimestamp() : 0L);
             row.put("signal_time", signal.getSignalTime() != null ? 
-                    ClickHouseHttpClient.formatDateTime(signal.getSignalTime()) : 
-                    ClickHouseHttpClient.formatDateTime(null));
+                    signal.getSignalTime().format(DATETIME_FORMAT) : 
+                    LocalDateTime.now().format(DATETIME_FORMAT));
             row.put("message_name", signal.getMessageName() != null ? signal.getMessageName() : "");
             row.put("message_id", signal.getMessageId() != null ? signal.getMessageId() : 0);
             return row;
         }).collect(Collectors.toList());
         
-        clickHouseHttpClient.insertJson("vehicle_signal_records", rows);
+        bigDataClient.insertJson("vehicle_signal_records", rows);
     }
 }
