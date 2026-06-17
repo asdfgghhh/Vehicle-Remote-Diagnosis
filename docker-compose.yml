@@ -66,14 +66,14 @@ services:
     networks:
       - vrd-network
 
-  hadoop:
-    image: sequenceiq/hadoop-docker:2.7.1
-    container_name: vrd-hadoop
+  clickhouse:
+    image: yandex/clickhouse-server:latest
+    container_name: vrd-clickhouse
     ports:
+      - "8123:8123"
       - "9000:9000"
-      - "50070:50070"
-    environment:
-      SERVICE_PRECONDITION: "namenode:50070"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
     networks:
       - vrd-network
 
@@ -98,18 +98,6 @@ services:
       - mysql
     networks:
       - vrd-network
-
-  service-register:
-    build:
-      context: ./backend/service-register
-      dockerfile: Dockerfile
-    container_name: vrd-service-register
-    ports:
-      - "8761:8761"
-    networks:
-      - vrd-network
-    depends_on:
-      - mysql
 
   service-gateway:
     build:
@@ -250,6 +238,7 @@ volumes:
   mosquitto_data:
   mosquitto_logs:
   nacos_data:
+  clickhouse_data:
 
 networks:
   vrd-network:

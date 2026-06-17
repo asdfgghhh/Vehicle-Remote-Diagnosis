@@ -9,14 +9,40 @@
 ### 后端微服务架构 (SpringCloud)
 
 ```
-├── service-gateway          # API网关服务
-├── service-auth             # 认证服务 (JWT)
-├── service-vehicle          # 车辆管理服务
-├── service-ecu-log          # ECU日志服务
-├── service-dbc              # DBC文件服务
-├── service-signal            # 信号采集服务 (MQTT)
-├── service-access           # 数据接入服务 (Kafka/MQTT)
-└── common                   # 公共模块
+┌─────────────────────────────────────────────────────────────────────┐
+│                        API Gateway (8080)                           │
+│              ┌──────────────────────────────────────────┐          │
+│              │   AuthFilter: JWT验证 → 用户信息注入       │          │
+│              │   请求头: X-User-Id, X-Username, X-Roles  │          │
+│              └──────────────────────────────────────────┘          │
+└───────────────────────────┬─────────────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│ service-auth  │   │service-vehicle│   │ service-dbc   │
+│ 认证服务      │   │ 车辆管理      │   │ DBC文件管理   │
+│ JWT签发/验证  │   │ Kafka消费     │   │ 消息解析      │
+└───────────────┘   └───────────────┘   └───────────────┘
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│service-ecu-log│   │service-signal │   │ service-access│
+│ ECU日志上传   │   │ 信号监控      │   │ 数据接入      │
+│ 断点续传      │   │ MQTT/Kafka    │   │ MQTT→Kafka    │
+└───────────────┘   └───────────────┘   └───────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                      common 模块                        │
+│  ┌───────────────────┐  ┌───────────────────────────┐  │
+│  │   BigDataClient   │  │       UserContext         │  │
+│  │   ├─ ClickHouse   │  │   请求头用户信息提取工具   │  │
+│  │   ├─ Doris        │  │                           │  │
+│  │   └─ TDengine     │  │                           │  │
+│  │   HTTP客户端/重试  │  └───────────────────────────┘  │
+│  └───────────────────┘                                 │
+└────────────────────────────────────────────────────────┘
 ```
 
 ### 前端架构 (Vue3)
@@ -24,12 +50,37 @@
 ```
 frontend/
 ├── src/
-│   ├── api/                 # API接口
+│   ├── api/                 # API接口定义
 │   ├── views/               # 页面组件
-│   ├── router/              # 路由配置
+│   │   ├── Vehicle/         # 车辆管理
+│   │   ├── EcuLog/          # ECU日志
+│   │   ├── DbcFile/         # DBC文件
+│   │   └── Signal/          # 信号监控
+│   ├── router/              # 路由配置（动态路由）
+│   ├── stores/              # Pinia状态管理
 │   ├── utils/               # 工具函数
-│   └── styles/              # 样式文件
+│   ├── styles/              # 全局样式
+│   └── layouts/             # 布局组件
 └── package.json
+```
+
+### 数据流架构
+
+```
+车端设备
+    │
+    ├── MQTT ──► service-access ──► Kafka ──► service-signal ──► BigDataStorage
+    │                     │                                    (ClickHouse/Doris/TDengine)
+    ├── HTTP ──► service-ecu-log ──────────────────────────────► BigDataStorage
+    │
+    └── API ──► service-gateway ──► service-vehicle ──► MySQL
+                                    └──► Kafka ──► service-access ──► BigDataStorage
+
+用户请求
+    │
+    └── service-gateway ──► AuthFilter验证JWT ──► 下游服务(信任网关身份)
+                                    │
+                                    └──► service-auth /service-vehicle /service-dbc /...
 ```
 
 ## 核心功能
@@ -79,9 +130,9 @@ frontend/
 - **数据库**: MySQL 8.0, Redis
 - **消息队列**: Apache Kafka
 - **物联网**: MQTT (Eclipse Mosquitto)
-- **大数据**: ClickHouse
+- **大数据存储**: ClickHouse / Doris / TDengine (可配置切换)
 - **ORM**: MyBatis-Plus 3.5.5
-- **安全**: JWT (jjwt 0.11.5)
+- **安全**: JWT (jjwt 0.12.6)
 - **工具**: Hutool, FastJSON2
 
 ### 前端技术
@@ -99,7 +150,7 @@ frontend/
 - **缓存**: Redis 7
 - **消息队列**: Apache Kafka 7.5.0
 - **物联网Broker**: Eclipse Mosquitto 2
-- **时序数据库**: ClickHouse
+- **时序数据库**: ClickHouse (默认), Doris, TDengine (可配置)
 
 ## 项目结构
 
@@ -227,12 +278,41 @@ mqtt:
   topic: vehicle/signal/+
 ```
 
-### ClickHouse配置
+### 大数据存储配置 (Nacos shared-config: storage.yml)
+支持通过配置切换大数据存储类型，默认使用ClickHouse
+
 ```yaml
-clickhouse:
-  host: localhost
-  port: 8123
-  database: vrd_bigdata
+bigdata:
+  type: CLICKHOUSE  # 可选值: CLICKHOUSE, DORIS, TDENGINE
+  clickhouse:
+    host: localhost
+    port: 8123
+    database: vrd_bigdata
+    username: default
+    password:
+  doris:
+    host: localhost
+    port: 8030
+    database: vrd_bigdata
+    username: root
+    password:
+  tdengine:
+    host: localhost
+    port: 6041
+    database: vrd_bigdata
+    username: root
+    password:
+```
+
+### 网关认证配置
+```yaml
+gateway:
+  auth:
+    introspect-url: http://service-auth/auth/introspect
+    ignore-paths:
+      - /auth/login
+      - /auth/register
+      - /auth/validate
 ```
 
 ## API接口
@@ -308,15 +388,25 @@ npm run preview
 
 ## 数据同步
 
-### Kafka数据流
-1. 车辆数据变更 → Service-Vehicle → Kafka → Service-Access → ClickHouse
-2. 实时信号 → Service-Access (MQTT) → Kafka → Service-Signal → ClickHouse
-3. ECU日志 → Service-Ecu-Log → ClickHouse
+### 数据流架构
+
+**车端数据流向：**
+1. **实时信号**: MQTT → service-access → Kafka → service-signal → BigDataStorage
+2. **ECU日志**: HTTP → service-ecu-log → BigDataStorage
+3. **车辆数据**: API → service-vehicle → MySQL → Kafka → service-access → BigDataStorage
+
+**大数据存储**: 通过 `bigdata.type` 配置切换 ClickHouse/Doris/TDengine
 
 ### MQTT主题
 - `vehicle/signal/+` - 车辆信号数据
 - `vehicle/logs/+` - 车辆日志数据
 - `vehicle/dtc/+` - 故障诊断码
+
+### 认证流程
+1. 用户登录 → service-auth 签发 JWT
+2. 请求经过网关 → AuthFilter 验证 JWT (调用 introspect 接口)
+3. 网关将 userId/roles 注入请求头 → 下游服务直接从请求头获取用户信息
+4. 下游服务不再各自解析 JWT，只信任网关转发的身份
 
 ## 监控运维
 
