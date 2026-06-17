@@ -1,57 +1,3 @@
--- 创建数据库
-CREATE DATABASE IF NOT EXISTS vrd_auth CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE IF NOT EXISTS vrd_vehicle CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE IF NOT EXISTS vrd_ecu_log CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE IF NOT EXISTS vrd_dbc CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE IF NOT EXISTS vrd_signal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE vrd_auth;
-
-CREATE TABLE IF NOT EXISTS sys_user (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    email VARCHAR(100),
-    phone VARCHAR(20),
-    real_name VARCHAR(50),
-    status INT DEFAULT 1 COMMENT '1-启用 0-禁用',
-    deleted INT DEFAULT 0,
-    create_time DATETIME,
-    update_time DATETIME,
-    INDEX idx_username (username),
-    INDEX idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS sys_role (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    role_code VARCHAR(50) NOT NULL UNIQUE,
-    role_name VARCHAR(100) NOT NULL,
-    description VARCHAR(255),
-    status INT DEFAULT 1,
-    deleted INT DEFAULT 0,
-    create_time DATETIME,
-    update_time DATETIME
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS sys_user_role (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    role_id BIGINT NOT NULL,
-    create_time DATETIME,
-    UNIQUE KEY uk_user_role (user_id, role_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-INSERT INTO sys_user (username, password, email, real_name, status, deleted, create_time, update_time)
-VALUES ('admin', '$2a$10$9sCn.a.mx9Xm/bvr6Dytm.RTNkwAggG334aleN7n7e9WiJKOKhBxa', 'admin@vrd.com', '系统管理员', 1, 0, NOW(), NOW());
-
-INSERT INTO sys_role (role_code, role_name, description, status, deleted, create_time, update_time)
-VALUES ('ADMIN', '系统管理员', '拥有系统全部权限', 1, 0, NOW(), NOW()),
-       ('OPERATOR', '操作员', '业务操作权限', 1, 0, NOW(), NOW()),
-       ('VIEWER', '只读用户', '只读查看权限', 1, 0, NOW(), NOW());
-
-INSERT INTO sys_user_role (user_id, role_id, create_time)
-VALUES (1, 1, NOW());
-
 USE vrd_vehicle;
 
 CREATE TABLE IF NOT EXISTS vehicle_model (
@@ -96,8 +42,6 @@ CREATE TABLE IF NOT EXISTS vehicle (
     INDEX idx_model_id (model_id),
     INDEX idx_plate_number (plate_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 已有库升级: ALTER TABLE vehicle ADD COLUMN config_word VARCHAR(255) COMMENT '配置字' AFTER body_number;
 
 CREATE TABLE IF NOT EXISTS vehicle_ecu (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -359,11 +303,6 @@ CREATE TABLE IF NOT EXISTS sync_log (
     INDEX idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 已有库升级:
--- ALTER TABLE sync_log ADD COLUMN vin VARCHAR(50) COMMENT '同步车辆VIN' AFTER target;
--- ALTER TABLE sync_log ADD COLUMN action VARCHAR(20) COMMENT 'CREATE/UPDATE/BATCH' AFTER vin;
--- ALTER TABLE sync_log ADD COLUMN payload TEXT COMMENT '原始同步车辆信息(JSON)' AFTER message;
-
 INSERT INTO sync_log (sync_type, source, target, vin, action, record_count, status, message, payload, start_time, end_time, create_time) VALUES
 ('KAFKA', 'vehicle-data', 'database', 'LSVAG4189ES123456', 'CREATE', 1, 'SUCCESS', NULL,
  '{"action":"CREATE","data":{"vin":"LSVAG4189ES123456","modelId":1,"plateNumber":"沪A12345","color":"白","productionYear":2024,"configWord":"A1B2C3D4"}}',
@@ -380,126 +319,3 @@ INSERT INTO sync_log (sync_type, source, target, vin, action, record_count, stat
 ('API', 'http://example.com/api/vehicles', 'database', NULL, 'BATCH', 0, 'FAILED', 'Connection refused: connect',
  NULL,
  DATE_SUB(NOW(), INTERVAL 10 MINUTE), DATE_SUB(NOW(), INTERVAL 10 MINUTE), DATE_SUB(NOW(), INTERVAL 10 MINUTE));
-
-USE vrd_ecu_log;
-
-CREATE TABLE IF NOT EXISTS ecu_log_file (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500),
-    file_size BIGINT,
-    md5 VARCHAR(64),
-    vehicle_id BIGINT,
-    vin VARCHAR(50),
-    ecu_type VARCHAR(50),
-    upload_status INT DEFAULT 1 COMMENT '1-上传中 2-完成 3-失败',
-    uploaded_size BIGINT DEFAULT 0,
-    deleted INT DEFAULT 0,
-    create_time DATETIME,
-    update_time DATETIME,
-    INDEX idx_vin (vin),
-    INDEX idx_vehicle_id (vehicle_id),
-    INDEX idx_upload_status (upload_status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS upload_chunk (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    chunk_id VARCHAR(100),
-    file_md5 VARCHAR(64),
-    chunk_number INT,
-    chunk_size BIGINT,
-    chunk_path VARCHAR(500),
-    status INT DEFAULT 1,
-    create_time DATETIME,
-    update_time DATETIME,
-    INDEX idx_chunk_id (chunk_id),
-    INDEX idx_file_md5 (file_md5)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-USE vrd_dbc;
-
-CREATE TABLE IF NOT EXISTS dbc_file (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    model_id BIGINT COMMENT '关联车型ID',
-    model_name VARCHAR(100) COMMENT '车型名称',
-    storage_key VARCHAR(500) COMMENT '对象存储key',
-    storage_address VARCHAR(1000) COMMENT '对象存储访问地址',
-    storage_type VARCHAR(32) COMMENT '存储类型',
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500) COMMENT '兼容字段，通常与storage_key一致',
-    file_size BIGINT,
-    version VARCHAR(50),
-    description TEXT,
-    parse_result TEXT,
-    message_count INT DEFAULT 0,
-    signal_count INT DEFAULT 0,
-    status INT DEFAULT 1,
-    deleted INT DEFAULT 0,
-    create_time DATETIME,
-    update_time DATETIME,
-    INDEX idx_model_id (model_id),
-    INDEX idx_file_name (file_name),
-    INDEX idx_version (version)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 已有库升级:
--- ALTER TABLE dbc_file ADD COLUMN model_id BIGINT COMMENT '关联车型ID' AFTER id;
--- ALTER TABLE dbc_file ADD COLUMN model_name VARCHAR(100) COMMENT '车型名称' AFTER model_id;
--- ALTER TABLE dbc_file ADD COLUMN storage_key VARCHAR(500) COMMENT '对象存储key' AFTER model_name;
--- ALTER TABLE dbc_file ADD COLUMN storage_address VARCHAR(1000) COMMENT '对象存储访问地址' AFTER storage_key;
--- ALTER TABLE dbc_file ADD COLUMN storage_type VARCHAR(32) COMMENT '存储类型' AFTER storage_address;
-
-CREATE TABLE IF NOT EXISTS dispatch_log (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    dbc_file_id BIGINT,
-    vehicle_id BIGINT,
-    vin VARCHAR(50),
-    dispatch_type VARCHAR(20),
-    status INT,
-    result TEXT,
-    dispatch_time DATETIME,
-    create_time DATETIME,
-    INDEX idx_dbc_file_id (dbc_file_id),
-    INDEX idx_vehicle_id (vehicle_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-USE vrd_signal;
-
-CREATE TABLE IF NOT EXISTS vehicle_signal (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    vin VARCHAR(50),
-    vehicle_id BIGINT,
-    signal_name VARCHAR(100),
-    signal_value VARCHAR(255),
-    numeric_value DECIMAL(20,6),
-    unit VARCHAR(20),
-    timestamp BIGINT,
-    signal_time DATETIME,
-    message_name VARCHAR(100),
-    message_id INT,
-    deleted INT DEFAULT 0,
-    create_time DATETIME,
-    INDEX idx_vin (vin),
-    INDEX idx_vehicle_id (vehicle_id),
-    INDEX idx_signal_name (signal_name),
-    INDEX idx_signal_time (signal_time),
-    INDEX idx_vin_signal_time (vin, signal_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS signal_batch (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    vin VARCHAR(50),
-    vehicle_id BIGINT,
-    signal_count INT DEFAULT 0,
-    raw_data TEXT,
-    parsed_data TEXT,
-    status INT DEFAULT 1,
-    deleted INT DEFAULT 0,
-    create_time DATETIME,
-    update_time DATETIME,
-    INDEX idx_vin (vin),
-    INDEX idx_vehicle_id (vehicle_id),
-    INDEX idx_create_time (create_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-SELECT '数据库初始化完成' AS status;

@@ -13,9 +13,4 @@ mqtt:
   topic: vehicle/signal/+
   qos: 1
 
-clickhouse:
-  host: localhost
-  port: 8123
-  database: vrd_bigdata
-  username: default
-  password:
+

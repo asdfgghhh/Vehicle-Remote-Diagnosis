@@ -21,7 +21,6 @@
         <module>service-signal</module>
         <module>service-access</module>
         <module>common</module>
-        <module>common-db</module>
     </modules>
 
     <properties>
