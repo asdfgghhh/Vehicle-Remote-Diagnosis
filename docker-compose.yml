@@ -1,108 +1,8 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: vrd-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: vrd_auth
-      MYSQL_USER: vrd
-      MYSQL_PASSWORD: vrd123
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: --default-authentication-plugin=mysql_native_password
-    networks:
-      - vrd-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: vrd-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - vrd-network
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: vrd-zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - vrd-network
-
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: vrd-kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    networks:
-      - vrd-network
-
-  mosquitto:
-    image: eclipse-mosquitto:2
-    container_name: vrd-mosquitto
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - mosquitto_data:/mosquitto/data
-      - mosquitto_logs:/mosquitto/log
-    networks:
-      - vrd-network
-
-  clickhouse:
-    image: yandex/clickhouse-server:latest
-    container_name: vrd-clickhouse
-    ports:
-      - "8123:8123"
-      - "9000:9000"
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-    networks:
-      - vrd-network
-
-  nacos:
-    image: nacos/nacos-server:v2.2.3
-    container_name: vrd-nacos
-    ports:
-      - "8848:8848"
-      - "9848:9848"
-    environment:
-      - MODE=standalone
-      - SPRING_DATASOURCE_PLATFORM=mysql
-      - MYSQL_SERVICE_HOST=mysql
-      - MYSQL_SERVICE_PORT=3306
-      - MYSQL_SERVICE_DB_NAME=nacos_config
-      - MYSQL_SERVICE_USER=root
-      - MYSQL_SERVICE_PASSWORD=root123
-      - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
-    volumes:
-      - nacos_data:/home/nacos/data
-    depends_on:
-      - mysql
-    networks:
-      - vrd-network
-
   service-gateway:
-    build:
-      context: ./backend/service-gateway
-      dockerfile: Dockerfile
+    image: 124.221.104.56:8211/vrd/service-gateway:latest
     container_name: vrd-service-gateway
     ports:
       - "8080:8080"
@@ -111,14 +11,9 @@ services:
       - NACOS_SERVER_ADDR=nacos:8848
     networks:
       - vrd-network
-    depends_on:
-      - nacos
-      - redis
 
   service-auth:
-    build:
-      context: ./backend/service-auth
-      dockerfile: Dockerfile
+    image: 124.221.104.56:8211/vrd/service-auth:latest
     container_name: vrd-service-auth
     ports:
       - "8081:8081"
@@ -127,15 +22,9 @@ services:
       - NACOS_SERVER_ADDR=nacos:8848
     networks:
       - vrd-network
-    depends_on:
-      - nacos
-      - mysql
-      - redis
 
   service-vehicle:
-    build:
-      context: ./backend/service-vehicle
-      dockerfile: Dockerfile
+    image: 124.221.104.56:8211/vrd/service-vehicle:latest
     container_name: vrd-service-vehicle
     ports:
       - "8082:8082"
@@ -146,15 +35,9 @@ services:
       - /data/vrd/uploads:/data/vrd/uploads
     networks:
       - vrd-network
-    depends_on:
-      - nacos
-      - mysql
-      - kafka
 
   service-ecu-log:
-    build:
-      context: ./backend/service-ecu-log
-      dockerfile: Dockerfile
+    image: 124.221.104.56:8211/vrd/service-ecu-log:latest
     container_name: vrd-service-ecu-log
     ports:
       - "8083:8083"
@@ -165,14 +48,9 @@ services:
       - /data/vrd/logs:/data/vrd/logs
     networks:
       - vrd-network
-    depends_on:
-      - nacos
-      - mysql
 
   service-dbc:
-    build:
-      context: ./backend/service-dbc
-      dockerfile: Dockerfile
+    image: 124.221.104.56:8211/vrd/service-dbc:latest
     container_name: vrd-service-dbc
     ports:
       - "8084:8084"
@@ -183,14 +61,9 @@ services:
       - /data/vrd/dbc:/data/vrd/dbc
     networks:
       - vrd-network
-    depends_on:
-      - nacos
-      - mysql
 
   service-signal:
-    build:
-      context: ./backend/service-signal
-      dockerfile: Dockerfile
+    image: 124.221.104.56:8211/vrd/service-signal:latest
     container_name: vrd-service-signal
     ports:
       - "8085:8085"
@@ -199,13 +72,9 @@ services:
       - NACOS_SERVER_ADDR=nacos:8848
     networks:
       - vrd-network
-    depends_on:
-      - nacos
 
   service-access:
-    build:
-      context: ./backend/service-access
-      dockerfile: Dockerfile
+    image: 124.221.104.56:8211/vrd/service-access:latest
     container_name: vrd-service-access
     ports:
       - "8086:8086"
@@ -217,28 +86,14 @@ services:
       - /data/vrd/storage:/data/vrd/storage
     networks:
       - vrd-network
-    depends_on:
-      - nacos
-      - kafka
-      - mosquitto
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: 124.221.104.56:8211/vrd/frontend:latest
     container_name: vrd-frontend
     ports:
       - "3000:3000"
     networks:
       - vrd-network
-
-volumes:
-  mysql_data:
-  redis_data:
-  mosquitto_data:
-  mosquitto_logs:
-  nacos_data:
-  clickhouse_data:
 
 networks:
   vrd-network:

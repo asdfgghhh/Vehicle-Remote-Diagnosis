@@ -1,35 +1,59 @@
 #!/bin/bash
+set -e
 
-echo "启动车辆远程诊断系统..."
+# 镜像仓库地址
+REGISTRY="124.221.104.56:8211/vrd"
 
-cd /workspace/demo/Vehicle-Remote-Diagnosis
+echo "============================================="
+echo "  车辆远程诊断系统 - 启动脚本"
+echo "============================================="
+echo ""
 
-echo "1. 创建必要的目录..."
-mkdir -p /data/vrd/{uploads,logs,temp,dbc,signals,data}
+# 创建数据目录（需要 sudo 权限）
+if [ ! -d "/data/vrd" ]; then
+    sudo mkdir -p /data/vrd/{uploads,logs,temp,dbc,signals,data,storage}
+    sudo chown -R $USER:$USER /data/vrd
+    sudo chmod -R 755 /data/vrd
+    echo "✅ 数据目录创建完成"
+else
+    echo "✅ 数据目录已存在"
+fi
 
-echo "2. 启动基础设施服务..."
-docker-compose up -d mysql redis zookeeper kafka mosquitto hadoop
+# 服务列表
+services=(
+    "service-gateway"
+    "service-auth"
+    "service-vehicle"
+    "service-ecu-log"
+    "service-dbc"
+    "service-signal"
+    "service-access"
+    "frontend"
+)
 
-echo "等待基础设施服务启动..."
+# ========== 拉取镜像 ==========
+echo "1. 拉取最新镜像..."
+for service in "${services[@]}"; do
+    docker pull "$REGISTRY/$service:latest"
+done
+echo "✅ 镜像拉取完成"
+echo ""
+
+# ========== 启动服务 ==========
+echo "2. 启动服务..."
+docker-compose up -d
+echo "✅ 服务启动中..."
 sleep 30
 
-echo "3. 启动微服务..."
-docker-compose up -d service-register
-
-sleep 10
-
-docker-compose up -d service-gateway service-auth service-vehicle service-ecu-log service-dbc service-signal service-bigdata
-
-sleep 10
-
-echo "4. 启动前端..."
-docker-compose up -d frontend
-
 echo ""
-echo "系统已启动!"
-echo "前端地址: http://localhost:3000"
-echo "API网关: http://localhost:8080"
-echo "服务注册中心: http://localhost:8761"
-echo "Kafka: localhost:9092"
-echo "MQTT: localhost:1883"
-echo "Hadoop: http://localhost:50070"
+echo "============================================="
+echo "  完成!"
+echo "============================================="
+echo ""
+echo "访问地址:"
+echo "  前端: http://localhost:3000"
+echo "  网关: http://localhost:8080"
+echo ""
+echo "查看状态: docker-compose ps"
+echo "查看日志: docker-compose logs -f <服务名>"
+echo "停止服务: ./scripts/stop.sh"

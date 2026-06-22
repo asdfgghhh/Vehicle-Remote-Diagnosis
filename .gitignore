@@ -59,6 +59,6 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# Temporary files
-tmp/
-temp/
+# Local tools (not part of project)
+.tools/
+.tmp-dbtest/

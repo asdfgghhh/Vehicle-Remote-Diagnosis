@@ -1,9 +1,12 @@
 #!/bin/bash
 
-echo "停止车辆远程诊断系统..."
-
-cd /workspace/demo/Vehicle-Remote-Diagnosis
+echo "============================================="
+echo "  车辆远程诊断系统 - 停止脚本"
+echo "============================================="
 
 docker-compose down
 
-echo "所有服务已停止"
+echo ""
+echo "✅ 服务已停止"
+echo ""
+echo "启动服务: ./scripts/start.sh"

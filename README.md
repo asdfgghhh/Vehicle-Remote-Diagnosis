@@ -174,11 +174,10 @@ Vehicle-Remote-Diagnosis/
 │   │   ├── router/                   # 路由配置
 │   │   └── styles/                   # 样式
 │   └── package.json
-├── scripts/                           # 脚本文件
-│   ├── build.sh                       # 构建脚本
-│   ├── start.sh                       # 启动脚本
-│   ├── stop.sh                        # 停止脚本
-│   └── init.sql                       # 数据库初始化
+├── scripts/                           # 部署脚本
+│   ├── build.sh                       # 构建并推送镜像
+│   ├── start.sh                       # 启动服务
+│   └── stop.sh                        # 停止服务
 ├── docs/                              # 文档
 │   └── kafka-integration.md           # Kafka集成文档
 ├── docker-compose.yml                 # Docker编排
@@ -189,65 +188,95 @@ Vehicle-Remote-Diagnosis/
 ## 快速开始
 
 ### 环境要求
-- JDK 17+
-- Node.js 18+
-- Maven 3.8+
 - Docker & Docker Compose
+- 基础设施服务：MySQL、Redis、Kafka、MQTT、Nacos
 
-### 1. 构建项目
+### 1. 克隆项目
 
 ```bash
-# 克隆项目
-cd /workspace/demo/Vehicle-Remote-Diagnosis
-
-# 方式一：使用构建脚本
-chmod +x scripts/build.sh
-./scripts/build.sh
-
-# 方式二：手动构建
-cd backend
-mvn clean package -DskipTests
-
-cd ../frontend
-npm install
-npm run build
+git clone https://github.com/your-repo/Vehicle-Remote-Diagnosis.git
+cd Vehicle-Remote-Diagnosis
 ```
 
-### 2. 启动服务
+### 2. 登录镜像仓库
 
 ```bash
-# 方式一：使用启动脚本
-chmod +x scripts/start.sh
+docker login 124.221.104.56:8211
+```
+
+### 3. 启动服务（从镜像仓库拉取并启动）
+
+```bash
+# 赋予脚本执行权限
+chmod +x scripts/*.sh
+
+# 一键启动所有服务
 ./scripts/start.sh
-
-# 方式二：使用Docker Compose
-docker-compose up -d
-
-# 方式三：单独启动服务
-docker-compose up -d mysql redis zookeeper kafka mosquitto clickhouse
-docker-compose up -d service-gateway service-auth service-vehicle
-docker-compose up -d service-ecu-log service-dbc service-signal service-access
-docker-compose up -d frontend
 ```
 
-### 3. 访问系统
-
-- **前端地址**: http://localhost:3000
-- **API网关**: http://localhost:8080
-- **Kafka**: localhost:9092
-- **MQTT**: localhost:1883
-- **ClickHouse**: http://localhost:8123
+**start.sh 自动执行以下操作：**
+- 检查 Docker 环境
+- 创建数据目录 `/data/vrd/`
+- 从镜像仓库拉取最新镜像
+- 启动所有 Docker 容器
 
 ### 4. 停止服务
 
 ```bash
-# 方式一：使用停止脚本
-chmod +x scripts/stop.sh
 ./scripts/stop.sh
-
-# 方式二：使用Docker Compose
-docker-compose down
 ```
+
+### 5. 访问系统
+
+- **前端地址**: http://localhost:3000
+- **API网关**: http://localhost:8080
+- **Nacos控制台**: http://localhost:8848/nacos (用户名: nacos, 密码: nacos)
+- **ClickHouse**: http://localhost:8123
+- **Kafka**: localhost:9092
+- **MQTT**: localhost:1883
+
+### 6. 查看服务状态
+
+```bash
+# 查看所有服务状态
+docker-compose ps
+
+# 查看服务日志
+docker-compose logs -f service-gateway
+docker-compose logs -f service-auth
+
+# 查看特定服务日志
+docker logs vrd-service-vehicle -f
+```
+
+### 7. 手动部署（可选）
+
+如果需要分步操作：
+
+```bash
+# 1. 创建数据目录
+mkdir -p /data/vrd/{uploads,logs,temp,dbc,signals,data}
+
+# 2. 构建后端
+cd backend
+./mvnw clean package -DskipTests
+
+# 3. 构建前端
+cd ../frontend
+npm install --legacy-peer-deps
+npm run build
+
+# 4. 构建 Docker 镜像
+cd ..
+docker-compose build
+
+# 5. 启动服务（基础设施服务需提前启动）
+docker-compose up -d service-gateway service-auth service-vehicle service-ecu-log service-dbc service-signal service-access
+sleep 20
+docker-compose up -d frontend
+```
+
+**注意**：基础设施服务（MySQL、Redis、Kafka、MQTT、ClickHouse、Nacos）需提前启动，脚本不再包含这些服务的启动。
 
 ## 配置说明
 
