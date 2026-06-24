@@ -6,7 +6,10 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import com.vrd.common.storage.config.StorageAutoConfiguration;
 
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, StorageAutoConfiguration.class})
+@SpringBootApplication(exclude = {
+    DataSourceAutoConfiguration.class,
+    StorageAutoConfiguration.class
+})
 @EnableDiscoveryClient
 public class ServiceGatewayApplication {
 

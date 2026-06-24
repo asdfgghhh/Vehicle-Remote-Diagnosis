@@ -15,7 +15,7 @@ public class LocalStorageServiceImpl implements StorageService {
     @Value("${storage.local.base-path:/data/vrd/storage}")
     private String basePath;
 
-    @Value("${storage.local.base-url:http://localhost:8080/storage}")
+    @Value("${storage.local.base-url:http://localhost:9080/storage}")
     private String baseUrl;
 
     @Override

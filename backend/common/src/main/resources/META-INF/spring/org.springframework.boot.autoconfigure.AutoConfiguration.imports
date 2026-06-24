@@ -1,2 +1,3 @@
 com.vrd.common.storage.config.StorageAutoConfiguration
 com.vrd.common.db.config.MybatisPlusConfig
+com.vrd.common.exception.config.ExceptionAutoConfiguration

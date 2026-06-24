@@ -1,19 +1,5 @@
-server:
-  port: 8085
-
+# 配置已迁移至 Nacos 配置中心
+# 本地仅保留应用名称用于启动识别
 spring:
   application:
     name: service-signal
-
-clickhouse:
-  enabled: true
-  host: localhost
-  port: 8123
-  database: vrd_bigdata
-  username: default
-  password:
-  connection-timeout: 10000
-  socket-timeout: 30000
-  query-timeout-seconds: 10
-  max-page-size: 500
-  insert-batch-size: 500

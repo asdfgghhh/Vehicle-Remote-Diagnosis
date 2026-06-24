@@ -12,7 +12,8 @@ echo "镜像仓库: $REGISTRY"
 echo ""
 
 # 自动修复行尾符
-find . -type f \( -name "*.sh" -o -name "mvnw" \) -exec sed -i 's/\r$//' {} \; -exec chmod +x {} \; 2>/dev/null || true
+find . -type f \( -name "*.sh" -o -name "mvnw" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+find . -type f -name "mvnw" -exec chmod +x {} \; 2>/dev/null || true
 
 # 创建数据目录（需要 sudo 权限）
 if [ ! -d "/data/vrd" ]; then
@@ -25,13 +26,13 @@ else
 fi
 
 # Maven Wrapper
-MVN="./backend/mvnw"
-chmod +x "$MVN" 2>/dev/null || true
+chmod +x "./backend/mvnw" 2>/dev/null || true
 
 # ========== 构建后端 ==========
 echo "1. 构建后端..."
 cd backend
-"$MVN" -f common/pom.xml clean package -DskipTests
+MVN="./mvnw"
+"$MVN" clean install -DskipTests -pl common -am
 
 for module in service-gateway service-auth service-vehicle service-ecu-log service-dbc service-signal service-access; do
     "$MVN" -f $module/pom.xml clean package -DskipTests
@@ -59,7 +60,6 @@ services=(
     "service-dbc:service-dbc"
     "service-signal:service-signal"
     "service-access:service-access"
-    "frontend:frontend"
 )
 
 for item in "${services[@]}"; do
@@ -67,6 +67,9 @@ for item in "${services[@]}"; do
     docker build -t "$image_name" -f "backend/$docker_name/Dockerfile" "backend/$docker_name"
     echo "✅ $image_name 构建完成"
 done
+
+docker build -t "frontend" -f "frontend/Dockerfile" "frontend"
+echo "✅ frontend 构建完成"
 echo ""
 
 # ========== 推送镜像 ==========
@@ -95,8 +98,8 @@ echo "  完成!"
 echo "============================================="
 echo ""
 echo "访问地址:"
-echo "  前端: http://localhost:3000"
-echo "  网关: http://localhost:8080"
+echo "  前端: http://124.221.104.56:3000"
+echo "  网关: http://124.221.104.56:9080"
 echo ""
 echo "查看状态: docker-compose ps"
 echo "查看日志: docker-compose logs -f <服务名>"

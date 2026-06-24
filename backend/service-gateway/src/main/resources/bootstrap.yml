@@ -3,12 +3,23 @@ spring:
     name: service-gateway
   cloud:
     nacos:
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:124.221.104.56:8848}
-        namespace: ${NACOS_NAMESPACE:}
+        namespace: ${NACOS_NAMESPACE:57f964ac-059c-4e2b-8138-47bba2b9afb0}
         group: ${NACOS_GROUP:DEFAULT_GROUP}
       config:
-        enabled: false
-
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+        server-addr: ${NACOS_SERVER_ADDR:124.221.104.56:8848}
+        namespace: ${NACOS_NAMESPACE:57f964ac-059c-4e2b-8138-47bba2b9afb0}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        file-extension: yml
+        shared-configs:
+          - data-id: application.yml
+            group: ${NACOS_GROUP:DEFAULT_GROUP}
+            refresh: true
+        extension-configs:
+          - data-id: ${spring.application.name}.yml
+            group: ${NACOS_GROUP:DEFAULT_GROUP}
+            refresh: true
+        refresh-enabled: true

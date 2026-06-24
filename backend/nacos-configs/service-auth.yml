@@ -1,5 +1,19 @@
 server:
-  port: 8081
+  port: 9081
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:124.221.104.56}:${DB_PORT:3306}/vrd_auth?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  data:
+    redis:
+      host: ${REDIS_HOST:124.221.104.56}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      timeout: ${REDIS_TIMEOUT:3000ms}
+      password: ${REDIS_PASSWORD:}
 
 mybatis-plus:
   configuration:
@@ -12,5 +26,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 jwt:
-  secret: your-jwt-secret-key-change-in-production
-  expiration: 86400000
+  secret: ${JWT_SECRET:vrd-secret-key-2024-vehicle-remote-diagnosis-system}
+  expiration: ${JWT_EXPIRATION:86400000}
+  header: Authorization
+  prefix: Bearer

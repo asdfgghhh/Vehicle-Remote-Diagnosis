@@ -8,7 +8,7 @@ storage:
 
   local:
     base-path: ${STORAGE_LOCAL_BASE_PATH:/data/vrd/storage}
-    base-url: ${STORAGE_LOCAL_BASE_URL:http://localhost:8080/storage}
+    base-url: ${STORAGE_LOCAL_BASE_URL:http://localhost:9080/storage}
 
   aliyun-oss:
     endpoint: ${ALIYUN_OSS_ENDPOINT:https://oss-cn-hangzhou.aliyuncs.com}

@@ -1,31 +1,5 @@
-server:
-  port: 8083
-
+# 配置已迁移至 Nacos 配置中心
+# 本地仅保留应用名称用于启动识别
 spring:
   application:
     name: service-ecu-log
-  servlet:
-    multipart:
-      max-file-size: 500MB
-      max-request-size: 500MB
-
-# 存储类型（从 Nacos shared-config 继承完整配置）
-storage:
-  type: MINIO
-
-file:
-  log:
-    temp-path: /data/vrd/logs/temp
-
-clickhouse:
-  enabled: true
-  host: localhost
-  port: 8123
-  database: vrd_bigdata
-  username: default
-  password:
-  connection-timeout: 10000
-  socket-timeout: 30000
-  query-timeout-seconds: 10
-  default-days: 7
-  max-page-size: 100

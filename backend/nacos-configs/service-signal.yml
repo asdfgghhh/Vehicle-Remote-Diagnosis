@@ -1,5 +1,19 @@
 server:
-  port: 8085
+  port: 9085
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:124.221.104.56}:${DB_PORT:3306}/vrd_signal?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  data:
+    redis:
+      host: ${REDIS_HOST:124.221.104.56}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      timeout: ${REDIS_TIMEOUT:3000ms}
+      password: ${REDIS_PASSWORD:}
 
 mybatis-plus:
   configuration:
@@ -12,8 +26,21 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 mqtt:
-  broker-url: tcp://localhost:1883
-  username:
-  password:
-  client-id: service-signal
-  topic: vehicle-signal
+  broker-url: ${MQTT_URL:tcp://localhost:1883}
+  username: ${MQTT_USERNAME:}
+  password: ${MQTT_PASSWORD:}
+  client-id: ${MQTT_CLIENT_ID:service-signal}
+  topic: ${MQTT_TOPIC:vehicle-signal}
+
+clickhouse:
+  enabled: ${CLICKHOUSE_ENABLED:true}
+  host: ${CLICKHOUSE_HOST:124.221.104.56}
+  port: ${CLICKHOUSE_PORT:8123}
+  database: ${CLICKHOUSE_DB:vrd_bigdata}
+  username: ${CLICKHOUSE_USER:default}
+  password: ${CLICKHOUSE_PASSWORD:}
+  connection-timeout: 10000
+  socket-timeout: 30000
+  query-timeout-seconds: 10
+  max-page-size: 500
+  insert-batch-size: 500

@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.vrd.common.storage.config.StorageAutoConfiguration
+com.vrd.common.storage.config.StorageAutoConfiguration,\
+com.vrd.common.exception.config.ExceptionAutoConfiguration

@@ -1,7 +1,0 @@
-# 本地开发（profile=dev）使用远程 MySQL
-spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://124.221.104.56:3306/vrd_auth?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: Wl1298236196!
