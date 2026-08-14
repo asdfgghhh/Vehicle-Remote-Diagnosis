@@ -1,5 +1,48 @@
 <template>
   <div class="dashboard">
+    <!-- WebSocket 实时推送面板（保留实时推送更新） -->
+    <el-card class="ws-card" style="margin-bottom: 20px">
+      <template #header>
+        <div class="ws-header">
+          <span>🔌 WebSocket 实时推送</span>
+          <div>
+            <el-tag :type="wsConnected ? 'success' : 'danger'" size="small">
+              {{ wsConnected ? '已连接' : '已断开' }}
+            </el-tag>
+            <el-button size="small" style="margin-left: 8px" @click="wsReconnect" :disabled="wsConnected">重新连接</el-button>
+          </div>
+        </div>
+      </template>
+      <el-row :gutter="16" class="ws-toolbar">
+        <el-col :span="8">
+          <el-input v-model="wsVin" placeholder="输入 VIN 订阅（留空为全局广播）" size="small" clearable>
+            <template #append>
+              <el-button @click="wsSubscribe" :disabled="!wsConnected">订阅</el-button>
+            </template>
+          </el-input>
+        </el-col>
+        <el-col :span="4">
+          <el-statistic title="已接收推送" :value="wsCount" />
+        </el-col>
+        <el-col :span="8">
+          <el-statistic title="当前订阅" :value="wsSubscribedVin || '全局广播'" />
+        </el-col>
+      </el-row>
+      <el-table :data="wsSignals" size="small" max-height="240" stripe>
+        <el-table-column prop="time" label="时间" width="170" />
+        <el-table-column prop="vin" label="VIN" width="160" />
+        <el-table-column prop="messageName" label="消息" width="140" />
+        <el-table-column label="信号">
+          <template #default="{ row }">
+            <el-tag v-for="(s, i) in row.signals.slice(0, 5)" :key="i" size="small" style="margin-right: 6px">
+              {{ s.name }}={{ s.value }}{{ s.unit || '' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-empty v-if="wsSignals.length === 0" description="等待实时信号推送..." :image-size="60" style="padding: 12px 0" />
+    </el-card>
+
     <el-row :gutter="20">
       <el-col :span="4">
         <el-card class="stat-card">
@@ -165,6 +208,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { getVehicleDashboardStats, getVehicleOnlineTrend, getVehicleAlertLongTrend } from '@/api/vehicle'
+import wsManager from '../utils/websocket'
 import {
   Van,
   Collection,
@@ -172,6 +216,41 @@ import {
   WarningFilled,
   CircleCloseFilled
 } from '@element-plus/icons-vue'
+
+// WebSocket 实时推送状态
+const wsConnected = ref(false)
+const wsVin = ref('')
+const wsSubscribedVin = ref('')
+const wsCount = ref(0)
+const wsSignals = ref([])
+
+const wsHandleSignal = (data) => {
+  wsCount.value++
+  wsSignals.value.unshift({
+    vin: data.vin,
+    time: data.timestamp
+      ? new Date(data.timestamp).toLocaleString('zh-CN', { hour12: false })
+      : new Date().toLocaleString('zh-CN', { hour12: false }),
+    messageName: data.signals?.[0]?.messageName || '',
+    signals: data.signals || []
+  })
+  if (wsSignals.value.length > 50) {
+    wsSignals.value = wsSignals.value.slice(0, 50)
+  }
+}
+
+const wsSubscribe = () => {
+  const vin = wsVin.value.trim()
+  if (vin) {
+    wsManager.subscribeVin(vin)
+    wsSubscribedVin.value = vin
+  }
+}
+
+const wsReconnect = () => {
+  wsManager.disconnect()
+  wsManager.connect(wsSubscribedVin.value || null)
+}
 
 const chartRef = ref(null)
 const pieChartRef = ref(null)
@@ -255,10 +334,20 @@ onMounted(async () => {
   initCharts()
   window.addEventListener('resize', handleResize)
   await Promise.all([loadStats(), loadOnlineTrend(), loadAlertLongTrend()])
+  // 建立 WebSocket 连接，接收实时推送
+  wsManager.on('connected', () => {
+    wsConnected.value = true
+  })
+  wsManager.on('disconnected', () => {
+    wsConnected.value = false
+  })
+  wsManager.on('signal', wsHandleSignal)
+  wsManager.connect()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  wsManager.disconnect()
   if (chart) {
     chart.dispose()
     chart = null
@@ -519,6 +608,16 @@ const handleResize = () => {
 <style scoped>
 .dashboard {
   padding: 20px;
+}
+
+.ws-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ws-toolbar {
+  margin-bottom: 12px;
 }
 
 .stat-card {
