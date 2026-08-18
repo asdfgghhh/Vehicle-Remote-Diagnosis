@@ -38,8 +38,18 @@ service.interceptors.response.use(
     return res
   },
   error => {
+    const status = error.response?.status
     const data = error.response?.data
     const message = data?.message || data?.error || error.message || '网络错误，请确认网关和认证服务已启动'
+
+    if (status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      ElMessage.error('登录已过期，请重新登录')
+      router.replace('/login')
+      return Promise.reject(new Error('登录已过期'))
+    }
+
     if (error.config?.showError !== false) {
       ElMessage.error(message)
     }
