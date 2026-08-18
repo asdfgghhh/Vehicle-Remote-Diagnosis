@@ -135,6 +135,8 @@ pipeline {
     post {
         success {
             echo "CI/CD succeeded! Service=${params.SERVICE}, Action=${params.ACTION}, Tag=${IMAGE_TAG}"
+            // 清理悬空镜像，避免磁盘被旧层占满
+            sh "docker image prune -f || true"
         }
         failure {
             echo "CI/CD FAILED! Service=${params.SERVICE}, Action=${params.ACTION}, Tag=${IMAGE_TAG}"
@@ -142,10 +144,6 @@ pipeline {
         always {
             sh "docker logout ${HARBOR_REGISTRY} || true"
             cleanWs()
-        }
-        success {
-            // 清理悬空镜像，避免磁盘被旧层占满
-            sh "docker image prune -f || true"
         }
     }
 }
