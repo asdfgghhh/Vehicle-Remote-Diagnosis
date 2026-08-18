@@ -1,0 +1,53 @@
+USE vrd_vehicle;
+
+CREATE TABLE IF NOT EXISTS alert_rule (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    rule_name VARCHAR(128) NOT NULL COMMENT '规则名称',
+    rule_type VARCHAR(32) NOT NULL COMMENT '规则类型: THRESHOLD-阈值 TREND-趋势 COMBINATION-组合',
+    model_id BIGINT COMMENT '适用车型ID',
+    model_name VARCHAR(64) COMMENT '适用车型名称',
+    signal_name VARCHAR(64) NOT NULL COMMENT '监测信号名称',
+    message_name VARCHAR(64) COMMENT '监测消息名称',
+    condition_expr TEXT COMMENT '规则条件表达式(MVEL语法)',
+    upper_threshold DOUBLE COMMENT '阈值上限',
+    lower_threshold DOUBLE COMMENT '阈值下限',
+    consecutive_count INT DEFAULT 1 COMMENT '连续超阈次数(防抖)',
+    trend_direction VARCHAR(16) COMMENT '趋势方向: UP-上升 DOWN-下降',
+    trend_change_rate DOUBLE COMMENT '趋势变化率阈值(%)',
+    trend_window_sec INT COMMENT '趋势窗口(秒)',
+    alert_level TINYINT NOT NULL DEFAULT 2 COMMENT '告警级别: 1-严重 2-警告 3-提示',
+    alert_message VARCHAR(512) COMMENT '告警消息模板',
+    component_code VARCHAR(32) COMMENT '部件代码',
+    ecu_type VARCHAR(64) COMMENT 'ECU类型',
+    cooldown_sec INT DEFAULT 60 COMMENT '冷却时间(秒)',
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 1-启用 0-禁用',
+    priority INT DEFAULT 100 COMMENT '优先级',
+    description VARCHAR(512) COMMENT '描述',
+    created_by VARCHAR(64) COMMENT '创建者',
+    deleted TINYINT NOT NULL DEFAULT 0 COMMENT '删除标记',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_rule_type (rule_type),
+    INDEX idx_signal_name (signal_name),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='告警规则定义';
+
+CREATE TABLE IF NOT EXISTS alert_trigger_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+    rule_id BIGINT NOT NULL COMMENT '规则ID',
+    rule_name VARCHAR(128) COMMENT '规则名称',
+    vin VARCHAR(32) NOT NULL COMMENT '车辆VIN',
+    vehicle_id BIGINT COMMENT '车辆ID',
+    signal_name VARCHAR(64) COMMENT '信号名称',
+    signal_value VARCHAR(64) COMMENT '信号值',
+    condition_matched VARCHAR(512) COMMENT '匹配的条件',
+    alert_level TINYINT COMMENT '告警级别',
+    alert_message VARCHAR(512) COMMENT '告警消息',
+    notified TINYINT DEFAULT 0 COMMENT '是否已通知: 0-未通知 1-已通知',
+    trigger_time DATETIME NOT NULL COMMENT '触发时间',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_vin (vin),
+    INDEX idx_rule_id (rule_id),
+    INDEX idx_trigger_time (trigger_time),
+    INDEX idx_alert_level (alert_level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='告警触发记录';

@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS sys_user_role (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO sys_user (username, password, email, real_name, status, deleted, create_time, update_time)
-VALUES ('admin', '$2a$10$9sCn.a.mx9Xm/bvr6Dytm.RTNkwAggG334aleN7n7e9WiJKOKhBxa', 'admin@vrd.com', '系统管理员', 1, 0, NOW(), NOW());
+VALUES ('admin', '$2a$10$5AYKN0cJtL9hk9mRUSdr8.VCG.GerdkHkatkCvUXzo5JMKdbjVini', 'admin@vrd.com', '系统管理员', 1, 0, NOW(), NOW());
 
 INSERT INTO sys_role (role_code, role_name, description, status, deleted, create_time, update_time)
 VALUES ('ADMIN', '系统管理员', '拥有系统全部权限', 1, 0, NOW(), NOW()),

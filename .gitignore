@@ -62,3 +62,7 @@ coverage/
 # Local tools (not part of project)
 .tools/
 .tmp-dbtest/
+
+# Temporary AI analysis files & archives
+**/summary.txt
+*.tar.gz
