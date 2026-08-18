@@ -1,172 +1,200 @@
-version: '2.4'
+version: '3.8'
+
+# ============================================================
+# VRD 微服务部署编排
+# 说明:
+#   - Nacos 已在宿主机 /opt/nacos 独立运行, 不在此编排
+#   - Redis/Kafka/EMQX/MySQL/ClickHouse 均在宿主机 124.221.104.56 运行
+#   - 服务通过 Nacos 配置中心的 ${ENV:default} 获取连接地址(默认指向宿主机)
+#   - JVM 降配: 服务器仅 4GB 内存, 8 服务各限制堆 128MB (SerialGC)
+# 用法:
+#   export REGISTRY=124.221.104.56:8211 TAG=latest
+#   docker compose pull && docker compose up -d --remove-orphans
+# ============================================================
+
+# 通用 JVM 参数 (覆盖镜像内默认 -Xms256m -Xmx512m, 防止 4GB 服务器 OOM)
+x-java-opts: &java-opts
+  JAVA_OPTS: "-Xms64m -Xmx128m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/logs/heapdump.hprof -Djava.security.egd=file:/dev/./urandom"
 
 services:
-  log:
-    image: goharbor/harbor-log:v2.11.0
-    container_name: harbor-log
-    restart: always
-    volumes:
-      - /var/log/harbor/:/var/log/harbor/:z
-      - ./common/config/log/:/etc/logrotate.d/:z
-    networks:
-      - harbor
+  # ==================== 微服务网关 ====================
 
-  registry:
-    image: goharbor/registry-photon:v2.11.0
-    container_name: harbor-registry
+  service-gateway:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/service-gateway:${TAG:-latest}
+    container_name: vrd-gateway
     restart: always
-    volumes:
-      - /home/harbor/data/registry:/storage:z
-      - ./common/config/registry/:/etc/registry/:z
-      - ./common/config/registryctl/:/etc/registryctl/:z
-    networks:
-      - harbor
-    depends_on:
-      - log
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://localhost:1514"
-        tag: "registry"
-
-  registryctl:
-    image: goharbor/harbor-registryctl:v2.11.0
-    container_name: harbor-registryctl
-    restart: always
-    volumes:
-      - /home/harbor/data/registry:/storage:z
-      - ./common/config/registry/:/etc/registry/:z
-      - ./common/config/registryctl/:/etc/registryctl/:z
-    networks:
-      - harbor
-    depends_on:
-      - log
-    env_file:
-      - ./common/config/registryctl/env
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://localhost:1514"
-        tag: "registryctl"
-
-  postgresql:
-    image: goharbor/harbor-db:v2.11.0
-    container_name: harbor-db
-    restart: always
-    volumes:
-      - /home/harbor/data/database:/var/lib/postgresql/data:z
-    networks:
-      - harbor
-    depends_on:
-      - log
-    env_file:
-      - ./common/config/db/env
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://localhost:1514"
-        tag: "postgresql"
-
-  core:
-    image: goharbor/harbor-core:v2.11.0
-    container_name: harbor-core
-    restart: always
-    volumes:
-      - /home/harbor/data/ca_download:/etc/core/ca_download:z
-      - /home/harbor/data/:/data/:z
-      - ./common/config/core/:/etc/core/:z
-      - ./common/config/core/private_key.pem:/etc/core/private_key.pem:z
-      - ./common/config/core/app.conf:/etc/core/app.conf:z
-    networks:
-      - harbor
-    depends_on:
-      - registry
-      - postgresql
-      - redis
-      - log
-    env_file:
-      - ./common/config/core/env
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://localhost:1514"
-        tag: "core"
-
-  portal:
-    image: goharbor/harbor-portal:v2.11.0
-    container_name: harbor-portal
-    restart: always
-    volumes:
-      - ./common/config/portal/nginx.conf:/etc/nginx/nginx.conf:z
-    networks:
-      - harbor
-    depends_on:
-      - log
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://localhost:1514"
-        tag: "portal"
-
-  jobservice:
-    image: goharbor/harbor-jobservice:v2.11.0
-    container_name: harbor-jobservice
-    restart: always
-    volumes:
-      - /home/harbor/data/job_logs:/var/log/jobservice:z
-      - ./common/config/jobservice/:/etc/jobservice/:z
-    networks:
-      - harbor
-    depends_on:
-      - redis
-      - core
-      - log
-    env_file:
-      - ./common/config/jobservice/env
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://localhost:1514"
-        tag: "jobservice"
-
-  redis:
-    image: goharbor/harbor-redis:v2.11.0
-    container_name: harbor-redis
-    restart: always
-    volumes:
-      - /home/harbor/data/redis:/var/lib/redis:z
-    networks:
-      - harbor
-    depends_on:
-      - log
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://localhost:1514"
-        tag: "redis"
-
-  proxy:
-    image: goharbor/harbor-nginx:v2.11.0
-    container_name: harbor-proxy
-    restart: always
-    volumes:
-      - ./common/config/nginx:/etc/nginx:z
-      - /home/harbor/data/secret/keys:/etc/keys:z
     ports:
-      - "80:8080"
+      - "9080:9080"
+    environment:
+      <<: *java-opts
+      NACOS_SERVER_ADDR: ${NACOS_ADDR:-124.221.104.56:8848}
+      NACOS_NAMESPACE: ${NACOS_NS:-57f964ac-059c-4e2b-8138-47bba2b9afb0}
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
+    volumes:
+      - /data/vrd/logs/gateway:/logs
     networks:
-      - harbor
+      - vrd-network
+
+  service-auth:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/service-auth:${TAG:-latest}
+    container_name: vrd-auth
+    restart: always
+    ports:
+      - "9081:9081"
+    environment:
+      <<: *java-opts
+      NACOS_SERVER_ADDR: ${NACOS_ADDR:-124.221.104.56:8848}
+      NACOS_NAMESPACE: ${NACOS_NS:-57f964ac-059c-4e2b-8138-47bba2b9afb0}
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
+    volumes:
+      - /data/vrd/logs/auth:/logs
+    networks:
+      - vrd-network
     depends_on:
-      - registry
-      - core
-      - portal
-      - log
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://localhost:1514"
-        tag: "proxy"
+      service-gateway:
+        condition: service_started
+
+  service-vehicle:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/service-vehicle:${TAG:-latest}
+    container_name: vrd-vehicle
+    restart: always
+    ports:
+      - "9082:9082"
+    environment:
+      <<: *java-opts
+      NACOS_SERVER_ADDR: ${NACOS_ADDR:-124.221.104.56:8848}
+      NACOS_NAMESPACE: ${NACOS_NS:-57f964ac-059c-4e2b-8138-47bba2b9afb0}
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
+    volumes:
+      - /data/vrd/logs/vehicle:/logs
+    networks:
+      - vrd-network
+    depends_on:
+      service-gateway:
+        condition: service_started
+
+  service-ecu-log:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/service-ecu-log:${TAG:-latest}
+    container_name: vrd-ecu-log
+    restart: always
+    ports:
+      - "9083:9083"
+    environment:
+      <<: *java-opts
+      NACOS_SERVER_ADDR: ${NACOS_ADDR:-124.221.104.56:8848}
+      NACOS_NAMESPACE: ${NACOS_NS:-57f964ac-059c-4e2b-8138-47bba2b9afb0}
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
+    volumes:
+      - /data/vrd/logs/ecu-log:/logs
+      - /data/vrd/data:/data
+    networks:
+      - vrd-network
+    depends_on:
+      service-gateway:
+        condition: service_started
+
+  service-dbc:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/service-dbc:${TAG:-latest}
+    container_name: vrd-dbc
+    restart: always
+    ports:
+      - "9084:9084"
+    environment:
+      <<: *java-opts
+      NACOS_SERVER_ADDR: ${NACOS_ADDR:-124.221.104.56:8848}
+      NACOS_NAMESPACE: ${NACOS_NS:-57f964ac-059c-4e2b-8138-47bba2b9afb0}
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
+    volumes:
+      - /data/vrd/logs/dbc:/logs
+      - /data/vrd/dbc:/dbc
+    networks:
+      - vrd-network
+    depends_on:
+      service-gateway:
+        condition: service_started
+
+  service-signal:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/service-signal:${TAG:-latest}
+    container_name: vrd-signal
+    restart: always
+    ports:
+      - "9085:9085"
+    environment:
+      <<: *java-opts
+      NACOS_SERVER_ADDR: ${NACOS_ADDR:-124.221.104.56:8848}
+      NACOS_NAMESPACE: ${NACOS_NS:-57f964ac-059c-4e2b-8138-47bba2b9afb0}
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
+    volumes:
+      - /data/vrd/logs/signal:/logs
+      - /data/vrd/signals:/signals
+    networks:
+      - vrd-network
+    depends_on:
+      service-gateway:
+        condition: service_started
+
+  service-access:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/service-access:${TAG:-latest}
+    container_name: vrd-access
+    restart: always
+    ports:
+      - "9086:9086"
+    environment:
+      <<: *java-opts
+      NACOS_SERVER_ADDR: ${NACOS_ADDR:-124.221.104.56:8848}
+      NACOS_NAMESPACE: ${NACOS_NS:-57f964ac-059c-4e2b-8138-47bba2b9afb0}
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
+    volumes:
+      - /data/vrd/logs/access:/logs
+    networks:
+      - vrd-network
+    depends_on:
+      service-gateway:
+        condition: service_started
+
+  service-diagnosis:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/service-diagnosis:${TAG:-latest}
+    container_name: vrd-diagnosis
+    restart: always
+    ports:
+      - "9087:9087"
+    environment:
+      <<: *java-opts
+      NACOS_SERVER_ADDR: ${NACOS_ADDR:-124.221.104.56:8848}
+      NACOS_NAMESPACE: ${NACOS_NS:-57f964ac-059c-4e2b-8138-47bba2b9afb0}
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
+    volumes:
+      - /data/vrd/logs/diagnosis:/logs
+    networks:
+      - vrd-network
+    depends_on:
+      service-gateway:
+        condition: service_started
+
+  # ==================== 前端 ====================
+
+  frontend:
+    image: ${REGISTRY:-124.221.104.56:8211}/vrd/frontend:${TAG:-latest}
+    container_name: vrd-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    volumes:
+      - /data/vrd/logs/frontend:/logs
+    networks:
+      - vrd-network
+    depends_on:
+      service-gateway:
+        condition: service_started
 
 networks:
-  harbor:
-    external: false
+  vrd-network:
+    driver: bridge
