@@ -1,10 +1,14 @@
 # Kafka Integration Configuration for Vehicle Remote Diagnosis System
 
+> 本文档基于当前代码实际使用的 Kafka 主题整理（核实自各服务源码与 Nacos 配置）。
+> Kafka 3.7 部署于服务器 124.221.104.56:9092（宿主机，非 docker-compose 内）。
+
 ## Kafka Topics
 
 ### 1. Vehicle Data Topic
 Topic: `vehicle-data`
-- Purpose: Synchronize vehicle data between systems
+- Purpose: 车辆主数据变更同步（新增/修改/删除）
+- Producer/Consumer: service-vehicle（`VehicleKafkaConsumer`，group `vehicle-processor`，topic 可在 `vrd.vehicle.kafka.consumer-topic` / `producer-topic` 配置）
 - Partitions: 6
 - Replication Factor: 1
 - Retention: 7 days
@@ -27,29 +31,11 @@ Message Format:
 }
 ```
 
-### 2. ECU Log Topic
-Topic: `ecu-logs`
-- Purpose: Receive ECU log files from vehicles
-- Partitions: 3
-- Replication Factor: 1
-- Retention: 30 days
-
-Message Format:
-```json
-{
-  "vin": "LSVAG4189ES123456",
-  "ecuType": "VCU",
-  "logType": "ERROR|WARN|INFO|DEBUG",
-  "logContent": "Base64 encoded log content",
-  "fileSize": 1024000,
-  "md5": "d41d8cd98f00b204e9800998ecf8427e",
-  "timestamp": 1704067200000
-}
-```
-
-### 3. Signal Data Topic
+### 2. Signal Data Topic
 Topic: `vehicle-signals`
-- Purpose: Real-time signal data from vehicles
+- Purpose: 实时信号数据（车辆信号采集与告警规则评估）
+- Producer: service-access（`KafkaMessageProducer`，由 MQTT `vehicle/signal/+` 接入后转发）
+- Consumer: service-signal（ClickHouse 存储）、service-vehicle `AlertEvaluationConsumer`（group `vehicle-alert-evaluator`，规则引擎评估）
 - Partitions: 10
 - Replication Factor: 1
 - Retention: 3 days
@@ -72,37 +58,56 @@ Message Format:
 }
 ```
 
-### 4. Diagnostics Topic
-Topic: `diagnostics`
-- Purpose: Diagnostic trouble codes and fault data
+### 3. UDS Commands Topic
+Topic: `uds-commands`
+- Purpose: UDS 远程诊断指令下发（会话控制、读写 DID、DTC 操作等）
+- Producer: service-diagnosis（`UdsCommandProducer`，topic 可在 `kafka.topics.uds-commands` 配置）
+- Consumer: 车辆端诊断网关（车端订阅执行）
 - Partitions: 3
 - Replication Factor: 1
-- Retention: 14 days
+- Retention: 7 days
 
 Message Format:
 ```json
 {
+  "traceId": "8f14e45fceea167a5a36dedd4bea2543",
   "vin": "LSVAG4189ES123456",
-  "dtcCodes": [
-    {
-      "code": "P0301",
-      "description": "Cylinder 1 Misfire Detected",
-      "severity": "HIGH",
-      "timestamp": 1704067200000
-    }
-  ],
-  "diagnosisResults": [],
-  "timestamp": 1704067200000
+  "serviceId": "0x22",
+  "subFunction": null,
+  "sessionType": "EXTENDED",
+  "securityLevel": "NONE",
+  "ecuType": "VCU",
+  "requestData": "F1 90"
+}
+```
+
+### 4. UDS Responses Topic
+Topic: `uds-responses`
+- Purpose: 车端 UDS 诊断响应回传（topic 已在 `service-diagnosis.yml` 配置为 `kafka.topics.uds-responses`）
+- Consumer: **待建设** — service-diagnosis 尚未实现 `uds-responses` 消费者，响应落库（`uds_diagnosis_session`）功能暂未打通
+- Partitions: 3
+- Replication Factor: 1
+- Retention: 7 days
+
+Message Format:
+```json
+{
+  "traceId": "8f14e45fceea167a5a36dedd4bea2543",
+  "vin": "LSVAG4189ES123456",
+  "serviceId": "0x22",
+  "success": true,
+  "nrc": null,
+  "responseData": "62 F1 90 01 02 03"
 }
 ```
 
 ## Kafka Producer Configuration
 
-### Service-Vehicle Producer
+### Service-Vehicle Producer（vehicle-data）
 ```yaml
 spring:
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_SERVERS:124.221.104.56:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -113,45 +118,79 @@ spring:
         max.in.flight.requests.per.connection: 5
 ```
 
-### Service-Bigdata Consumer
+### Service-Access Producer（vehicle-signals）
 ```yaml
 spring:
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_SERVERS:124.221.104.56:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+```
+
+### Service-Vehicle Consumer（AlertEvaluationConsumer，vehicle-signals）
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:124.221.104.56:9092}
     consumer:
-      group-id: bigdata-group
+      group-id: vehicle-alert-evaluator
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      enable-auto-commit: false
-      properties:
-        session.timeout.ms: 30000
-        heartbeat.interval.ms: 10000
+```
+
+### Service-Diagnosis Producer（uds-commands）
+```yaml
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:124.221.104.56:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+kafka:
+  topics:
+    uds-commands: uds-commands
+    uds-responses: uds-responses
 ```
 
 ## Data Flow
 
-1. **Vehicle → Kafka → Service-Vehicle**
-   - Vehicle data changes trigger Kafka messages
-   - Service-Vehicle processes and stores in MySQL
+1. **Vehicle → MQTT → service-access → Kafka vehicle-signals → service-signal / service-vehicle**
+   - 车端信号经 MQTT 主题 `vehicle/signal/+` 接入 service-access
+   - service-access 转发到 Kafka `vehicle-signals`
+   - service-signal 消费并写入 ClickHouse（时序存储）
+   - service-vehicle `AlertEvaluationConsumer` 消费并提交规则引擎评估告警
 
-2. **Service-Vehicle → Kafka → Service-Bigdata**
-   - Processed data is forwarded to big data cluster
-   - Service-Bigdata stores in HDFS for long-term storage
+2. **Vehicle data changes → service-vehicle → Kafka vehicle-data**
+   - 车辆主数据变更（增删改）发布到 `vehicle-data`
+   - service-vehicle 自身消费者（`VehicleKafkaConsumer`）同步处理，外部系统亦可订阅
 
-3. **Vehicle → Kafka → Service-Bigdata**
-   - Real-time signals and logs go directly to big data
-   - Low-latency processing for critical data
+3. **service-diagnosis → Kafka uds-commands → 车端诊断网关**
+   - 远程诊断指令下发到 `uds-commands`
+   - 车端执行后经 `uds-responses` 回传（消费者待建设）
 
 ## Monitoring
 
-### Kafka Manager
-- URL: http://localhost:9000
-- Purpose: Monitor topic health, consumer groups, message lag
+### 现状说明
+- 未部署 Kafka Manager / Kafka UI 等 Web 管理界面
+- 推荐使用 Kafka 自带 CLI 工具在服务器（124.221.104.56）上监控：
+
+```bash
+# 查看消费者组与 lag
+kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --all-groups
+
+# 查看主题列表
+kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+# 查看主题详情（分区/副本）
+kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic vehicle-signals
+```
 
 ### Metrics
 - Messages per second
-- Consumer lag
+- Consumer lag（重点关注 vehicle-alert-evaluator、vehicle-processor 两个消费组）
 - Producer error rate
 - Disk usage per topic
 

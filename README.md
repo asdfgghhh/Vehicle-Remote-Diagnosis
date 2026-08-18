@@ -10,39 +10,27 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        API Gateway (8080)                           │
+│                        API Gateway (9080)                           │
 │              ┌──────────────────────────────────────────┐          │
-│              │   AuthFilter: JWT验证 → 用户信息注入       │          │
+│              │   AuthFilter: JWT校验(内省) → 用户信息注入 │          │
 │              │   请求头: X-User-Id, X-Username, X-Roles  │          │
 │              └──────────────────────────────────────────┘          │
 └───────────────────────────┬─────────────────────────────────────────┘
                             │
-        ┌───────────────────┼───────────────────┐
-        ▼                   ▼                   ▼
-┌───────────────┐   ┌───────────────┐   ┌───────────────┐
-│ service-auth  │   │service-vehicle│   │ service-dbc   │
-│ 认证服务      │   │ 车辆管理      │   │ DBC文件管理   │
-│ JWT签发/验证  │   │ Kafka消费     │   │ 消息解析      │
-└───────────────┘   └───────────────┘   └───────────────┘
-        │                   │                   │
-        ▼                   ▼                   ▼
-┌───────────────┐   ┌───────────────┐   ┌───────────────┐
-│service-ecu-log│   │service-signal │   │ service-access│
-│ ECU日志上传   │   │ 信号监控      │   │ 数据接入      │
-│ 断点续传      │   │ MQTT/Kafka    │   │ MQTT→Kafka    │
-└───────────────┘   └───────────────┘   └───────────────┘
-                            │
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                      common 模块                        │
-│  ┌───────────────────┐  ┌───────────────────────────┐  │
-│  │   BigDataClient   │  │       UserContext         │  │
-│  │   ├─ ClickHouse   │  │   请求头用户信息提取工具   │  │
-│  │   ├─ Doris        │  │                           │  │
-│  │   └─ TDengine     │  │                           │  │
-│  │   HTTP客户端/重试  │  └───────────────────────────┘  │
-│  └───────────────────┘                                 │
-└────────────────────────────────────────────────────────┘
+        ┌───────────────────┼───────────────────┬───────────────────┐
+        ▼                   ▼                   ▼                   ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│ service-auth  │   │service-vehicle│   │ service-dbc   │   │service-       │
+│ 认证服务      │   │ 车辆管理      │   │ DBC文件管理   │   │diagnosis      │
+│ JWT签发/校验  │   │ 告警规则引擎  │   │ CAN帧编解码   │   │ UDS远程诊断   │
+└───────────────┘   └───────────────┘   └───────────────┘   └───────────────┘
+        │                   │                   │                   │
+        ▼                   ▼                   ▼                   ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│service-ecu-log│   │service-signal │   │ service-access│   │  common 模块  │
+│ ECU日志查询   │   │ 信号监控      │   │ 数据接入      │   │ 统一响应/存储  │
+│ 断点续传      │   │ MQTT/Kafka    │   │ MQTT→Kafka    │   │ 抽象/MyBatis  │
+└───────────────┘   └───────────────┘   └───────────────┘   └───────────────┘
 ```
 
 ### 前端架构 (Vue3)
@@ -52,15 +40,18 @@ frontend/
 ├── src/
 │   ├── api/                 # API接口定义
 │   ├── views/               # 页面组件
-│   │   ├── Vehicle/         # 车辆管理
-│   │   ├── EcuLog/          # ECU日志
-│   │   ├── DbcFile/         # DBC文件
-│   │   └── Signal/          # 信号监控
-│   ├── router/              # 路由配置（动态路由）
-│   ├── stores/              # Pinia状态管理
-│   ├── utils/               # 工具函数
-│   ├── styles/              # 全局样式
-│   └── layouts/             # 布局组件
+│   │   ├── Login.vue        # 登录页
+│   │   ├── Layout.vue       # 主布局（侧边栏导航）
+│   │   ├── Dashboard.vue    # 仪表盘
+│   │   ├── Vehicle*.vue     # 车辆管理（车型/车辆/同步记录）
+│   │   ├── EcuLog.vue       # ECU日志
+│   │   ├── config/          # DBC配置（CAN模型/故障配置）
+│   │   ├── signal/          # 信号监控（故障监控/回放）
+│   │   ├── settings/        # 系统设置（用户/角色）
+│   │   └── UdsDiagnosis.vue # UDS远程诊断
+│   ├── router/              # 路由配置
+│   ├── utils/               # 工具函数（request/websocket）
+│   └── styles/              # 全局样式
 └── package.json
 ```
 
@@ -76,9 +67,13 @@ frontend/
     └── API ──► service-gateway ──► service-vehicle ──► MySQL
                                     └──► Kafka ──► service-access ──► BigDataStorage
 
+诊断指令
+    │
+    └── 管理端 ──► service-gateway ──► service-diagnosis ──► Kafka(uds-commands) ──► 车端
+
 用户请求
     │
-    └── service-gateway ──► AuthFilter验证JWT ──► 下游服务(信任网关身份)
+    └── service-gateway ──► AuthFilter校验JWT(内省) ──► 下游服务(信任网关身份)
                                     │
                                     └──► service-auth /service-vehicle /service-dbc /...
 ```
@@ -121,17 +116,27 @@ frontend/
 - Kafka消息队列
 - ClickHouse大数据存储
 
+### 7. UDS远程诊断
+- 基于 ISO 14229 的 UDS 诊断协议（service-diagnosis）
+- 诊断会话控制、ECU复位、安全访问（种子/密钥）
+- DID数据读写、DTC故障码读取/清除、例程控制
+- 内存读写、IO控制、Tester Present
+- 诊断指令经 Kafka（uds-commands）下发车端
+- 诊断会话历史查询（MySQL vrd_diagnosis）
+
 ## 技术栈
 
 ### 后端技术
 - **框架**: Spring Boot 3.2.0, Spring Cloud 2023.0.0
-- **注册配置中心**: Nacos
+- **注册配置中心**: Nacos 2.3
 - **网关**: Spring Cloud Gateway
 - **数据库**: MySQL 8.0, Redis
-- **消息队列**: Apache Kafka
-- **物联网**: MQTT (Eclipse Mosquitto)
+- **消息队列**: Apache Kafka 3.7
+- **物联网**: MQTT (EMQX)
 - **大数据存储**: ClickHouse / Doris / TDengine (可配置切换)
-- **ORM**: MyBatis-Plus 3.5.5
+- **ORM**: MyBatis-Plus 3.5.9
+- **诊断协议**: UDS (ISO 14229)
+- **规则引擎**: Easy Rules 4.1
 - **安全**: JWT (jjwt 0.12.6)
 - **工具**: Hutool, FastJSON2
 
@@ -148,8 +153,8 @@ frontend/
 - **容器化**: Docker, Docker Compose
 - **数据库**: MySQL 8.0
 - **缓存**: Redis 7
-- **消息队列**: Apache Kafka 7.5.0
-- **物联网Broker**: Eclipse Mosquitto 2
+- **消息队列**: Apache Kafka 3.7
+- **物联网Broker**: EMQX 5
 - **时序数据库**: ClickHouse (默认), Doris, TDengine (可配置)
 
 ## 项目结构
@@ -158,14 +163,17 @@ frontend/
 Vehicle-Remote-Diagnosis/
 ├── backend/                           # 后端微服务
 │   ├── pom.xml                        # 父POM
-│   ├── service-gateway/               # API网关
-│   ├── service-auth/                  # 认证服务
-│   ├── service-vehicle/               # 车辆管理
-│   ├── service-ecu-log/               # ECU日志
-│   ├── service-dbc/                   # DBC文件
-│   ├── service-signal/                # 信号采集
-│   ├── service-access/                # 数据接入
+│   ├── service-gateway/               # API网关 (9080)
+│   ├── service-auth/                  # 认证服务 (9081)
+│   ├── service-vehicle/               # 车辆管理+告警规则引擎 (9082)
+│   ├── service-ecu-log/               # ECU日志 (9083)
+│   ├── service-dbc/                   # DBC文件+原生解析器 (9084)
+│   ├── service-signal/                # 信号采集 (9085)
+│   ├── service-access/                # 数据接入 (9086)
+│   ├── service-diagnosis/             # UDS远程诊断 (9087)
 │   ├── nacos-configs/                 # Nacos配置文件
+│   ├── sql/                           # MySQL/ClickHouse初始化脚本
+│   ├── Dockerfile                     # 统一多阶段构建
 │   └── common/                        # 公共模块
 ├── frontend/                          # 前端应用
 │   ├── src/
@@ -173,13 +181,11 @@ Vehicle-Remote-Diagnosis/
 │   │   ├── views/                    # 页面组件
 │   │   ├── router/                   # 路由配置
 │   │   └── styles/                   # 样式
+│   ├── Dockerfile                     # 前端镜像 (Nginx)
 │   └── package.json
-├── scripts/                           # 部署脚本
-│   ├── build.sh                       # 构建并推送镜像
-│   ├── start.sh                       # 启动服务
-│   └── stop.sh                        # 停止服务
+├── dbc-parser-service/                # 遗留Python解析服务(已被Java原生替代)
+├── deploy.sh                          # 一键构建部署脚本
 ├── docs/                              # 文档
-│   └── kafka-integration.md           # Kafka集成文档
 ├── docker-compose.yml                 # Docker编排
 └── README.md                          # 项目说明
 
@@ -204,79 +210,204 @@ cd Vehicle-Remote-Diagnosis
 docker login 124.221.104.56:8211
 ```
 
-### 3. 启动服务（从镜像仓库拉取并启动）
+### 3. 构建并推送镜像（可选，镜像已就绪可跳过）
 
 ```bash
-# 赋予脚本执行权限
-chmod +x scripts/*.sh
-
-# 一键启动所有服务
-./scripts/start.sh
+# 本地一键构建并推送全部 8 个后端镜像 + 前端镜像
+./deploy.sh [tag] [registry]
+# 示例: ./deploy.sh v1.2.0 124.221.104.56:8211
 ```
 
-**start.sh 自动执行以下操作：**
-- 检查 Docker 环境
-- 创建数据目录 `/data/vrd/`
-- 从镜像仓库拉取最新镜像
-- 启动所有 Docker 容器
+**deploy.sh 自动执行以下操作：**
+- Maven 打包全部后端微服务
+- 构建前端 dist
+- 并行构建 8 个后端 Docker 镜像 + 前端镜像
+- 推送镜像到 Harbor 镜像仓库
 
-### 4. 停止服务
+### 4. 在目标服务器启动服务（从镜像仓库拉取并启动）
 
 ```bash
-./scripts/stop.sh
+# 在服务器上拉取并启动
+export TAG=latest REGISTRY=124.221.104.56:8211
+docker compose pull
+docker compose up -d --remove-orphans
 ```
 
-### 5. 访问系统
+**docker compose up 自动执行以下操作：**
+- 创建 Docker 网络 `vrd-network`
+- 按依赖顺序启动 8 个微服务容器 + 前端容器
+- 自动重启策略（restart: always）
+
+### 5. 停止服务
+
+```bash
+docker compose down
+```
+
+### 6. 访问系统
 
 - **前端地址**: http://localhost:3000
-- **API网关**: http://localhost:8080
+- **API网关**: http://localhost:9080
 - **Nacos控制台**: http://localhost:8848/nacos (用户名: nacos, 密码: nacos)
 - **ClickHouse**: http://localhost:8123
 - **Kafka**: localhost:9092
 - **MQTT**: localhost:1883
 
-### 6. 查看服务状态
+### 7. 查看服务状态
 
 ```bash
 # 查看所有服务状态
-docker-compose ps
+docker compose ps
 
 # 查看服务日志
-docker-compose logs -f service-gateway
-docker-compose logs -f service-auth
+docker compose logs -f service-gateway
+docker compose logs -f service-auth
 
-# 查看特定服务日志
-docker logs vrd-service-vehicle -f
+# 查看特定服务日志（容器名）
+docker logs vrd-vehicle -f
 ```
 
-### 7. 手动部署（可选）
+### 8. 手动部署（可选）
 
 如果需要分步操作：
 
 ```bash
-# 1. 创建数据目录
-mkdir -p /data/vrd/{uploads,logs,temp,dbc,signals,data}
-
-# 2. 构建后端
+# 1. 构建后端（注意：本机需 JAVA_HOME 指向 JDK 17+，target 为 17）
 cd backend
 ./mvnw clean package -DskipTests
 
-# 3. 构建前端
+# 2. 构建前端
 cd ../frontend
 npm install --legacy-peer-deps
 npm run build
 
-# 4. 构建 Docker 镜像
+# 3. 构建 Docker 镜像（统一多阶段 Dockerfile，按服务传入 build-arg）
 cd ..
-docker-compose build
+docker build --build-arg SERVICE_NAME=service-diagnosis -f backend/Dockerfile -t 124.221.104.56:8211/vrd/service-diagnosis:latest backend
 
-# 5. 启动服务（基础设施服务需提前启动）
-docker-compose up -d service-gateway service-auth service-vehicle service-ecu-log service-dbc service-signal service-access
+# 4. 启动服务（基础设施服务需提前启动）
+export REGISTRY=124.221.104.56:8211 TAG=latest
+docker compose up -d service-gateway service-auth service-vehicle service-ecu-log service-dbc service-signal service-access service-diagnosis
 sleep 20
-docker-compose up -d frontend
+docker compose up -d frontend
 ```
 
-**注意**：基础设施服务（MySQL、Redis、Kafka、MQTT、ClickHouse、Nacos）需提前启动，脚本不再包含这些服务的启动。
+**注意**：基础设施服务（MySQL、Redis、Kafka、EMQX、ClickHouse、Nacos）部署在宿主机（124.221.104.56），不在 docker-compose 编排内，需提前启动。
+
+### 9. 更新单个服务（增量发布）
+
+日常迭代无需全量重建，只需更新变更的服务即可。以下分别以**后端 service-dbc（:9084）**和**前端 frontend（:3000）**为例，其他服务替换服务名即可。
+
+#### 9.1 更新后端服务（以 service-dbc 为例）
+
+**① 本地构建并推送镜像**
+
+```bash
+cd Vehicle-Remote-Diagnosis
+
+# 登录镜像仓库（未登录时）
+docker login 124.221.104.56:8211
+
+# 构建单个服务镜像（统一多阶段 Dockerfile，通过 SERVICE_NAME 指定服务）
+docker build \
+  --build-arg SERVICE_NAME=service-dbc \
+  -t 124.221.104.56:8211/vrd/service-dbc:v1.2.1 \
+  -t 124.221.104.56:8211/vrd/service-dbc:latest \
+  -f backend/Dockerfile backend
+
+# 推送镜像到 Harbor
+docker push 124.221.104.56:8211/vrd/service-dbc:v1.2.1
+docker push 124.221.104.56:8211/vrd/service-dbc:latest
+```
+
+> 注：统一 Dockerfile 内部会执行 Maven 全量编译，但最终镜像只包含 `service-dbc` 的 JAR，产物是单服务镜像。
+
+**② 服务器拉取并重建该服务**
+
+```bash
+ssh root@124.221.104.56
+cd /data/vrd   # docker-compose.yml 所在目录
+
+# 拉取新镜像
+docker compose pull service-dbc
+
+# 仅重建该服务容器（--no-deps 避免连带重启其他服务）
+docker compose up -d --no-deps service-dbc
+```
+
+**③ 验证**
+
+```bash
+docker ps | grep vrd-dbc
+docker logs -f vrd-dbc
+curl -s http://localhost:9084/actuator/health
+```
+
+#### 9.2 更新前端服务
+
+**① 本地构建并推送镜像**
+
+```bash
+cd Vehicle-Remote-Diagnosis
+
+docker build \
+  -t 124.221.104.56:8211/vrd/frontend:v1.2.1 \
+  -t 124.221.104.56:8211/vrd/frontend:latest \
+  -f frontend/Dockerfile frontend
+
+docker push 124.221.104.56:8211/vrd/frontend:v1.2.1
+docker push 124.221.104.56:8211/vrd/frontend:latest
+```
+
+**② 服务器拉取并重建**
+
+```bash
+ssh root@124.221.104.56
+cd /data/vrd
+
+docker compose pull frontend
+docker compose up -d --no-deps frontend
+```
+
+**③ 验证**
+
+```bash
+docker ps | grep vrd-frontend
+docker logs -f vrd-frontend
+# 浏览器访问 http://124.221.104.56:3000 确认页面已更新
+```
+
+#### 9.3 仅更新配置（不重新构建镜像）
+
+若只修改了 Nacos 配置（如 `backend/nacos-configs/` 下的 yml），无需构建镜像：
+
+```bash
+# 在 Nacos 控制台修改并发布配置后，重启服务使其生效
+docker restart vrd-dbc
+```
+
+#### 9.4 回滚到上一版本
+
+```bash
+cd /data/vrd
+TAG=v1.2.0 docker compose up -d --no-deps service-dbc
+```
+
+#### 9.5 服务名 / 容器名 / 端口对照
+
+| compose 服务名 | 容器名 | 端口 |
+|---|---|---|
+| service-gateway | vrd-gateway | 9080 |
+| service-auth | vrd-auth | 9081 |
+| service-vehicle | vrd-vehicle | 9082 |
+| service-ecu-log | vrd-ecu-log | 9083 |
+| service-dbc | vrd-dbc | 9084 |
+| service-signal | vrd-signal | 9085 |
+| service-access | vrd-access | 9086 |
+| service-diagnosis | vrd-diagnosis | 9087 |
+| frontend | vrd-frontend | 3000 |
+
+> **注意**：`docker compose` 命令使用**服务名**（如 `service-dbc`），`docker ps / logs / restart` 使用**容器名**（如 `vrd-dbc`），两者不要混用。
 
 ## 配置说明
 
@@ -337,11 +468,12 @@ bigdata:
 ```yaml
 gateway:
   auth:
-    introspect-url: http://service-auth/auth/introspect
-    ignore-paths:
-      - /auth/login
-      - /auth/register
-      - /auth/validate
+    introspect-url: http://service-auth/auth/introspect   # 网关内省校验 Token
+    white-list:
+      - /api/auth/login
+      - /api/auth/register
+      - /api/auth/introspect
+      - /actuator/**
 ```
 
 ## API接口
@@ -375,13 +507,42 @@ gateway:
 - `GET /dbc/page` - 文件分页查询
 - `POST /dbc/upload` - 上传DBC文件
 - `GET /dbc/{id}/messages` - 获取消息列表
+- `GET /dbc/{id}/signals` - 获取信号定义
+- `GET /dbc/{id}/structured` - 结构化解析结果查询
+- `GET /dbc/{id}/message/{messageId}` - 报文详情
+- `GET /dbc/{id}/signal/{signalName}` - 信号详情
+- `POST /dbc/{id}/decode` - CAN帧实时解码
+- `POST /dbc/{id}/encode` - CAN帧编码测试
+- `GET /dbc/{id}/java-constants` - Java常量类生成
+- `GET /dbc/{id}/json-schema` - JSON Schema生成
 - `POST /dbc/{id}/dispatch/{vehicleId}` - 下发到车辆
+- `POST /dbc/{id}/dispatch` - 批量下发
+- `DELETE /dbc/{id}` - 逻辑删除
 - `GET /dbc/{id}/download` - 下载DBC文件
 
 ### 信号监控
 - `GET /signal/timeline/{vehicleId}` - 时间轴查询
 - `GET /signal/page/{vehicleId}` - 分页查询
 - `GET /signal/signal-name/{vehicleId}` - 按信号名查询
+- `GET /signal/{id}` - 单条信号详情
+
+### UDS远程诊断
+- `GET /diagnosis/services` - 支持的服务列表
+- `POST /diagnosis/uds` - 通用UDS指令执行
+- `POST /diagnosis/session/control` - 诊断会话控制
+- `POST /diagnosis/ecu/reset` - ECU复位
+- `POST /diagnosis/security/request-seed` - 安全访问种子
+- `POST /diagnosis/security/send-key` - 安全访问密钥
+- `POST /diagnosis/data/read` - 按ID读取数据
+- `POST /diagnosis/data/write` - 按ID写入数据
+- `POST /diagnosis/dtc/read` - 读取DTC故障码
+- `POST /diagnosis/dtc/clear` - 清除DTC
+- `POST /diagnosis/routine/control` - 例程控制
+- `POST /diagnosis/memory/read` - 按地址读内存
+- `POST /diagnosis/memory/write` - 按地址写内存
+- `POST /diagnosis/io/control` - IO控制
+- `POST /diagnosis/tester-present` - Tester Present保活
+- `GET /diagnosis/sessions` - 诊断会话历史查询
 
 ## 开发指南
 
@@ -420,20 +581,25 @@ npm run preview
 ### 数据流架构
 
 **车端数据流向：**
-1. **实时信号**: MQTT → service-access → Kafka → service-signal → BigDataStorage
-2. **ECU日志**: HTTP → service-ecu-log → BigDataStorage
+1. **实时信号**: MQTT/HTTP → service-access → Kafka → service-signal → BigDataStorage
+2. **ECU日志**: HTTP 分片/直传 → service-access → 对象存储 + ClickHouse → service-ecu-log 查询
 3. **车辆数据**: API → service-vehicle → MySQL → Kafka → service-access → BigDataStorage
+4. **诊断指令**: 管理端 → service-diagnosis → Kafka (uds-commands) → 车端
 
 **大数据存储**: 通过 `bigdata.type` 配置切换 ClickHouse/Doris/TDengine
 
+### Kafka 主题
+- `vehicle-data` - 车辆主数据同步（service-vehicle 生产/消费）
+- `vehicle-signals` - 车辆信号数据（service-access 生产，service-access/service-vehicle 消费）
+- `uds-commands` - UDS 诊断指令下发（service-diagnosis 生产）
+- `uds-responses` - UDS 诊断响应回传（预留）
+
 ### MQTT主题
-- `vehicle/signal/+` - 车辆信号数据
-- `vehicle/logs/+` - 车辆日志数据
-- `vehicle/dtc/+` - 故障诊断码
+- `vehicle/signal/+` - 车辆信号数据（`+` 为 VIN 通配）
 
 ### 认证流程
 1. 用户登录 → service-auth 签发 JWT
-2. 请求经过网关 → AuthFilter 验证 JWT (调用 introspect 接口)
+2. 请求经过网关 → AuthFilter 调用 service-auth `/auth/introspect` 校验 Token
 3. 网关将 userId/roles 注入请求头 → 下游服务直接从请求头获取用户信息
 4. 下游服务不再各自解析 JWT，只信任网关转发的身份
 
@@ -445,10 +611,8 @@ npm run preview
 - 查看配置管理
 
 ### Kafka监控
-- Kafka Manager: http://localhost:9000
-- 监控主题
-- 监控消费者组
-- 监控消息延迟
+- 通过 Kafka 命令行工具（宿主机部署）监控主题与消费者组
+- 各服务日志查看: `docker compose logs -f <service>`
 
 ### 日志管理
 - 应用日志: `/var/log/vrd/`
@@ -494,13 +658,12 @@ jwt:
 - 查看日志文件
 
 ### 2. Kafka连接失败
-- 确认Zookeeper启动
 - 检查网络连接
-- 验证端口配置
+- 验证端口配置（默认 9092，地址经 Nacos 配置下发）
 
 ### 3. MQTT连接失败
-- 确认Mosquitto启动
-- 检查认证信息
+- 确认 EMQX 已启动
+- 检查认证信息（service-access.yml 的 mqtt.username/password）
 - 验证主题权限
 
 ## 扩展功能
@@ -536,6 +699,18 @@ MIT License
 - 技术讨论: Discussions
 
 ## 版本历史
+
+### v1.2.0 (2026-08)
+- UDS 远程诊断服务（service-diagnosis，ISO 14229）
+- DBC 解析改为纯 Java 原生实现（DbcParser + CanFrameCodec），移除 Python cantools 依赖
+- 告警规则引擎（Easy Rules：阈值/趋势/组合规则）
+- WebSocket 实时信号推送
+- CI/CD 流水线 + Harbor 镜像仓库部署
+
+### v1.1.0 (2026-06)
+- 网关认证升级为 Token 内省（introspect）模式
+- ClickHouse 时序存储落地
+- 前端完整版管理系统（登录 + Layout + 14 路由）
 
 ### v1.0.0 (2024-01-15)
 - 初始版本

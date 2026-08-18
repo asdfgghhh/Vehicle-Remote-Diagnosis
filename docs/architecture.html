@@ -217,7 +217,7 @@
         <div class="layer-panel">
           <div class="box key">
             <div class="name">service-gateway</div>
-            <div class="desc">Spring Cloud Gateway · :8080</div>
+            <div class="desc">Spring Cloud Gateway · :9080</div>
           </div>
           <div class="box"><div class="name">路由转发</div><div class="desc">StripPrefix=1</div></div>
           <div class="box"><div class="name">JWT 前置校验</div><div class="desc">AuthFilter</div></div>
@@ -234,12 +234,13 @@
       <div class="layer t-service">
         <div class="layer-tag"><span class="num">③</span>服务层</div>
         <div class="layer-panel">
-          <div class="box"><div class="name">service-auth</div><div class="desc">认证/用户/角色 · :8081</div></div>
-          <div class="box"><div class="name">service-vehicle</div><div class="desc">车辆/车型/统计 · :8082</div></div>
-          <div class="box"><div class="name">service-ecu-log</div><div class="desc">日志查询/下载 · :8083</div></div>
-          <div class="box"><div class="name">service-dbc</div><div class="desc">DBC 解析/下发 · :8084</div></div>
-          <div class="box"><div class="name">service-signal</div><div class="desc">信号时序查询 · :8085</div></div>
-          <div class="box access-key"><div class="name">service-access</div><div class="desc">车端接入层 · :8086</div></div>
+          <div class="box"><div class="name">service-auth</div><div class="desc">认证/用户/角色 · :9081</div></div>
+          <div class="box"><div class="name">service-vehicle</div><div class="desc">车辆/车型/统计 · :9082</div></div>
+          <div class="box"><div class="name">service-ecu-log</div><div class="desc">日志查询/下载 · :9083</div></div>
+          <div class="box"><div class="name">service-dbc</div><div class="desc">DBC 解析/下发 · :9084</div></div>
+          <div class="box"><div class="name">service-signal</div><div class="desc">信号时序查询 · :9085</div></div>
+          <div class="box access-key"><div class="name">service-access</div><div class="desc">车端接入层 · :9086</div></div>
+          <div class="box"><div class="name">service-diagnosis</div><div class="desc">UDS 诊断 · :9087</div></div>
         </div>
       </div>
 
@@ -268,8 +269,8 @@
       <div class="layer t-mid">
         <div class="layer-tag"><span class="num">⑤</span>中间件</div>
         <div class="layer-panel">
-          <div class="box"><div class="name">Kafka</div><div class="desc">vehicle-data · vehicle-signals</div></div>
-          <div class="box"><div class="name">MQTT Broker</div><div class="desc">Mosquitto · :1883</div></div>
+          <div class="box"><div class="name">Kafka</div><div class="desc">vehicle-data · vehicle-signals · uds-commands · uds-responses</div></div>
+          <div class="box"><div class="name">EMQX（MQTT）</div><div class="desc">:1883 · vehicle/signal/+</div></div>
         </div>
       </div>
 
@@ -326,7 +327,7 @@
 
       <!-- 网关路由 -->
       <div class="route-box">
-        <h3>网关路由映射（application.yml）</h3>
+        <h3>网关路由映射（nacos-configs/service-gateway.yml）</h3>
         <code>
           /api/auth/**           → service-auth<br>
           /api/vehicle/**        → service-vehicle<br>
@@ -334,7 +335,8 @@
           /api/ecu-log/vehicle/**→ service-access（车端上传）<br>
           /api/signal/**         → service-signal（管理端查询）<br>
           /api/signal/vehicle/** → service-access（车端上报）<br>
-          /api/dbc/**            → service-dbc
+          /api/dbc/**            → service-dbc<br>
+          /api/diagnosis/**      → service-diagnosis
         </code>
       </div>
 
@@ -356,13 +358,15 @@
             <tr><td>service-dbc</td><td><span class="dot"></span></td><td></td><td></td><td><span class="dot"></span></td><td></td><td></td></tr>
             <tr><td>service-signal</td><td></td><td></td><td><span class="dot"></span></td><td></td><td></td><td></td></tr>
             <tr><td>service-access</td><td></td><td></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td></tr>
+            <tr><td>service-diagnosis</td><td><span class="dot"></span></td><td></td><td></td><td></td><td><span class="dot"></span></td><td></td></tr>
           </tbody>
         </table>
         <div class="legend">
           主链路：管理端 ①→②→③→④；车端 ⑦→⑥→⑤→③→④。<br>
           信号写入：service-access → Kafka → ClickHouse；查询：service-signal 读 ClickHouse。<br>
           日志写入：service-access → 对象存储 + ClickHouse；查询/下载：service-ecu-log。<br>
-          公共模块：common（Result/存储抽象）、common-db（MyBatis-Plus 分页）。
+          UDS 诊断：service-diagnosis → Kafka uds-commands 下发 → 车端执行 → uds-responses 回传。<br>
+          公共模块：common（Result/存储抽象/MyBatis-Plus 分页 db 子包）。
         </div>
       </div>
 
