@@ -1,30 +1,23 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  com.baomidou.mybatisplus.extension.plugins.pagination.Page
- *  com.baomidou.mybatisplus.extension.service.IService
- */
 package com.vrd.auth.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.vrd.auth.dto.RoleRequest;
 import com.vrd.auth.entity.Role;
+
 import java.util.List;
 
-public interface RoleService
-extends IService<Role> {
-    public Page<Role> page(Integer var1, Integer var2, String var3);
+public interface RoleService extends IService<Role> {
 
-    public List<Role> listEnabled();
+    Page<Role> page(Integer current, Integer size, String keyword);
 
-    public Role create(RoleRequest var1);
+    List<Role> listEnabled();
 
-    public Role update(Long var1, RoleRequest var2);
+    Role create(RoleRequest request);
 
-    public void delete(Long var1);
+    Role update(Long id, RoleRequest request);
 
-    public List<String> getRoleNamesByUserId(Long var1);
+    void delete(Long id);
+
+    List<String> getRoleNamesByUserId(Long userId);
 }
-

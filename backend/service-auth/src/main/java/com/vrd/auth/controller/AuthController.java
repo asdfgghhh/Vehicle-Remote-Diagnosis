@@ -1,18 +1,3 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  com.vrd.common.result.Result
- *  org.springframework.beans.factory.annotation.Autowired
- *  org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
- *  org.springframework.web.bind.annotation.GetMapping
- *  org.springframework.web.bind.annotation.PostMapping
- *  org.springframework.web.bind.annotation.RequestBody
- *  org.springframework.web.bind.annotation.RequestHeader
- *  org.springframework.web.bind.annotation.RequestMapping
- *  org.springframework.web.bind.annotation.RequestParam
- *  org.springframework.web.bind.annotation.RestController
- */
 package com.vrd.auth.controller;
 
 import com.vrd.auth.dto.LoginRequest;
@@ -24,21 +9,17 @@ import com.vrd.auth.service.RoleService;
 import com.vrd.auth.service.UserService;
 import com.vrd.auth.util.JwtUtil;
 import com.vrd.common.result.Result;
-import java.time.LocalDateTime;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
-@RequestMapping(value={"/auth"})
+@RequestMapping("/auth")
 public class AuthController {
+
     @Autowired
     private UserService userService;
     @Autowired
@@ -48,14 +29,14 @@ public class AuthController {
     @Autowired
     private RoleService roleService;
 
-    @PostMapping(value={"/login"})
+    @PostMapping("/login")
     public Result<LoginResponse> login(@RequestBody LoginRequest request) {
         User user = this.userService.findByUsername(request.getUsername());
-        if (user == null || !this.passwordEncoder.matches((CharSequence)request.getPassword(), user.getPassword())) {
-            return Result.error((Integer)401, (String)"\u7528\u6237\u540d\u6216\u5bc6\u7801\u9519\u8bef");
+        if (user == null || !this.passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return Result.error(401, "用户名或密码错误");
         }
         if (user.getStatus() != 1) {
-            return Result.error((Integer)403, (String)"\u8d26\u53f7\u5df2\u88ab\u7981\u7528");
+            return Result.error(403, "账号已被禁用");
         }
         String token = this.jwtUtil.generateToken(user.getUsername(), user.getId());
         LoginResponse response = new LoginResponse();
@@ -63,17 +44,17 @@ public class AuthController {
         response.setUsername(user.getUsername());
         response.setUserId(user.getId());
         response.setExpiresIn(this.jwtUtil.getExpiration());
-        return Result.success((Object)response);
+        return Result.success(response);
     }
 
-    @PostMapping(value={"/register"})
+    @PostMapping("/register")
     public Result<String> register(@RequestBody RegisterRequest request) {
         if (this.userService.findByUsername(request.getUsername()) != null) {
-            return Result.error((String)"\u7528\u6237\u540d\u5df2\u5b58\u5728");
+            return Result.error("用户名已存在");
         }
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(this.passwordEncoder.encode((CharSequence)request.getPassword()));
+        user.setPassword(this.passwordEncoder.encode(request.getPassword()));
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setRealName(request.getRealName());
@@ -82,32 +63,30 @@ public class AuthController {
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
         this.userService.save(user);
-        return Result.success((Object)"\u6ce8\u518c\u6210\u529f");
+        return Result.success("注册成功");
     }
 
-    @GetMapping(value={"/validate"})
-    public Result<Boolean> validateToken(@RequestHeader(value="Authorization") String token) {
+    @GetMapping("/validate")
+    public Result<Boolean> validateToken(@RequestHeader(value = "Authorization") String token) {
         if (token == null || !token.startsWith("Bearer ")) {
-            return Result.success((Object)false);
+            return Result.success(false);
         }
         String jwt = token.substring(7);
-        Boolean isValid = this.jwtUtil.validateToken(jwt);
-        return Result.success((Object)isValid);
+        return Result.success(this.jwtUtil.validateToken(jwt));
     }
 
-    @PostMapping(value={"/introspect"})
-    public Result<TokenIntrospectResponse> introspectToken(@RequestParam(value="token") String token) {
+    @PostMapping("/introspect")
+    public Result<TokenIntrospectResponse> introspectToken(@RequestParam(value = "token") String token) {
         TokenIntrospectResponse response = new TokenIntrospectResponse();
         try {
-            String jwt;
             if (token == null || token.isEmpty()) {
                 response.setActive(false);
-                return Result.success((Object)response);
+                return Result.success(response);
             }
-            String string = jwt = token.startsWith("Bearer ") ? token.substring(7) : token;
-            if (!this.jwtUtil.validateToken(jwt).booleanValue()) {
+            String jwt = token.startsWith("Bearer ") ? token.substring(7) : token;
+            if (!this.jwtUtil.validateToken(jwt)) {
                 response.setActive(false);
-                return Result.success((Object)response);
+                return Result.success(response);
             }
             Long userId = this.jwtUtil.getUserIdFromToken(jwt);
             String username = this.jwtUtil.getUsernameFromToken(jwt);
@@ -117,12 +96,10 @@ public class AuthController {
             response.setUsername(username);
             response.setRoles(roles);
             response.setExpiresAt(this.jwtUtil.getExpirationDateFromToken(jwt).getTime());
-            return Result.success((Object)response);
-        }
-        catch (Exception e) {
+            return Result.success(response);
+        } catch (Exception e) {
             response.setActive(false);
-            return Result.success((Object)response);
+            return Result.success(response);
         }
     }
 }
-

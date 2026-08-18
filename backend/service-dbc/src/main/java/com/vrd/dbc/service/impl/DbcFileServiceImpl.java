@@ -1,24 +1,6 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  com.baomidou.mybatisplus.core.conditions.Wrapper
- *  com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper
- *  com.baomidou.mybatisplus.core.metadata.IPage
- *  com.baomidou.mybatisplus.extension.plugins.pagination.Page
- *  com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
- *  com.vrd.common.exception.BusinessException
- *  com.vrd.common.storage.StorageKeyUtils
- *  com.vrd.common.storage.StorageService
- *  org.springframework.beans.factory.annotation.Autowired
- *  org.springframework.stereotype.Service
- *  org.springframework.web.multipart.MultipartFile
- */
 package com.vrd.dbc.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.vrd.common.exception.BusinessException;
@@ -35,6 +17,10 @@ import com.vrd.dbc.parser.DbcNode;
 import com.vrd.dbc.parser.DbcSignal;
 import com.vrd.dbc.service.DbcFileService;
 import com.vrd.dbc.service.DbcParserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,7 +29,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.invoke.CallSite;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -56,20 +41,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
-public class DbcFileServiceImpl
-extends ServiceImpl<DbcFileMapper, DbcFile>
-implements DbcFileService {
+public class DbcFileServiceImpl extends ServiceImpl<DbcFileMapper, DbcFile> implements DbcFileService {
+
     @Autowired
     private DispatchLogMapper dispatchLogMapper;
+
     @Autowired
     private StorageService storageService;
+
     @Autowired
     private DbcParserService dbcParserService;
+
     private static final Pattern MESSAGE_LINE = Pattern.compile("MESSAGE:\\s*BO_\\s*(\\d+)\\s+(\\w+):\\s*(\\d+)\\s+(\\w+)");
     private static final Pattern SIGNAL_LINE = Pattern.compile("SIGNAL:\\s+SG_\\s+(\\w+)\\s*:\\s*(\\d+)\\|(\\d+)@(\\d)([+-])\\s*\\(([^,]+),([^)]+)\\)\\s*\\[([^|]*)\\|([^\\]]*)\\]\\s*\"([^\"]*)\"\\s*(\\w+)");
     private static final Pattern COMMENT_LINE = Pattern.compile("COMMENT:\\s+CM_\\s+SG_\\s+(\\d+)\\s+(\\w+)\\s+\"(.*)\"");
@@ -81,24 +65,23 @@ implements DbcFileService {
 
     @Override
     public Page<DbcFile> page(Integer current, Integer size, String keyword, Long modelId) {
-        Page page = new Page((long)current.intValue(), (long)size.intValue());
-        LambdaQueryWrapper wrapper = new LambdaQueryWrapper();
+        Page<DbcFile> page = new Page<>(current, size);
+        LambdaQueryWrapper<DbcFile> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(DbcFile::getFileName, (Object)keyword);
+            wrapper.like(DbcFile::getFileName, keyword);
         }
         if (modelId != null) {
-            wrapper.eq(DbcFile::getModelId, (Object)modelId);
+            wrapper.eq(DbcFile::getModelId, modelId);
         }
-        wrapper.eq(DbcFile::getDeleted, (Object)0);
+        wrapper.eq(DbcFile::getDeleted, 0);
         wrapper.orderByDesc(DbcFile::getCreateTime);
-        IPage result = this.page((IPage)page, (Wrapper)wrapper);
-        return (Page)result;
+        return this.page(page, wrapper);
     }
 
     @Override
     public DbcFile uploadAndParse(MultipartFile file, Long modelId, String modelName, String version, String description) {
         if (modelId == null) {
-            throw new BusinessException("\u8bf7\u9009\u62e9\u8f66\u578b");
+            throw new BusinessException("请选择车型");
         }
         try {
             String dateStr = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -125,26 +108,23 @@ implements DbcFileService {
             dbcFile.setCreateTime(LocalDateTime.now());
             dbcFile.setUpdateTime(LocalDateTime.now());
             this.save(dbcFile);
-            try {
-                InputStream cachedStream = this.openDbcInputStream(dbcFile);
+            try (InputStream cachedStream = this.openDbcInputStream(dbcFile)) {
                 this.dbcParserService.parseAndCache(dbcFile.getId(), cachedStream);
-                cachedStream.close();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 this.log.warn("Failed to cache DBC parse result: " + e.getMessage());
             }
             return dbcFile;
-        }
-        catch (IOException e) {
-            throw new BusinessException("\u4e0a\u4f20DBC\u6587\u4ef6\u5931\u8d25: " + e.getMessage());
+        } catch (IOException e) {
+            throw new BusinessException("上传DBC文件失败: " + e.getMessage());
         }
     }
 
     private String parseWithNativeParser(InputStream inputStream, String originalFilename) {
+        byte[] dbcData = null;
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             inputStream.transferTo(baos);
-            byte[] dbcData = baos.toByteArray();
+            dbcData = baos.toByteArray();
             DbcDatabase db = this.dbcParserService.parse(new ByteArrayInputStream(dbcData));
             StringBuilder sb = new StringBuilder();
             sb.append("=== DBC Parser -- Java Native ===\n");
@@ -174,43 +154,29 @@ implements DbcFileService {
                     if (sig.getComment() != null && !sig.getComment().isEmpty()) {
                         sb.append("  COMMENT: CM_ SG_ ").append(msg.getMessageId()).append(" ").append(sig.getName()).append(" \"").append(sig.getComment()).append("\"\n");
                     }
-                    if (sig.getChoices() == null || sig.getChoices().isEmpty()) continue;
+                    if (sig.getChoices() == null || sig.getChoices().isEmpty()) {
+                        continue;
+                    }
                     sb.append("  VALUE: VAL_ ").append(msg.getMessageId()).append(" ").append(sig.getName()).append(" ");
-                    sig.getChoices().forEach((k, v) -> sb.append(k).append(" \"").append((String)v).append("\" "));
+                    sig.getChoices().forEach((k, v) -> sb.append(k).append(" \"").append(v).append("\" "));
                     sb.append(";\n");
                 }
             }
             return sb.toString();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             this.log.error("Native DBC parser failed, falling back to regex: " + e.getMessage());
-            return this.parseWithRegex(new ByteArrayInputStream(this.readAllBytes(inputStream)));
+            return this.parseWithRegex(new ByteArrayInputStream(dbcData == null ? new byte[0] : dbcData));
         }
     }
 
     private byte[] readAllBytes(InputStream is) {
-        byte[] byArray;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             is.transferTo(baos);
-            byArray = baos.toByteArray();
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new BusinessException("读取文件失败");
         }
-        catch (Throwable throwable) {
-            try {
-                try {
-                    baos.close();
-                }
-                catch (Throwable throwable2) {
-                    throwable.addSuppressed(throwable2);
-                }
-                throw throwable;
-            }
-            catch (IOException e) {
-                throw new BusinessException("\u8bfb\u53d6\u6587\u4ef6\u5931\u8d25");
-            }
-        }
-        baos.close();
-        return byArray;
     }
 
     @Override
@@ -220,58 +186,51 @@ implements DbcFileService {
 
     private String parseWithRegex(InputStream inputStream) {
         StringBuilder parseResult = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));){
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if ((line = line.trim()).startsWith("BO_ ")) {
+                line = line.trim();
+                if (line.startsWith("BO_ ")) {
                     parseResult.append("MESSAGE: ").append(line).append("\n");
-                    continue;
-                }
-                if (line.startsWith("SG_ ")) {
+                } else if (line.startsWith("SG_ ")) {
                     parseResult.append("  SIGNAL: ").append(line).append("\n");
-                    continue;
-                }
-                if (line.startsWith("CM_ SG_")) {
+                } else if (line.startsWith("CM_ SG_")) {
                     parseResult.append("  COMMENT: ").append(line).append("\n");
-                    continue;
-                }
-                if (line.startsWith("VAL_ ")) {
+                } else if (line.startsWith("VAL_ ")) {
                     parseResult.append("  VALUE: ").append(line).append("\n");
-                    continue;
+                } else if (line.startsWith("BA_ ")) {
+                    this.appendCycleAttributes(parseResult, line);
                 }
-                if (!line.startsWith("BA_ ")) continue;
-                this.appendCycleAttributes(parseResult, line);
             }
-        }
-        catch (IOException e) {
-            throw new BusinessException("\u89e3\u6790DBC\u6587\u4ef6\u5931\u8d25: " + e.getMessage());
+        } catch (IOException e) {
+            throw new BusinessException("解析DBC文件失败: " + e.getMessage());
         }
         return parseResult.toString();
     }
 
     public Map<String, Object> decodeCanFrameNative(Long dbcId, long messageId, String dataHex) {
         try {
-            DbcMessage message;
             DbcDatabase db = this.dbcParserService.getDatabase(dbcId);
             if (db == null) {
-                DbcFile dbcFile = (DbcFile)this.getById(dbcId);
+                DbcFile dbcFile = this.getById(dbcId);
                 if (dbcFile == null) {
-                    return Map.of("error", "DBC \u6587\u4ef6\u4e0d\u5b58\u5728");
+                    return Map.of("error", "DBC 文件不存在");
                 }
                 db = this.loadDbcIntoCache(dbcFile);
             }
-            if ((message = db.getMessageById(messageId)) == null) {
-                return Map.of("error", "\u672a\u77e5 CAN ID: 0x" + Long.toHexString(messageId));
+            DbcMessage message = db.getMessageById(messageId);
+            if (message == null) {
+                return Map.of("error", "未知 CAN ID: 0x" + Long.toHexString(messageId));
             }
             Map<String, CanFrameCodec.DecodedSignal> decoded = this.dbcParserService.decodeCanFrame(dbcId, messageId, dataHex);
-            LinkedHashMap<String, Object> result = new LinkedHashMap<String, Object>();
+            LinkedHashMap<String, Object> result = new LinkedHashMap<>();
             result.put("messageId", messageId);
             result.put("messageName", message.getName());
             result.put("dataHex", dataHex);
             result.put("dbcId", dbcId);
-            ArrayList signals = new ArrayList();
+            List<Map<String, Object>> signals = new ArrayList<>();
             for (CanFrameCodec.DecodedSignal ds : decoded.values()) {
-                LinkedHashMap<String, Object> sigMap = new LinkedHashMap<String, Object>();
+                LinkedHashMap<String, Object> sigMap = new LinkedHashMap<>();
                 sigMap.put("name", ds.getName());
                 sigMap.put("rawValue", ds.getRawValue());
                 sigMap.put("physicalValue", ds.getPhysicalValue());
@@ -283,24 +242,23 @@ implements DbcFileService {
             }
             result.put("signals", signals);
             return result;
-        }
-        catch (Exception e) {
-            this.log.error("Native CAN decode failed", (Throwable)e);
-            return Map.of("error", "\u89e3\u7801\u5931\u8d25: " + e.getMessage());
+        } catch (Exception e) {
+            this.log.error("Native CAN decode failed", e);
+            return Map.of("error", "解码失败: " + e.getMessage());
         }
     }
 
     public byte[] encodeCanFrameNative(Long dbcId, long messageId, Map<String, Double> signalValues) {
-        CanFrameCodec codec;
         DbcDatabase db = this.dbcParserService.getDatabase(dbcId);
         if (db == null) {
-            DbcFile dbcFile = (DbcFile)this.getById(dbcId);
+            DbcFile dbcFile = this.getById(dbcId);
             if (dbcFile == null) {
-                throw new BusinessException("DBC \u6587\u4ef6\u4e0d\u5b58\u5728");
+                throw new BusinessException("DBC 文件不存在");
             }
             db = this.loadDbcIntoCache(dbcFile);
         }
-        if ((codec = this.dbcParserService.getCodec(dbcId)) == null) {
+        CanFrameCodec codec = this.dbcParserService.getCodec(dbcId);
+        if (codec == null) {
             codec = new CanFrameCodec(db);
         }
         return codec.encode(messageId, signalValues);
@@ -309,9 +267,9 @@ implements DbcFileService {
     public Map<String, Object> getStructuredData(Long dbcId) {
         DbcDatabase db = this.dbcParserService.getDatabase(dbcId);
         if (db == null) {
-            DbcFile dbcFile = (DbcFile)this.getById(dbcId);
+            DbcFile dbcFile = this.getById(dbcId);
             if (dbcFile == null) {
-                return Map.of("error", "DBC \u6587\u4ef6\u4e0d\u5b58\u5728");
+                return Map.of("error", "DBC 文件不存在");
             }
             db = this.loadDbcIntoCache(dbcFile);
         }
@@ -319,24 +277,23 @@ implements DbcFileService {
     }
 
     public Map<String, Object> getMessageDetailNative(Long dbcId, String messageIdOrName) {
-        DbcMessage msg;
         DbcDatabase db = this.dbcParserService.getDatabase(dbcId);
         if (db == null) {
-            DbcFile dbcFile = (DbcFile)this.getById(dbcId);
+            DbcFile dbcFile = this.getById(dbcId);
             if (dbcFile == null) {
-                return Map.of("error", "DBC \u6587\u4ef6\u4e0d\u5b58\u5728");
+                return Map.of("error", "DBC 文件不存在");
             }
             db = this.loadDbcIntoCache(dbcFile);
         }
+        DbcMessage msg;
         try {
             long id = Long.parseLong(messageIdOrName);
             msg = db.getMessageById(id);
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             msg = db.getMessageByName(messageIdOrName);
         }
         if (msg == null) {
-            return Map.of("error", "\u62a5\u6587\u4e0d\u5b58\u5728: " + messageIdOrName);
+            return Map.of("error", "报文不存在: " + messageIdOrName);
         }
         return msg.toMap();
     }
@@ -344,31 +301,29 @@ implements DbcFileService {
     public List<Map<String, Object>> getSignalsNative(Long dbcId, String messageIdOrName) {
         DbcDatabase db = this.dbcParserService.getDatabase(dbcId);
         if (db == null) {
-            DbcFile dbcFile = (DbcFile)this.getById(dbcId);
+            DbcFile dbcFile = this.getById(dbcId);
             if (dbcFile == null) {
                 return Collections.emptyList();
             }
             db = this.loadDbcIntoCache(dbcFile);
         }
+        List<Map<String, Object>> result = new ArrayList<>();
         if (messageIdOrName != null && !messageIdOrName.isEmpty()) {
             DbcMessage msg;
             try {
                 long id = Long.parseLong(messageIdOrName);
                 msg = db.getMessageById(id);
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 msg = db.getMessageByName(messageIdOrName);
             }
             if (msg == null) {
                 return Collections.emptyList();
             }
-            ArrayList<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
             for (DbcSignal sig : msg.getSignals()) {
                 result.add(sig.toMap());
             }
             return result;
         }
-        ArrayList<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
         for (DbcSignal sig : db.getAllSignals()) {
             result.add(sig.toMap());
         }
@@ -378,9 +333,9 @@ implements DbcFileService {
     public String generateJavaConstants(Long dbcId, String packageName, String className) {
         DbcDatabase db = this.dbcParserService.getDatabase(dbcId);
         if (db == null) {
-            DbcFile dbcFile = (DbcFile)this.getById(dbcId);
+            DbcFile dbcFile = this.getById(dbcId);
             if (dbcFile == null) {
-                throw new BusinessException("DBC \u6587\u4ef6\u4e0d\u5b58\u5728");
+                throw new BusinessException("DBC 文件不存在");
             }
             db = this.loadDbcIntoCache(dbcFile);
         }
@@ -390,9 +345,9 @@ implements DbcFileService {
     public String generateJsonSchema(Long dbcId) {
         DbcDatabase db = this.dbcParserService.getDatabase(dbcId);
         if (db == null) {
-            DbcFile dbcFile = (DbcFile)this.getById(dbcId);
+            DbcFile dbcFile = this.getById(dbcId);
             if (dbcFile == null) {
-                throw new BusinessException("DBC \u6587\u4ef6\u4e0d\u5b58\u5728");
+                throw new BusinessException("DBC 文件不存在");
             }
             db = this.loadDbcIntoCache(dbcFile);
         }
@@ -404,32 +359,11 @@ implements DbcFileService {
     }
 
     private DbcDatabase loadDbcIntoCache(DbcFile dbcFile) {
-        DbcDatabase dbcDatabase;
-        block8: {
-            InputStream is = this.openDbcInputStream(dbcFile);
-            try {
-                dbcDatabase = this.dbcParserService.parseAndCache(dbcFile.getId(), is);
-                if (is == null) break block8;
-            }
-            catch (Throwable throwable) {
-                try {
-                    if (is != null) {
-                        try {
-                            is.close();
-                        }
-                        catch (Throwable throwable2) {
-                            throwable.addSuppressed(throwable2);
-                        }
-                    }
-                    throw throwable;
-                }
-                catch (IOException e) {
-                    throw new BusinessException("\u52a0\u8f7dDBC\u6587\u4ef6\u5931\u8d25: " + e.getMessage());
-                }
-            }
-            is.close();
+        try (InputStream is = this.openDbcInputStream(dbcFile)) {
+            return this.dbcParserService.parseAndCache(dbcFile.getId(), is);
+        } catch (IOException e) {
+            throw new BusinessException("加载DBC文件失败: " + e.getMessage());
         }
-        return dbcDatabase;
     }
 
     private InputStream openDbcInputStream(DbcFile dbcFile) {
@@ -437,20 +371,19 @@ implements DbcFileService {
     }
 
     private InputStream openDbcInputStream(String storageKey, String filePath, String storageAddress) {
-        String objectKey = StorageKeyUtils.resolveObjectKey((String)storageKey, (String)filePath, (String)storageAddress, (StorageService)this.storageService);
+        String objectKey = StorageKeyUtils.resolveObjectKey(storageKey, filePath, storageAddress, this.storageService);
         if (objectKey != null) {
             return this.storageService.openInputStream(objectKey);
         }
-        File legacyFile = StorageKeyUtils.resolveLegacyLocalFile((String)filePath);
+        File legacyFile = StorageKeyUtils.resolveLegacyLocalFile(filePath);
         if (legacyFile != null) {
             try {
                 return new FileInputStream(legacyFile);
-            }
-            catch (IOException e) {
-                throw new BusinessException("\u8bfb\u53d6DBC\u6587\u4ef6\u5931\u8d25: " + e.getMessage());
+            } catch (IOException e) {
+                throw new BusinessException("读取DBC文件失败: " + e.getMessage());
             }
         }
-        throw new BusinessException("DBC\u6587\u4ef6\u4e0d\u5b58\u5728\u6216\u5b58\u50a8\u5730\u5740\u65e0\u6548");
+        throw new BusinessException("DBC文件不存在或存储地址无效");
     }
 
     private void appendCycleAttributes(StringBuilder parseResult, String line) {
@@ -467,7 +400,7 @@ implements DbcFileService {
 
     @Override
     public List<String> getMessageNames(String parseResult) {
-        ArrayList<String> messages = new ArrayList<String>();
+        List<String> messages = new ArrayList<>();
         Pattern pattern = Pattern.compile("MESSAGE:\\s*BO_\\s*\\d+\\s+(\\w+):");
         Matcher matcher = pattern.matcher(parseResult);
         while (matcher.find()) {
@@ -478,7 +411,7 @@ implements DbcFileService {
 
     @Override
     public List<Map<String, String>> getSignalDefinitions(String parseResult) {
-        ArrayList<Map<String, String>> signals = new ArrayList<Map<String, String>>();
+        List<Map<String, String>> signals = new ArrayList<>();
         if (parseResult == null || parseResult.isEmpty()) {
             return signals;
         }
@@ -492,8 +425,10 @@ implements DbcFileService {
                 continue;
             }
             Matcher signalMatcher = signalPattern.matcher(line);
-            if (!signalMatcher.find()) continue;
-            HashMap<String, String> signal = new HashMap<String, String>();
+            if (!signalMatcher.find()) {
+                continue;
+            }
+            Map<String, String> signal = new HashMap<>();
             signal.put("name", signalMatcher.group(1));
             signal.put("messageName", currentMessage);
             signals.add(signal);
@@ -503,22 +438,24 @@ implements DbcFileService {
 
     @Override
     public List<Map<String, String>> getSignalDetails(String parseResult) {
-        ArrayList<Map<String, String>> signals = new ArrayList<Map<String, String>>();
+        List<Map<String, String>> signals = new ArrayList<>();
         if (parseResult == null || parseResult.isEmpty()) {
             return signals;
         }
-        HashMap<CallSite, String> comments = new HashMap<CallSite, String>();
-        HashMap<String, StringBuilder> valueTables = new HashMap<String, StringBuilder>();
+        Map<String, String> comments = new HashMap<>();
+        Map<String, StringBuilder> valueTables = new HashMap<>();
         Map<String, String> messageCycles = this.buildMessageCycleMap(parseResult);
         Map<String, String> signalSamples = this.buildSignalSampleMap(parseResult);
         for (String line : parseResult.split("\n")) {
             Matcher commentMatcher = COMMENT_LINE.matcher(line.trim());
             if (commentMatcher.find()) {
-                comments.put((CallSite)((Object)(commentMatcher.group(1) + ":" + commentMatcher.group(2))), commentMatcher.group(3));
+                comments.put(commentMatcher.group(1) + ":" + commentMatcher.group(2), commentMatcher.group(3));
                 continue;
             }
             Matcher valueMatcher = VALUE_LINE.matcher(line.trim());
-            if (!valueMatcher.find()) continue;
+            if (!valueMatcher.find()) {
+                continue;
+            }
             String key = valueMatcher.group(1) + ":" + valueMatcher.group(2);
             valueTables.computeIfAbsent(key, k -> new StringBuilder()).append(valueMatcher.group(3)).append(" ");
         }
@@ -532,17 +469,19 @@ implements DbcFileService {
                 continue;
             }
             Matcher signalMatcher = SIGNAL_LINE.matcher(line.trim());
-            if (!signalMatcher.find()) continue;
+            if (!signalMatcher.find()) {
+                continue;
+            }
             String signalName = signalMatcher.group(1);
             String key = currentMessageId + ":" + signalName;
-            HashMap<String, String> signal = new HashMap<String, String>();
+            Map<String, String> signal = new HashMap<>();
             signal.put("name", signalName);
             signal.put("messageName", currentMessageName);
             signal.put("messageId", currentMessageId);
             signal.put("startBit", signalMatcher.group(2));
             signal.put("length", signalMatcher.group(3));
             signal.put("byteOrder", "1".equals(signalMatcher.group(4)) ? "Intel" : "Motorola");
-            signal.put("signed", "+".equals(signalMatcher.group(5)) ? "\u65e0\u7b26\u53f7" : "\u6709\u7b26\u53f7");
+            signal.put("signed", "+".equals(signalMatcher.group(5)) ? "无符号" : "有符号");
             signal.put("factor", signalMatcher.group(6));
             signal.put("offset", signalMatcher.group(7));
             signal.put("min", signalMatcher.group(8));
@@ -550,7 +489,7 @@ implements DbcFileService {
             signal.put("unit", signalMatcher.group(10));
             signal.put("receiver", signalMatcher.group(11));
             signal.put("comment", comments.getOrDefault(key, ""));
-            signal.put("valueDesc", this.formatValueDesc((StringBuilder)valueTables.get(key)));
+            signal.put("valueDesc", this.formatValueDesc(valueTables.get(key)));
             String sampleMs = this.resolveSamplePeriod(currentMessageId, signalName, messageCycles, signalSamples);
             signal.put("samplePeriodMs", sampleMs);
             signal.put("samplePeriod", this.formatSamplePeriod(sampleMs));
@@ -561,9 +500,9 @@ implements DbcFileService {
 
     @Override
     public List<Map<String, String>> getSignalDetailsByFileId(Long id) {
-        DbcFile dbcFile = (DbcFile)this.getById(id);
+        DbcFile dbcFile = this.getById(id);
         if (dbcFile == null || dbcFile.getDeleted() == 1) {
-            throw new BusinessException("DBC\u6587\u4ef6\u4e0d\u5b58\u5728");
+            throw new BusinessException("DBC文件不存在");
         }
         String parseResult = this.enrichParseResultWithCycles(dbcFile.getParseResult(), dbcFile);
         return this.getSignalDetails(parseResult);
@@ -571,9 +510,9 @@ implements DbcFileService {
 
     @Override
     public void updateMetadata(Long id, String version, String description) {
-        DbcFile dbcFile = (DbcFile)this.getById(id);
+        DbcFile dbcFile = this.getById(id);
         if (dbcFile == null || dbcFile.getDeleted() == 1) {
-            throw new BusinessException("DBC\u6587\u4ef6\u4e0d\u5b58\u5728");
+            throw new BusinessException("DBC文件不存在");
         }
         if (version != null) {
             dbcFile.setVersion(version);
@@ -587,9 +526,9 @@ implements DbcFileService {
 
     @Override
     public void publish(Long id) {
-        DbcFile dbcFile = (DbcFile)this.getById(id);
+        DbcFile dbcFile = this.getById(id);
         if (dbcFile == null || dbcFile.getDeleted() == 1) {
-            throw new BusinessException("DBC\u6587\u4ef6\u4e0d\u5b58\u5728");
+            throw new BusinessException("DBC文件不存在");
         }
         dbcFile.setStatus(2);
         dbcFile.setUpdateTime(LocalDateTime.now());
@@ -598,9 +537,9 @@ implements DbcFileService {
 
     @Override
     public void revoke(Long id) {
-        DbcFile dbcFile = (DbcFile)this.getById(id);
+        DbcFile dbcFile = this.getById(id);
         if (dbcFile == null || dbcFile.getDeleted() == 1) {
-            throw new BusinessException("DBC\u6587\u4ef6\u4e0d\u5b58\u5728");
+            throw new BusinessException("DBC文件不存在");
         }
         dbcFile.setStatus(0);
         dbcFile.setUpdateTime(LocalDateTime.now());
@@ -609,9 +548,9 @@ implements DbcFileService {
 
     @Override
     public void dispatchToVehicle(Long dbcFileId, Long vehicleId) {
-        DbcFile dbcFile = (DbcFile)this.getById(dbcFileId);
+        DbcFile dbcFile = this.getById(dbcFileId);
         if (dbcFile == null) {
-            throw new BusinessException("DBC\u6587\u4ef6\u4e0d\u5b58\u5728");
+            throw new BusinessException("DBC文件不存在");
         }
         DispatchLog dispatchLog = new DispatchLog();
         dispatchLog.setDbcFileId(dbcFileId);
@@ -621,13 +560,13 @@ implements DbcFileService {
         dispatchLog.setDispatchTime(LocalDateTime.now());
         dispatchLog.setCreateTime(LocalDateTime.now());
         try {
-            String result = this.sendToVehicle(StorageKeyUtils.resolveObjectKey((String)dbcFile.getStorageKey(), (String)dbcFile.getFilePath(), (String)dbcFile.getStorageAddress(), (StorageService)this.storageService), vehicleId);
+            String objectKey = StorageKeyUtils.resolveObjectKey(dbcFile.getStorageKey(), dbcFile.getFilePath(), dbcFile.getStorageAddress(), this.storageService);
+            String result = this.sendToVehicle(objectKey, vehicleId);
             dispatchLog.setStatus(2);
             dispatchLog.setResult(result);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             dispatchLog.setStatus(3);
-            dispatchLog.setResult("\u5931\u8d25: " + e.getMessage());
+            dispatchLog.setResult("失败: " + e.getMessage());
         }
         this.dispatchLogMapper.insert(dispatchLog);
     }
@@ -640,24 +579,28 @@ implements DbcFileService {
     }
 
     private String sendToVehicle(String storageKey, Long vehicleId) {
-        return "SUCCESS: DBC\u6587\u4ef6\u5df2\u4e0b\u53d1\u5230\u8f66\u8f86 " + vehicleId + ", key=" + storageKey;
+        return "SUCCESS: DBC文件已下发到车辆 " + vehicleId + ", key=" + storageKey;
     }
 
     private Map<String, String> buildMessageCycleMap(String parseResult) {
-        HashMap<String, String> cycles = new HashMap<String, String>();
+        Map<String, String> cycles = new HashMap<>();
         for (String line : parseResult.split("\n")) {
             Matcher matcher = MSG_CYCLE_LINE.matcher(line.trim());
-            if (!matcher.find()) continue;
+            if (!matcher.find()) {
+                continue;
+            }
             cycles.put(matcher.group(1), matcher.group(2));
         }
         return cycles;
     }
 
     private Map<String, String> buildSignalSampleMap(String parseResult) {
-        HashMap<String, String> samples = new HashMap<String, String>();
+        Map<String, String> samples = new HashMap<>();
         for (String line : parseResult.split("\n")) {
             Matcher matcher = SIG_SAMPLE_LINE.matcher(line.trim());
-            if (!matcher.find()) continue;
+            if (!matcher.find()) {
+                continue;
+            }
             samples.put(matcher.group(1) + ":" + matcher.group(2), matcher.group(3));
         }
         return samples;
@@ -707,7 +650,7 @@ implements DbcFileService {
         Pattern pattern = Pattern.compile("BO_ \\d+");
         Matcher matcher = pattern.matcher(parseResult);
         while (matcher.find()) {
-            ++count;
+            count++;
         }
         return count;
     }
@@ -720,7 +663,7 @@ implements DbcFileService {
         Pattern pattern = Pattern.compile("SG_ \\w+");
         Matcher matcher = pattern.matcher(parseResult);
         while (matcher.find()) {
-            ++count;
+            count++;
         }
         return count;
     }
@@ -728,17 +671,17 @@ implements DbcFileService {
     private String enrichParseResultWithCycles(String parseResult, DbcFile dbcFile) {
         StringBuilder enriched = new StringBuilder(parseResult == null ? "" : parseResult);
         try (InputStream inputStream = this.openDbcInputStream(dbcFile);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));){
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (!line.trim().startsWith("BA_ ")) continue;
+                if (!line.trim().startsWith("BA_ ")) {
+                    continue;
+                }
                 this.appendCycleAttributes(enriched, line.trim());
             }
-        }
-        catch (IOException e) {
-            throw new BusinessException("\u8bfb\u53d6DBC\u91c7\u6837\u5468\u671f\u5931\u8d25: " + e.getMessage());
+        } catch (IOException e) {
+            throw new BusinessException("读取DBC采样周期失败: " + e.getMessage());
         }
         return enriched.toString();
     }
 }
-
