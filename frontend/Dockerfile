@@ -4,8 +4,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /build
 
-COPY package*.json ./
-RUN npm ci --registry=https://registry.npmmirror.com
+COPY package.json ./
+RUN npm install --registry=https://registry.npmmirror.com
 
 COPY . .
 RUN npm run build
@@ -25,6 +25,6 @@ RUN mkdir -p /logs && chown -R nginx:nginx /logs
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -q --spider http://localhost/ || exit 1
+  CMD wget -q --spider http://127.0.0.1/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
