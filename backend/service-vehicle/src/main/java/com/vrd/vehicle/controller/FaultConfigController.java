@@ -48,11 +48,11 @@ public class FaultConfigController {
 
     @GetMapping(value={"/{id}"})
     public Result<FaultConfig> getById(@PathVariable Long id) {
-        FaultConfig config = (FaultConfig)this.faultConfigService.getById(id);
+        FaultConfig config = this.faultConfigService.getById(id);
         if (config == null || config.getDeleted() == 1) {
-            return Result.error((String)"\u6545\u969c\u914d\u7f6e\u4e0d\u5b58\u5728");
+            return Result.error("\u6545\u969c\u914d\u7f6e\u4e0d\u5b58\u5728");
         }
-        return Result.success((Object)config);
+        return Result.success(config);
     }
 
     @PostMapping
@@ -63,12 +63,12 @@ public class FaultConfigController {
         config.setCreateTime(LocalDateTime.now());
         config.setUpdateTime(LocalDateTime.now());
         this.faultConfigService.save(config);
-        return Result.success((Object)config);
+        return Result.success(config);
     }
 
     @PutMapping(value={"/{id}"})
     public Result<FaultConfig> update(@PathVariable Long id, @RequestBody FaultConfig body) {
-        FaultConfig config = (FaultConfig)this.faultConfigService.getById(id);
+        FaultConfig config = this.faultConfigService.getById(id);
         if (config == null || config.getDeleted() == 1) {
             throw new BusinessException("\u6545\u969c\u914d\u7f6e\u4e0d\u5b58\u5728");
         }
@@ -83,12 +83,12 @@ public class FaultConfigController {
         config.setStatus(body.getStatus());
         config.setUpdateTime(LocalDateTime.now());
         this.faultConfigService.updateById(config);
-        return Result.success((Object)config);
+        return Result.success(config);
     }
 
     @DeleteMapping(value={"/{id}"})
     public Result<Void> delete(@PathVariable Long id) {
-        FaultConfig config = (FaultConfig)this.faultConfigService.getById(id);
+        FaultConfig config = this.faultConfigService.getById(id);
         if (config != null) {
             config.setDeleted(1);
             config.setUpdateTime(LocalDateTime.now());

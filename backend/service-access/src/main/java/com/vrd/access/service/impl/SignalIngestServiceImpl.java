@@ -33,19 +33,19 @@ implements SignalIngestService {
         if (signals.isEmpty()) {
             return;
         }
-        List rows = signals.stream().map(signal -> {
+        List<JSONObject> rows = signals.stream().map(signal -> {
             JSONObject row = new JSONObject();
-            row.put((Object)"id", (Object)(signal.getId() != null ? signal.getId() : System.currentTimeMillis() * 1000L + (long)((int)(Math.random() * 1000.0))));
-            row.put((Object)"vin", (Object)(signal.getVin() != null ? signal.getVin() : ""));
-            row.put((Object)"vehicle_id", (Object)(signal.getVehicleId() != null ? signal.getVehicleId() : 0L));
-            row.put((Object)"signal_name", (Object)(signal.getSignalName() != null ? signal.getSignalName() : ""));
-            row.put((Object)"signal_value", (Object)(signal.getSignalValue() != null ? signal.getSignalValue() : ""));
-            row.put((Object)"numeric_value", (Object)(signal.getNumericValue() != null ? signal.getNumericValue().doubleValue() : 0.0));
-            row.put((Object)"unit", (Object)(signal.getUnit() != null ? signal.getUnit() : ""));
-            row.put((Object)"timestamp", (Object)(signal.getTimestamp() != null ? signal.getTimestamp() : 0L));
-            row.put((Object)"signal_time", (Object)(signal.getSignalTime() != null ? signal.getSignalTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
-            row.put((Object)"message_name", (Object)(signal.getMessageName() != null ? signal.getMessageName() : ""));
-            row.put((Object)"message_id", (Object)(signal.getMessageId() != null ? signal.getMessageId() : 0));
+            row.put("id", (signal.getId() != null ? signal.getId() : System.currentTimeMillis() * 1000L + (long)((int)(Math.random() * 1000.0))));
+            row.put("vin", (signal.getVin() != null ? signal.getVin() : ""));
+            row.put("vehicle_id", (signal.getVehicleId() != null ? signal.getVehicleId() : 0L));
+            row.put("signal_name", (signal.getSignalName() != null ? signal.getSignalName() : ""));
+            row.put("signal_value", (signal.getSignalValue() != null ? signal.getSignalValue() : ""));
+            row.put("numeric_value", (signal.getNumericValue() != null ? signal.getNumericValue().doubleValue() : 0.0));
+            row.put("unit", (signal.getUnit() != null ? signal.getUnit() : ""));
+            row.put("timestamp", (signal.getTimestamp() != null ? signal.getTimestamp() : 0L));
+            row.put("signal_time", (signal.getSignalTime() != null ? signal.getSignalTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
+            row.put("message_name", (signal.getMessageName() != null ? signal.getMessageName() : ""));
+            row.put("message_id", (signal.getMessageId() != null ? signal.getMessageId() : 0));
             return row;
         }).collect(Collectors.toList());
         this.bigDataClient.insertJson("vehicle_signal_records", rows);

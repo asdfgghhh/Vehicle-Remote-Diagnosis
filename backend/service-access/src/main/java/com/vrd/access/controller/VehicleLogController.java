@@ -35,7 +35,7 @@ public class VehicleLogController {
     @PostMapping(value={"/init"})
     public Result<String> initUpload(@RequestParam(value="vin") String vin, @RequestParam(value="ecuType") String ecuType, @RequestParam(value="fileName") String fileName, @RequestParam(value="fileSize") Long fileSize, @RequestParam(value="fileMd5", required=false) String fileMd5, @RequestParam(value="logStartTime") @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss") LocalDateTime logStartTime, @RequestParam(value="logEndTime") @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss") LocalDateTime logEndTime) {
         String uploadId = this.vehicleLogUploadService.initUpload(vin, ecuType, fileName, fileSize, fileMd5, logStartTime, logEndTime);
-        return Result.success((Object)uploadId);
+        return Result.success(uploadId);
     }
 
     @PostMapping(value={"/chunk"})
@@ -52,13 +52,13 @@ public class VehicleLogController {
     @PostMapping(value={"/complete"})
     public Result<EcuLogRecord> completeUpload(@RequestParam(value="uploadId") String uploadId) {
         EcuLogRecord record = this.vehicleLogUploadService.completeUpload(uploadId);
-        return Result.success((Object)record);
+        return Result.success(record);
     }
 
     @PostMapping(value={"/report"})
     public Result<EcuLogRecord> reportLog(@RequestParam(value="file") MultipartFile file, @RequestParam(value="vin") String vin, @RequestParam(value="ecuType") String ecuType, @RequestParam(value="logStartTime") @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss") LocalDateTime logStartTime, @RequestParam(value="logEndTime") @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss") LocalDateTime logEndTime, @RequestParam(value="fileMd5", required=false) String fileMd5) {
         EcuLogRecord record = this.vehicleLogUploadService.reportLog(file, vin, ecuType, logStartTime, logEndTime, fileMd5);
-        return Result.success((Object)record);
+        return Result.success(record);
     }
 }
 

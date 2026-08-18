@@ -17,7 +17,6 @@
  */
 package com.vrd.vehicle.rule.engine;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.vrd.vehicle.entity.VehicleAlert;
 import com.vrd.vehicle.mapper.VehicleAlertMapper;
@@ -68,12 +67,15 @@ public class AlertRuleEngine {
     }
 
     public void refreshRules() {
-        List rules = this.alertRuleMapper.selectList((Wrapper)((LambdaQueryWrapper)new LambdaQueryWrapper().eq(AlertRule::getStatus, (Object)1)).eq(AlertRule::getDeleted, (Object)0));
+        List<AlertRule> rules = this.alertRuleMapper.selectList(
+                new LambdaQueryWrapper<AlertRule>()
+                        .eq(AlertRule::getStatus, 1)
+                        .eq(AlertRule::getDeleted, 0));
         this.ruleCache.clear();
         for (AlertRule rule : rules) {
             this.ruleCache.put(rule.getId(), rule);
         }
-        log.info("Alert rules refreshed: {} rules loaded", (Object)rules.size());
+        log.info("Alert rules refreshed: {} rules loaded", rules.size());
     }
 
     public void evaluate(String vin, Long vehicleId, String signalName, BigDecimal value, String messageName) {

@@ -21,8 +21,8 @@ public class UdsCommandProducer {
 
     public void sendUdsCommand(String vin, Map<String, Object> command) {
         String message = JSON.toJSONString(command);
-        this.kafkaTemplate.send(this.udsCommandsTopic, (Object)vin, (Object)message);
-        log.debug("UDS command published to Kafka topic={}, vin={}", (Object)this.udsCommandsTopic, (Object)vin);
+        this.kafkaTemplate.send(this.udsCommandsTopic, vin, message);
+        log.debug("UDS command published to Kafka topic={}, vin={}", this.udsCommandsTopic, vin);
     }
 }
 

@@ -53,7 +53,7 @@ public class VehicleSignalKafkaConsumer {
             String vin = envelope.getString("vin");
             String payload = envelope.getString("payload");
             if (!StringUtils.hasText((String)vin) || !StringUtils.hasText((String)payload)) {
-                log.warn("Skip invalid signal message: {}", (Object)message);
+                log.warn("Skip invalid signal message: {}", message);
                 return;
             }
             JSONObject data = JSON.parseObject((String)payload);
@@ -61,7 +61,7 @@ public class VehicleSignalKafkaConsumer {
             List<VehicleSignal> signals = this.parseSignals(vin, vehicleId, data);
             if (!signals.isEmpty()) {
                 this.signalIngestService.saveBatch(signals);
-                log.debug("Ingested {} signals for vin={}", (Object)signals.size(), (Object)vin);
+                log.debug("Ingested {} signals for vin={}", signals.size(), vin);
                 this.pushToWebSocket(vin, signals, data);
             }
         }
@@ -73,28 +73,28 @@ public class VehicleSignalKafkaConsumer {
     private void pushToWebSocket(String vin, List<VehicleSignal> signals, JSONObject data) {
         try {
             JSONObject pushMessage = new JSONObject();
-            pushMessage.put((Object)"type", (Object)"signal");
-            pushMessage.put((Object)"vin", (Object)vin);
-            pushMessage.put((Object)"timestamp", (Object)System.currentTimeMillis());
+            pushMessage.put("type", "signal");
+            pushMessage.put("vin", vin);
+            pushMessage.put("timestamp", System.currentTimeMillis());
             JSONArray signalArray = new JSONArray();
             for (VehicleSignal signal : signals) {
                 JSONObject sigObj = new JSONObject();
-                sigObj.put((Object)"name", (Object)signal.getSignalName());
-                sigObj.put((Object)"value", (Object)signal.getSignalValue());
-                sigObj.put((Object)"numericValue", (Object)signal.getNumericValue());
-                sigObj.put((Object)"unit", (Object)signal.getUnit());
-                sigObj.put((Object)"messageName", (Object)signal.getMessageName());
-                sigObj.put((Object)"messageId", (Object)signal.getMessageId());
-                sigObj.put((Object)"timestamp", (Object)signal.getTimestamp());
-                signalArray.add((Object)sigObj);
+                sigObj.put("name", signal.getSignalName());
+                sigObj.put("value", signal.getSignalValue());
+                sigObj.put("numericValue", signal.getNumericValue());
+                sigObj.put("unit", signal.getUnit());
+                sigObj.put("messageName", signal.getMessageName());
+                sigObj.put("messageId", signal.getMessageId());
+                sigObj.put("timestamp", signal.getTimestamp());
+                signalArray.add(sigObj);
             }
-            pushMessage.put((Object)"signals", (Object)signalArray);
+            pushMessage.put("signals", signalArray);
             String pushJson = pushMessage.toJSONString(new JSONWriter.Feature[0]);
             this.webSocketHandler.broadcastSignal(vin, pushJson);
             this.webSocketHandler.broadcastToAll(pushJson);
         }
         catch (Exception e) {
-            log.error("Failed to push signal via WebSocket for vin={}", (Object)vin, (Object)e);
+            log.error("Failed to push signal via WebSocket for vin={}", vin, e);
         }
     }
 

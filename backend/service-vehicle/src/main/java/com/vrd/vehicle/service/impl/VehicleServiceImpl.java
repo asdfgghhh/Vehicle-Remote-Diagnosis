@@ -1,37 +1,8 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  com.alibaba.fastjson2.JSON
- *  com.alibaba.fastjson2.JSONObject
- *  com.alibaba.fastjson2.JSONReader$Feature
- *  com.alibaba.fastjson2.JSONWriter$Feature
- *  com.baomidou.mybatisplus.core.conditions.Wrapper
- *  com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper
- *  com.baomidou.mybatisplus.core.metadata.IPage
- *  com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper
- *  com.baomidou.mybatisplus.extension.plugins.pagination.Page
- *  com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
- *  com.vrd.common.exception.BusinessException
- *  org.slf4j.Logger
- *  org.slf4j.LoggerFactory
- *  org.springframework.beans.factory.annotation.Autowired
- *  org.springframework.http.MediaType
- *  org.springframework.kafka.core.KafkaTemplate
- *  org.springframework.scheduling.annotation.Async
- *  org.springframework.stereotype.Service
- *  org.springframework.web.reactive.function.client.WebClient
- */
 package com.vrd.vehicle.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import com.alibaba.fastjson2.JSONReader;
-import com.alibaba.fastjson2.JSONWriter;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.vrd.common.exception.BusinessException;
@@ -73,9 +44,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
-public class VehicleServiceImpl
-extends ServiceImpl<VehicleMapper, Vehicle>
-implements VehicleService {
+public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> implements VehicleService {
     private static final Logger log = LoggerFactory.getLogger(VehicleServiceImpl.class);
     @Autowired
     private VehicleEcuMapper vehicleEcuMapper;
@@ -104,16 +73,31 @@ implements VehicleService {
     @Override
     public VehicleDashboardStatsVO getDashboardStats() {
         VehicleDashboardStatsVO stats = new VehicleDashboardStatsVO();
-        long connectedModelCount = ((LambdaQueryChainWrapper)((LambdaQueryChainWrapper)this.vehicleModelService.lambdaQuery().eq(VehicleModel::getDeleted, (Object)0)).eq(VehicleModel::getStatus, (Object)1)).count();
+        long connectedModelCount = this.vehicleModelService.lambdaQuery()
+                .eq(VehicleModel::getDeleted, 0)
+                .eq(VehicleModel::getStatus, 1)
+                .count();
         stats.setConnectedModelCount(connectedModelCount);
-        long totalVehicles = ((LambdaQueryChainWrapper)this.lambdaQuery().eq(Vehicle::getDeleted, (Object)0)).count();
+        long totalVehicles = this.lambdaQuery()
+                .eq(Vehicle::getDeleted, 0)
+                .count();
         stats.setTotalVehicles(totalVehicles);
-        long onlineVehicles = ((LambdaQueryChainWrapper)((LambdaQueryChainWrapper)this.lambdaQuery().eq(Vehicle::getDeleted, (Object)0)).eq(Vehicle::getStatus, (Object)1)).count();
+        long onlineVehicles = this.lambdaQuery()
+                .eq(Vehicle::getDeleted, 0)
+                .eq(Vehicle::getStatus, 1)
+                .count();
         stats.setOnlineVehicles(onlineVehicles);
-        List models = ((LambdaQueryChainWrapper)((LambdaQueryChainWrapper)this.vehicleModelService.lambdaQuery().eq(VehicleModel::getDeleted, (Object)0)).orderByAsc(VehicleModel::getModelName)).list();
-        List vehicles = ((LambdaQueryChainWrapper)((LambdaQueryChainWrapper)this.lambdaQuery().eq(Vehicle::getDeleted, (Object)0)).isNotNull(Vehicle::getModelId)).list();
-        Map<Long, Long> countByModelId = vehicles.stream().collect(Collectors.groupingBy(Vehicle::getModelId, Collectors.counting()));
-        ArrayList<VehicleDashboardStatsVO.ModelVehicleStat> modelStats = new ArrayList<VehicleDashboardStatsVO.ModelVehicleStat>();
+        List<VehicleModel> models = this.vehicleModelService.lambdaQuery()
+                .eq(VehicleModel::getDeleted, 0)
+                .orderByAsc(VehicleModel::getModelName)
+                .list();
+        List<Vehicle> vehicles = this.lambdaQuery()
+                .eq(Vehicle::getDeleted, 0)
+                .isNotNull(Vehicle::getModelId)
+                .list();
+        Map<Long, Long> countByModelId = vehicles.stream()
+                .collect(Collectors.groupingBy(Vehicle::getModelId, Collectors.counting()));
+        List<VehicleDashboardStatsVO.ModelVehicleStat> modelStats = new ArrayList<>();
         for (VehicleModel model : models) {
             VehicleDashboardStatsVO.ModelVehicleStat item = new VehicleDashboardStatsVO.ModelVehicleStat();
             item.setModelId(model.getId());
@@ -123,10 +107,12 @@ implements VehicleService {
             modelStats.add(item);
         }
         stats.setModelStats(modelStats);
-        stats.setTotalAlertCount(this.vehicleAlertMapper.selectCount((Wrapper)new LambdaQueryWrapper().eq(VehicleAlert::getDeleted, (Object)0)));
+        stats.setTotalAlertCount(this.vehicleAlertMapper.selectCount(
+                new LambdaQueryWrapper<VehicleAlert>().eq(VehicleAlert::getDeleted, 0)));
         stats.setAlertByComponent(this.buildAlertByComponent());
         stats.setRecentAlerts(this.buildRecentAlerts());
-        stats.setTotalFaultCount(this.vehicleFaultMapper.selectCount((Wrapper)new LambdaQueryWrapper().eq(VehicleFault::getDeleted, (Object)0)));
+        stats.setTotalFaultCount(this.vehicleFaultMapper.selectCount(
+                new LambdaQueryWrapper<VehicleFault>().eq(VehicleFault::getDeleted, 0)));
         stats.setFaultByCode(this.buildFaultByCode());
         return stats;
     }
@@ -134,17 +120,19 @@ implements VehicleService {
     @Override
     public VehicleOnlineTrendVO getOnlineTrend(String granularity) {
         String mode = "day".equalsIgnoreCase(granularity) ? "day" : "hour";
-        List<Map<String, Object>> rows = "day".equals(mode) ? this.vehicleOnlineStatMapper.listDailyTrend() : this.vehicleOnlineStatMapper.listHourlyTrend();
+        List<Map<String, Object>> rows = "day".equals(mode)
+                ? this.vehicleOnlineStatMapper.listDailyTrend()
+                : this.vehicleOnlineStatMapper.listHourlyTrend();
         VehicleOnlineTrendVO trend = new VehicleOnlineTrendVO();
         trend.setGranularity(mode);
-        ArrayList<VehicleOnlineTrendVO.TrendPoint> points = new ArrayList<VehicleOnlineTrendVO.TrendPoint>();
+        List<VehicleOnlineTrendVO.TrendPoint> points = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             LocalDateTime statTime = this.toLocalDateTime(row.get("statTime"));
             if (statTime == null) continue;
             VehicleOnlineTrendVO.TrendPoint point = new VehicleOnlineTrendVO.TrendPoint();
             point.setTimeLabel("day".equals(mode) ? statTime.format(DAY_LABEL_FORMAT) : statTime.format(HOUR_LABEL_FORMAT));
             Object count = row.get("onlineCount");
-            point.setOnlineCount(count instanceof Number ? ((Number)count).longValue() : Long.parseLong(String.valueOf(count)));
+            point.setOnlineCount(count instanceof Number ? ((Number) count).longValue() : Long.parseLong(String.valueOf(count)));
             points.add(point);
         }
         trend.setPoints(points);
@@ -159,7 +147,7 @@ implements VehicleService {
         VehicleAlertLongTrendVO trend = new VehicleAlertLongTrendVO();
         trend.setGranularity(mode);
         trend.setMetric(metricMode);
-        ArrayList<VehicleAlertLongTrendVO.TrendPoint> points = new ArrayList<VehicleAlertLongTrendVO.TrendPoint>();
+        List<VehicleAlertLongTrendVO.TrendPoint> points = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             LocalDateTime statTime = this.toLocalDateTime(row.get("statTime"));
             if (statTime == null) continue;
@@ -207,9 +195,11 @@ implements VehicleService {
 
     private Double resolveMetricValue(String metricMode, long faultCount, long faultVehicleCount) {
         return switch (metricMode) {
-            case "faultVehicleCount" -> faultVehicleCount;
-            case "avgFaultPerVehicle" -> faultVehicleCount > 0L ? (double)Math.round((double)faultCount * 100.0 / (double)faultVehicleCount) / 100.0 : 0.0;
-            default -> faultCount;
+            case "faultVehicleCount" -> (double) faultVehicleCount;
+            case "avgFaultPerVehicle" -> faultVehicleCount > 0L
+                    ? (double) Math.round((double) faultCount * 100.0 / (double) faultVehicleCount) / 100.0
+                    : 0.0;
+            default -> (double) faultCount;
         };
     }
 
@@ -218,7 +208,7 @@ implements VehicleService {
             return 0L;
         }
         if (value instanceof Number) {
-            return ((Number)value).longValue();
+            return ((Number) value).longValue();
         }
         return Long.parseLong(String.valueOf(value));
     }
@@ -228,20 +218,20 @@ implements VehicleService {
             return null;
         }
         if (value instanceof LocalDateTime) {
-            return (LocalDateTime)value;
+            return (LocalDateTime) value;
         }
         if (value instanceof Timestamp) {
-            return ((Timestamp)value).toLocalDateTime();
+            return ((Timestamp) value).toLocalDateTime();
         }
         if (value instanceof Date) {
-            return LocalDateTime.ofInstant(((Date)value).toInstant(), ZoneId.systemDefault());
+            return LocalDateTime.ofInstant(((Date) value).toInstant(), ZoneId.systemDefault());
         }
         return LocalDateTime.parse(String.valueOf(value).replace(' ', 'T'));
     }
 
     private List<VehicleDashboardStatsVO.FaultByCode> buildFaultByCode() {
         List<Map<String, Object>> rows = this.vehicleFaultMapper.countGroupByFaultCode();
-        ArrayList<VehicleDashboardStatsVO.FaultByCode> result = new ArrayList<VehicleDashboardStatsVO.FaultByCode>();
+        List<VehicleDashboardStatsVO.FaultByCode> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             VehicleDashboardStatsVO.FaultByCode item = new VehicleDashboardStatsVO.FaultByCode();
             item.setFaultCode(String.valueOf(row.get("faultCode")));
@@ -250,7 +240,7 @@ implements VehicleService {
             Object faultName = row.get("faultName");
             item.setFaultName(faultName != null ? String.valueOf(faultName) : item.getFaultCode());
             Object count = row.get("faultCount");
-            item.setFaultCount(count instanceof Number ? ((Number)count).longValue() : Long.parseLong(String.valueOf(count)));
+            item.setFaultCount(count instanceof Number ? ((Number) count).longValue() : Long.parseLong(String.valueOf(count)));
             result.add(item);
         }
         return result;
@@ -258,20 +248,24 @@ implements VehicleService {
 
     private List<VehicleDashboardStatsVO.AlertByComponent> buildAlertByComponent() {
         List<Map<String, Object>> rows = this.vehicleAlertMapper.countGroupByComponent();
-        ArrayList<VehicleDashboardStatsVO.AlertByComponent> result = new ArrayList<VehicleDashboardStatsVO.AlertByComponent>();
+        List<VehicleDashboardStatsVO.AlertByComponent> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             VehicleDashboardStatsVO.AlertByComponent item = new VehicleDashboardStatsVO.AlertByComponent();
             item.setComponentCode(String.valueOf(row.get("componentCode")));
             Object count = row.get("alertCount");
-            item.setAlertCount(count instanceof Number ? ((Number)count).longValue() : Long.parseLong(String.valueOf(count)));
+            item.setAlertCount(count instanceof Number ? ((Number) count).longValue() : Long.parseLong(String.valueOf(count)));
             result.add(item);
         }
         return result;
     }
 
     private List<VehicleDashboardStatsVO.RecentAlert> buildRecentAlerts() {
-        List alerts = this.vehicleAlertMapper.selectList((Wrapper)((LambdaQueryWrapper)((LambdaQueryWrapper)new LambdaQueryWrapper().eq(VehicleAlert::getDeleted, (Object)0)).orderByDesc(VehicleAlert::getAlertTime)).last("LIMIT 10"));
-        ArrayList<VehicleDashboardStatsVO.RecentAlert> result = new ArrayList<VehicleDashboardStatsVO.RecentAlert>();
+        List<VehicleAlert> alerts = this.vehicleAlertMapper.selectList(
+                new LambdaQueryWrapper<VehicleAlert>()
+                        .eq(VehicleAlert::getDeleted, 0)
+                        .orderByDesc(VehicleAlert::getAlertTime)
+                        .last("LIMIT 10"));
+        List<VehicleDashboardStatsVO.RecentAlert> result = new ArrayList<>();
         for (VehicleAlert alert : alerts) {
             VehicleDashboardStatsVO.RecentAlert item = new VehicleDashboardStatsVO.RecentAlert();
             item.setTime(alert.getAlertTime() != null ? alert.getAlertTime().format(ALERT_TIME_FORMAT) : "");
@@ -294,16 +288,15 @@ implements VehicleService {
 
     @Override
     public Page<Vehicle> page(Integer current, Integer size, String keyword, Long modelId) {
-        Page page = new Page((long)current.intValue(), (long)size.intValue());
-        LambdaQueryWrapper wrapper = new LambdaQueryWrapper();
+        Page<Vehicle> page = new Page<>(current, size);
+        LambdaQueryWrapper<Vehicle> wrapper = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.and(w -> ((LambdaQueryWrapper)((LambdaQueryWrapper)w.like(Vehicle::getVin, (Object)keyword)).or()).like(Vehicle::getPlateNumber, (Object)keyword));
+            wrapper.and(w -> w.like(Vehicle::getVin, keyword).or().like(Vehicle::getPlateNumber, keyword));
         }
         if (modelId != null) {
-            wrapper.eq(Vehicle::getModelId, (Object)modelId);
+            wrapper.eq(Vehicle::getModelId, modelId);
         }
-        IPage result = this.page((IPage)page, (Wrapper)wrapper);
-        return (Page)result;
+        return this.page(page, wrapper);
     }
 
     @Override
@@ -311,7 +304,7 @@ implements VehicleService {
         if (vehicle.getVin() == null || vehicle.getVin().isEmpty()) {
             throw new BusinessException("VIN\u7801\u4e0d\u80fd\u4e3a\u7a7a");
         }
-        Vehicle exist = (Vehicle)((LambdaQueryChainWrapper)this.lambdaQuery().eq(Vehicle::getVin, (Object)vehicle.getVin())).one();
+        Vehicle exist = this.lambdaQuery().eq(Vehicle::getVin, vehicle.getVin()).one();
         if (exist != null) {
             throw new BusinessException("\u8f66\u8f86VIN\u7801\u5df2\u5b58\u5728");
         }
@@ -330,7 +323,7 @@ implements VehicleService {
         if (vehicle.getId() == null) {
             throw new BusinessException("\u8f66\u8f86ID\u4e0d\u80fd\u4e3a\u7a7a");
         }
-        Vehicle exist = (Vehicle)this.getById(vehicle.getId());
+        Vehicle exist = this.getById(vehicle.getId());
         if (exist == null) {
             throw new BusinessException("\u8f66\u8f86\u4e0d\u5b58\u5728");
         }
@@ -342,12 +335,9 @@ implements VehicleService {
 
     @Override
     public void syncFromKafka() {
-        log.info("\u8f66\u8f86 Kafka \u540c\u6b65\u5df2\u542f\u7528\uff0c\u6d88\u8d39\u4e3b\u9898: {}", (Object)this.vehicleKafkaProperties.getConsumerTopic());
+        log.info("\u8f66\u8f86 Kafka \u540c\u6b65\u5df2\u542f\u7528\uff0c\u6d88\u8d39\u4e3b\u9898: {}", this.vehicleKafkaProperties.getConsumerTopic());
     }
 
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     @Override
     public void processKafkaMessage(String message) {
         SyncLog syncLog = new SyncLog();
@@ -360,7 +350,7 @@ implements VehicleService {
         syncLog.setPayload(message);
         syncLog.setRecordCount(0);
         try {
-            JSONObject jsonObject = JSON.parseObject((String)message);
+            JSONObject jsonObject = JSON.parseObject(message);
             String action = jsonObject.getString("action");
             JSONObject data = jsonObject.getJSONObject("data");
             syncLog.setAction(action);
@@ -368,7 +358,7 @@ implements VehicleService {
                 throw new BusinessException("\u540c\u6b65\u6570\u636e\u7f3a\u5c11 data \u5b57\u6bb5");
             }
             if ("CREATE".equals(action)) {
-                Vehicle vehicle = (Vehicle)data.toJavaObject(Vehicle.class, new JSONReader.Feature[0]);
+                Vehicle vehicle = data.toJavaObject(Vehicle.class);
                 if (vehicle.getVin() == null || vehicle.getVin().isBlank()) {
                     throw new BusinessException("VIN\u7801\u4e0d\u80fd\u4e3a\u7a7a");
                 }
@@ -380,7 +370,7 @@ implements VehicleService {
                 this.save(vehicle);
                 syncLog.setRecordCount(1);
             } else if ("UPDATE".equals(action)) {
-                Vehicle vehicle = (Vehicle)data.toJavaObject(Vehicle.class, new JSONReader.Feature[0]);
+                Vehicle vehicle = data.toJavaObject(Vehicle.class);
                 syncLog.setVin(vehicle.getVin());
                 vehicle.setUpdateTime(LocalDateTime.now());
                 this.updateById(vehicle);
@@ -393,7 +383,7 @@ implements VehicleService {
         catch (Exception e) {
             syncLog.setStatus("FAILED");
             syncLog.setMessage(e.getMessage());
-            log.warn("\u5904\u7406 Kafka \u8f66\u8f86\u540c\u6b65\u6d88\u606f\u5931\u8d25: {}", (Object)e.getMessage());
+            log.warn("\u5904\u7406 Kafka \u8f66\u8f86\u540c\u6b65\u6d88\u606f\u5931\u8d25: {}", e.getMessage());
         }
         finally {
             syncLog.setEndTime(LocalDateTime.now());
@@ -415,11 +405,15 @@ implements VehicleService {
         syncLog.setRecordCount(0);
         String response = null;
         try {
-            response = (String)WebClient.create((String)apiUrl).get().accept(new MediaType[]{MediaType.APPLICATION_JSON}).retrieve().bodyToMono(String.class).block();
+            response = WebClient.create(apiUrl).get()
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
             syncLog.setPayload(response);
-            List vehicles = JSON.parseArray((String)response, Vehicle.class);
+            List<Vehicle> vehicles = JSON.parseArray(response, Vehicle.class);
             for (Vehicle vehicle : vehicles) {
-                Vehicle exist = (Vehicle)((LambdaQueryChainWrapper)this.lambdaQuery().eq(Vehicle::getVin, (Object)vehicle.getVin())).one();
+                Vehicle exist = this.lambdaQuery().eq(Vehicle::getVin, vehicle.getVin()).one();
                 if (exist == null) {
                     vehicle.setDataSource(3);
                     vehicle.setDeleted(0);
@@ -441,7 +435,7 @@ implements VehicleService {
             if (response != null) {
                 syncLog.setPayload(response);
             }
-            log.warn("API \u8f66\u8f86\u540c\u6b65\u5931\u8d25: {}", (Object)e.getMessage());
+            log.warn("API \u8f66\u8f86\u540c\u6b65\u5931\u8d25: {}", e.getMessage());
         }
         syncLog.setEndTime(LocalDateTime.now());
         this.syncLogMapper.insert(syncLog);
@@ -449,9 +443,9 @@ implements VehicleService {
 
     private void publishToKafka(Vehicle vehicle) {
         JSONObject message = new JSONObject();
-        message.put((Object)"action", (Object)(vehicle.getId() == null ? "CREATE" : "UPDATE"));
-        message.put((Object)"data", JSON.toJSON((Object)vehicle));
-        this.kafkaTemplate.send(this.vehicleKafkaProperties.getProducerTopic(), (Object)vehicle.getVin(), (Object)message.toJSONString(new JSONWriter.Feature[0]));
+        message.put("action", vehicle.getId() == null ? "CREATE" : "UPDATE");
+        message.put("data", JSON.toJSON(vehicle));
+        this.kafkaTemplate.send(this.vehicleKafkaProperties.getProducerTopic(), vehicle.getVin(), message.toJSONString());
     }
 
     @Override
@@ -470,7 +464,9 @@ implements VehicleService {
 
     @Override
     public List<VehicleEcu> getEcusByVehicleId(Long vehicleId) {
-        return this.vehicleEcuMapper.selectList((Wrapper)((LambdaQueryWrapper)new LambdaQueryWrapper().eq(VehicleEcu::getVehicleId, (Object)vehicleId)).eq(VehicleEcu::getDeleted, (Object)0));
+        return this.vehicleEcuMapper.selectList(
+                new LambdaQueryWrapper<VehicleEcu>()
+                        .eq(VehicleEcu::getVehicleId, vehicleId)
+                        .eq(VehicleEcu::getDeleted, 0));
     }
 }
-

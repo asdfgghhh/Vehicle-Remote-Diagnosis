@@ -38,8 +38,8 @@ public class SyncLogController {
 
     @GetMapping(value={"/{id}"})
     public Result<SyncLog> getById(@PathVariable(value="id") Long id) {
-        SyncLog syncLog = (SyncLog)this.syncLogService.getById(id);
-        return Result.success((Object)syncLog);
+        SyncLog syncLog = this.syncLogService.getById(id);
+        return Result.success(syncLog);
     }
 }
 

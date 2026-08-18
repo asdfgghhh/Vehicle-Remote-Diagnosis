@@ -50,17 +50,17 @@ extends TextWebSocketHandler {
             this.sessionManager.addSession(session);
             this.sendMessage(session, this.buildWelcome(null));
         }
-        log.info("WebSocket connected: sessionId={}, vin={}", (Object)session.getId(), (Object)vin);
+        log.info("WebSocket connected: sessionId={}, vin={}", session.getId(), vin);
     }
 
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         this.sessionManager.removeSession(session);
-        log.info("WebSocket disconnected: sessionId={}, status={}", (Object)session.getId(), (Object)status);
+        log.info("WebSocket disconnected: sessionId={}, status={}", session.getId(), status);
     }
 
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         String payload = (String)message.getPayload();
-        log.debug("Received WebSocket message from {}: {}", (Object)session.getId(), (Object)payload);
+        log.debug("Received WebSocket message from {}: {}", session.getId(), payload);
         try {
             JSONObject request = JSON.parseObject((String)payload);
             String action = request.getString("action");
@@ -80,12 +80,12 @@ extends TextWebSocketHandler {
             }
         }
         catch (Exception e) {
-            log.error("Error handling WebSocket message: {}", (Object)e.getMessage());
+            log.error("Error handling WebSocket message: {}", e.getMessage());
         }
     }
 
     public void handleTransportError(WebSocketSession session, Throwable exception) {
-        log.error("WebSocket transport error: sessionId={}", (Object)session.getId(), (Object)exception);
+        log.error("WebSocket transport error: sessionId={}", session.getId(), exception);
         this.sessionManager.removeSession(session);
     }
 
@@ -122,7 +122,7 @@ extends TextWebSocketHandler {
                 }
             }
             catch (IOException e) {
-                log.error("Failed to send WebSocket message to {}", (Object)session.getId(), (Object)e);
+                log.error("Failed to send WebSocket message to {}", session.getId(), e);
             }
         }
     }
@@ -142,19 +142,19 @@ extends TextWebSocketHandler {
 
     private String buildWelcome(String vin) {
         JSONObject welcome = new JSONObject();
-        welcome.put((Object)"type", (Object)"connected");
-        welcome.put((Object)"vin", (Object)vin);
-        welcome.put((Object)"mode", (Object)(vin != null ? "VIN\u8ba2\u9605" : "\u5168\u5c40\u5e7f\u64ad"));
-        welcome.put((Object)"message", (Object)"\u5df2\u8fde\u63a5\u5230\u8f66\u8f86\u4fe1\u53f7\u5b9e\u65f6\u63a8\u9001\u670d\u52a1");
-        welcome.put((Object)"timestamp", (Object)System.currentTimeMillis());
+        welcome.put("type", "connected");
+        welcome.put("vin", vin);
+        welcome.put("mode", (vin != null ? "VIN\u8ba2\u9605" : "\u5168\u5c40\u5e7f\u64ad"));
+        welcome.put("message", "\u5df2\u8fde\u63a5\u5230\u8f66\u8f86\u4fe1\u53f7\u5b9e\u65f6\u63a8\u9001\u670d\u52a1");
+        welcome.put("timestamp", System.currentTimeMillis());
         return welcome.toJSONString(new JSONWriter.Feature[0]);
     }
 
     private String buildResponse(String action, String message) {
         JSONObject response = new JSONObject();
-        response.put((Object)"type", (Object)action);
-        response.put((Object)"message", (Object)message);
-        response.put((Object)"timestamp", (Object)System.currentTimeMillis());
+        response.put("type", action);
+        response.put("message", message);
+        response.put("timestamp", System.currentTimeMillis());
         return response.toJSONString(new JSONWriter.Feature[0]);
     }
 }

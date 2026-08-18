@@ -168,7 +168,7 @@ implements VehicleLogUploadService {
         if (chunkFiles == null || chunkFiles.length == 0) {
             throw new BusinessException("\u6ca1\u6709\u627e\u5230\u5206\u7247\u6587\u4ef6");
         }
-        List sorted = List.of(chunkFiles).stream().sorted(Comparator.comparingInt(f -> Integer.parseInt(f.getName()))).collect(Collectors.toList());
+        List<File> sorted = List.of(chunkFiles).stream().sorted(Comparator.comparingInt(f -> Integer.parseInt(f.getName()))).collect(Collectors.toList());
         UploadSession session = this.requireSession(uploadId);
         File mergedFile = new File(this.tempPath, uploadId + "_" + session.getFileName());
         mergedFile.getParentFile().mkdirs();

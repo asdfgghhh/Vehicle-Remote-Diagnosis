@@ -19,9 +19,7 @@
  */
 package com.vrd.vehicle.rule.controller;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.vrd.common.result.Result;
 import com.vrd.vehicle.rule.engine.AlertRuleEngine;
@@ -55,17 +53,17 @@ public class AlertRuleController {
 
     @GetMapping(value={"/rules"})
     public Result<Page<AlertRule>> listRules(@RequestParam(defaultValue="1") Integer page, @RequestParam(defaultValue="20") Integer size, @RequestParam(required=false) String keyword, @RequestParam(required=false) String ruleType) {
-        Page pageParam = new Page((long)page.intValue(), (long)size.intValue());
-        LambdaQueryWrapper wrapper = new LambdaQueryWrapper();
-        wrapper.eq(AlertRule::getDeleted, (Object)0);
+        Page<AlertRule> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<AlertRule> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AlertRule::getDeleted, 0);
         if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(AlertRule::getRuleName, (Object)keyword);
+            wrapper.like(AlertRule::getRuleName, keyword);
         }
         if (ruleType != null && !ruleType.isEmpty()) {
-            wrapper.eq(AlertRule::getRuleType, (Object)ruleType);
+            wrapper.eq(AlertRule::getRuleType, ruleType);
         }
         wrapper.orderByAsc(AlertRule::getPriority);
-        return Result.success((Object)((Page)this.alertRuleMapper.selectPage((IPage)pageParam, (Wrapper)wrapper)));
+        return Result.success(this.alertRuleMapper.selectPage(pageParam, wrapper));
     }
 
     @PostMapping(value={"/rules"})
@@ -75,7 +73,7 @@ public class AlertRuleController {
         rule.setUpdateTime(LocalDateTime.now());
         this.alertRuleMapper.insert(rule);
         this.alertRuleEngine.refreshRules();
-        return Result.success((Object)rule);
+        return Result.success(rule);
     }
 
     @PutMapping(value={"/rules/{id}"})
@@ -84,7 +82,7 @@ public class AlertRuleController {
         rule.setUpdateTime(LocalDateTime.now());
         this.alertRuleMapper.updateById(rule);
         this.alertRuleEngine.refreshRules();
-        return Result.success((Object)rule);
+        return Result.success(rule);
     }
 
     @DeleteMapping(value={"/rules/{id}"})
@@ -96,7 +94,7 @@ public class AlertRuleController {
             this.alertRuleMapper.updateById(rule);
             this.alertRuleEngine.refreshRules();
         }
-        return Result.success((Object)"\u5220\u9664\u6210\u529f");
+        return Result.success("\u5220\u9664\u6210\u529f");
     }
 
     @PutMapping(value={"/rules/{id}/status"})
@@ -108,27 +106,27 @@ public class AlertRuleController {
             this.alertRuleMapper.updateById(rule);
             this.alertRuleEngine.refreshRules();
         }
-        return Result.success((Object)(status == 1 ? "\u5df2\u542f\u7528" : "\u5df2\u7981\u7528"));
+        return Result.success(status == 1 ? "\u5df2\u542f\u7528" : "\u5df2\u7981\u7528");
     }
 
     @PostMapping(value={"/rules/refresh"})
     public Result<String> refreshRules() {
         this.alertRuleEngine.refreshRules();
-        return Result.success((Object)"\u89c4\u5219\u7f13\u5b58\u5df2\u5237\u65b0");
+        return Result.success("\u89c4\u5219\u7f13\u5b58\u5df2\u5237\u65b0");
     }
 
     @GetMapping(value={"/logs"})
     public Result<Page<AlertTriggerLog>> listTriggerLogs(@RequestParam(defaultValue="1") Integer page, @RequestParam(defaultValue="20") Integer size, @RequestParam(required=false) String vin, @RequestParam(required=false) Integer alertLevel) {
-        Page pageParam = new Page((long)page.intValue(), (long)size.intValue());
-        LambdaQueryWrapper wrapper = new LambdaQueryWrapper();
+        Page<AlertTriggerLog> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<AlertTriggerLog> wrapper = new LambdaQueryWrapper<>();
         if (vin != null && !vin.isEmpty()) {
-            wrapper.eq(AlertTriggerLog::getVin, (Object)vin);
+            wrapper.eq(AlertTriggerLog::getVin, vin);
         }
         if (alertLevel != null) {
-            wrapper.eq(AlertTriggerLog::getAlertLevel, (Object)alertLevel);
+            wrapper.eq(AlertTriggerLog::getAlertLevel, alertLevel);
         }
         wrapper.orderByDesc(AlertTriggerLog::getTriggerTime);
-        return Result.success((Object)((Page)this.alertTriggerLogMapper.selectPage((IPage)pageParam, (Wrapper)wrapper)));
+        return Result.success(this.alertTriggerLogMapper.selectPage(pageParam, wrapper));
     }
 }
 

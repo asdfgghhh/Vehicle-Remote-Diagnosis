@@ -18,7 +18,6 @@
  */
 package com.vrd.vehicle.controller;
 
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.vrd.common.result.Result;
 import com.vrd.vehicle.dto.VehicleAlertLongTrendVO;
@@ -49,17 +48,17 @@ public class VehicleController {
 
     @GetMapping(value={"/stats"})
     public Result<VehicleDashboardStatsVO> stats() {
-        return Result.success((Object)this.vehicleService.getDashboardStats());
+        return Result.success(this.vehicleService.getDashboardStats());
     }
 
     @GetMapping(value={"/stats/online-trend"})
     public Result<VehicleOnlineTrendVO> onlineTrend(@RequestParam(value="granularity", defaultValue="hour") String granularity) {
-        return Result.success((Object)this.vehicleService.getOnlineTrend(granularity));
+        return Result.success(this.vehicleService.getOnlineTrend(granularity));
     }
 
     @GetMapping(value={"/stats/alert-long-trend"})
     public Result<VehicleAlertLongTrendVO> alertLongTrend(@RequestParam(value="granularity", defaultValue="hour") String granularity, @RequestParam(value="metric", defaultValue="faultCount") String metric) {
-        return Result.success((Object)this.vehicleService.getAlertLongTrend(granularity, metric));
+        return Result.success(this.vehicleService.getAlertLongTrend(granularity, metric));
     }
 
     @GetMapping(value={"/page"})
@@ -70,14 +69,14 @@ public class VehicleController {
 
     @GetMapping(value={"/{id}"})
     public Result<Vehicle> getById(@PathVariable(value="id") Long id) {
-        Vehicle vehicle = (Vehicle)this.vehicleService.getById(id);
-        return Result.success((Object)vehicle);
+        Vehicle vehicle = this.vehicleService.getById(id);
+        return Result.success(vehicle);
     }
 
     @GetMapping(value={"/vin/{vin}"})
     public Result<Vehicle> getByVin(@PathVariable(value="vin") String vin) {
-        Vehicle vehicle = (Vehicle)((LambdaQueryChainWrapper)this.vehicleService.lambdaQuery().eq(Vehicle::getVin, (Object)vin)).one();
-        return Result.success((Object)vehicle);
+        Vehicle vehicle = this.vehicleService.lambdaQuery().eq(Vehicle::getVin, vin).one();
+        return Result.success(vehicle);
     }
 
     @PostMapping
@@ -93,7 +92,7 @@ public class VehicleController {
         vehicle.setConfigWord(dto.getConfigWord());
         vehicle.setCurrentEcuVersion(dto.getCurrentEcuVersion());
         Vehicle result = this.vehicleService.create(vehicle);
-        return Result.success((Object)result);
+        return Result.success(result);
     }
 
     @PutMapping(value={"/{id}"})
@@ -110,12 +109,12 @@ public class VehicleController {
         vehicle.setConfigWord(dto.getConfigWord());
         vehicle.setCurrentEcuVersion(dto.getCurrentEcuVersion());
         Vehicle result = this.vehicleService.update(vehicle);
-        return Result.success((Object)result);
+        return Result.success(result);
     }
 
     @DeleteMapping(value={"/{id}"})
     public Result<Void> delete(@PathVariable(value="id") Long id) {
-        Vehicle vehicle = (Vehicle)this.vehicleService.getById(id);
+        Vehicle vehicle = this.vehicleService.getById(id);
         if (vehicle != null) {
             vehicle.setDeleted(1);
             this.vehicleService.updateById(vehicle);

@@ -48,8 +48,8 @@ public class VehicleModelController {
 
     @GetMapping(value={"/{id}"})
     public Result<VehicleModel> getById(@PathVariable(value="id") Long id) {
-        VehicleModel model = (VehicleModel)this.vehicleModelService.getById(id);
-        return Result.success((Object)model);
+        VehicleModel model = this.vehicleModelService.getById(id);
+        return Result.success(model);
     }
 
     @PostMapping
@@ -71,14 +71,14 @@ public class VehicleModelController {
         model.setCreateTime(LocalDateTime.now());
         model.setUpdateTime(LocalDateTime.now());
         this.vehicleModelService.save(model);
-        return Result.success((Object)model);
+        return Result.success(model);
     }
 
     @PutMapping(value={"/{id}"})
     public Result<VehicleModel> update(@PathVariable(value="id") Long id, @RequestBody VehicleModelDTO dto) {
-        VehicleModel model = (VehicleModel)this.vehicleModelService.getById(id);
+        VehicleModel model = this.vehicleModelService.getById(id);
         if (model == null) {
-            return Result.error((String)"\u8f66\u578b\u4e0d\u5b58\u5728");
+            return Result.error("\u8f66\u578b\u4e0d\u5b58\u5728");
         }
         model.setModelCode(dto.getModelCode());
         model.setModelName(dto.getModelName());
@@ -93,12 +93,12 @@ public class VehicleModelController {
         model.setDescription(dto.getDescription());
         model.setUpdateTime(LocalDateTime.now());
         this.vehicleModelService.updateById(model);
-        return Result.success((Object)model);
+        return Result.success(model);
     }
 
     @DeleteMapping(value={"/{id}"})
     public Result<Void> delete(@PathVariable(value="id") Long id) {
-        VehicleModel model = (VehicleModel)this.vehicleModelService.getById(id);
+        VehicleModel model = this.vehicleModelService.getById(id);
         if (model != null) {
             model.setDeleted(1);
             model.setUpdateTime(LocalDateTime.now());

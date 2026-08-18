@@ -32,12 +32,12 @@ public class KafkaMessageProducer {
 
     public void publishVehicleSignal(String vin, String source, String payload) {
         JSONObject envelope = new JSONObject();
-        envelope.put((Object)"vin", (Object)vin);
-        envelope.put((Object)"source", (Object)source);
-        envelope.put((Object)"payload", (Object)payload);
+        envelope.put("vin", vin);
+        envelope.put("source", source);
+        envelope.put("payload", payload);
         String message = envelope.toJSONString(new JSONWriter.Feature[0]);
-        this.kafkaTemplate.send(this.topicProperties.getVehicleSignals(), (Object)vin, (Object)message);
-        log.debug("Published signal message to Kafka, vin={}", (Object)vin);
+        this.kafkaTemplate.send(this.topicProperties.getVehicleSignals(), vin, message);
+        log.debug("Published signal message to Kafka, vin={}", vin);
     }
 }
 

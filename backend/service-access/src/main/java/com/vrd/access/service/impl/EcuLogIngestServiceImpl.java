@@ -37,19 +37,19 @@ implements EcuLogIngestService {
     @Override
     public void insertRecord(EcuLogRecord record) {
         JSONObject row = new JSONObject();
-        row.put((Object)"id", (Object)(record.getId() != null ? record.getId() : System.currentTimeMillis() * 1000L + (long)((int)(Math.random() * 1000.0))));
-        row.put((Object)"vin", (Object)(record.getVin() != null ? record.getVin() : ""));
-        row.put((Object)"ecu_type", (Object)(record.getEcuType() != null ? record.getEcuType() : ""));
-        row.put((Object)"log_start_time", (Object)(record.getLogStartTime() != null ? record.getLogStartTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
-        row.put((Object)"log_end_time", (Object)(record.getLogEndTime() != null ? record.getLogEndTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
-        row.put((Object)"upload_start_time", (Object)(record.getUploadStartTime() != null ? record.getUploadStartTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
-        row.put((Object)"upload_end_time", (Object)(record.getUploadEndTime() != null ? record.getUploadEndTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
-        row.put((Object)"storage_address", (Object)(record.getStorageAddress() != null ? record.getStorageAddress() : ""));
-        row.put((Object)"storage_key", (Object)(record.getStorageKey() != null ? record.getStorageKey() : ""));
-        row.put((Object)"storage_type", (Object)(record.getStorageType() != null ? record.getStorageType() : ""));
-        row.put((Object)"file_name", (Object)(record.getFileName() != null ? record.getFileName() : ""));
-        row.put((Object)"file_size", (Object)(record.getFileSize() != null ? record.getFileSize() : 0L));
-        row.put((Object)"file_md5", (Object)(record.getFileMd5() != null ? record.getFileMd5() : ""));
+        row.put("id", (record.getId() != null ? record.getId() : System.currentTimeMillis() * 1000L + (long)((int)(Math.random() * 1000.0))));
+        row.put("vin", (record.getVin() != null ? record.getVin() : ""));
+        row.put("ecu_type", (record.getEcuType() != null ? record.getEcuType() : ""));
+        row.put("log_start_time", (record.getLogStartTime() != null ? record.getLogStartTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
+        row.put("log_end_time", (record.getLogEndTime() != null ? record.getLogEndTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
+        row.put("upload_start_time", (record.getUploadStartTime() != null ? record.getUploadStartTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
+        row.put("upload_end_time", (record.getUploadEndTime() != null ? record.getUploadEndTime().format(DATETIME_FORMAT) : LocalDateTime.now().format(DATETIME_FORMAT)));
+        row.put("storage_address", (record.getStorageAddress() != null ? record.getStorageAddress() : ""));
+        row.put("storage_key", (record.getStorageKey() != null ? record.getStorageKey() : ""));
+        row.put("storage_type", (record.getStorageType() != null ? record.getStorageType() : ""));
+        row.put("file_name", (record.getFileName() != null ? record.getFileName() : ""));
+        row.put("file_size", (record.getFileSize() != null ? record.getFileSize() : 0L));
+        row.put("file_md5", (record.getFileMd5() != null ? record.getFileMd5() : ""));
         this.bigDataClient.insertJson("ecu_log_records", List.of(row));
     }
 
