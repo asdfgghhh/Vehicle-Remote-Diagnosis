@@ -1,3 +1,10 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.baomidou.mybatisplus.extension.plugins.pagination.Page
+ *  com.baomidou.mybatisplus.extension.service.IService
+ */
 package com.vrd.vehicle.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -7,31 +14,32 @@ import com.vrd.vehicle.dto.VehicleDashboardStatsVO;
 import com.vrd.vehicle.dto.VehicleOnlineTrendVO;
 import com.vrd.vehicle.entity.Vehicle;
 import com.vrd.vehicle.entity.VehicleEcu;
-
 import java.util.List;
 
-public interface VehicleService extends IService<Vehicle> {
-    VehicleDashboardStatsVO getDashboardStats();
+public interface VehicleService
+extends IService<Vehicle> {
+    public VehicleDashboardStatsVO getDashboardStats();
 
-    VehicleOnlineTrendVO getOnlineTrend(String granularity);
+    public VehicleOnlineTrendVO getOnlineTrend(String var1);
 
-    VehicleAlertLongTrendVO getAlertLongTrend(String granularity, String metric);
+    public VehicleAlertLongTrendVO getAlertLongTrend(String var1, String var2);
 
-    Page<Vehicle> page(Integer current, Integer size, String keyword, Long modelId);
-    
-    Vehicle create(Vehicle vehicle);
-    
-    Vehicle update(Vehicle vehicle);
-    
-    void syncFromKafka();
+    public Page<Vehicle> page(Integer var1, Integer var2, String var3, Long var4);
 
-    void processKafkaMessage(String message);
-    
-    void syncFromApi(String apiUrl);
+    public Vehicle create(Vehicle var1);
 
-    List<VehicleEcu> getEcusByVehicleId(Long vehicleId);
+    public Vehicle update(Vehicle var1);
 
-    void addEcu(VehicleEcu ecu);
+    public void syncFromKafka();
 
-    void updateEcu(VehicleEcu ecu);
+    public void processKafkaMessage(String var1);
+
+    public void syncFromApi(String var1);
+
+    public List<VehicleEcu> getEcusByVehicleId(Long var1);
+
+    public void addEcu(VehicleEcu var1);
+
+    public void updateEcu(VehicleEcu var1);
 }
+

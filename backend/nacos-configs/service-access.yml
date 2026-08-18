@@ -6,14 +6,14 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_HOST:124.221.104.56}:${DB_PORT:3306}/vrd_access?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:change-me}
   data:
     redis:
       host: ${REDIS_HOST:124.221.104.56}
       port: ${REDIS_PORT:6379}
       database: ${REDIS_DATABASE:0}
       timeout: ${REDIS_TIMEOUT:3000ms}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:change-me}
   servlet:
     multipart:
       max-file-size: 500MB
@@ -30,7 +30,7 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 mqtt:
-  url: ${MQTT_URL:tcp://localhost:1883}
+  url: ${MQTT_URL:tcp://124.221.104.56:1883}
   username: ${MQTT_USERNAME:admin}
   password: ${MQTT_PASSWORD:public}
   client-id: ${MQTT_CLIENT_ID:vrd-access-client}

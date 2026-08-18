@@ -1,18 +1,19 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
 package com.vrd.ecu.service;
 
 import com.vrd.ecu.dto.EcuLogRecord;
 import com.vrd.ecu.dto.PageResult;
-
 import java.time.LocalDateTime;
 
 public interface EcuLogClickHouseService {
+    public PageResult<EcuLogRecord> search(Integer var1, Integer var2, String var3, String var4, LocalDateTime var5, LocalDateTime var6);
 
-    PageResult<EcuLogRecord> search(Integer current, Integer size, String vin, String ecuType,
-                              LocalDateTime startTime, LocalDateTime endTime);
+    public void insertRecord(EcuLogRecord var1);
 
-    void insertRecord(EcuLogRecord record);
+    public EcuLogRecord getById(Long var1);
 
-    EcuLogRecord getById(Long id);
-
-    boolean existsByMd5(String fileMd5);
+    public boolean existsByMd5(String var1);
 }
+

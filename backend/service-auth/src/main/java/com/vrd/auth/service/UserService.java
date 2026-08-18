@@ -1,3 +1,10 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.baomidou.mybatisplus.extension.plugins.pagination.Page
+ *  com.baomidou.mybatisplus.extension.service.IService
+ */
 package com.vrd.auth.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -5,22 +12,22 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.vrd.auth.dto.UserManageRequest;
 import com.vrd.auth.dto.UserVO;
 import com.vrd.auth.entity.User;
-
 import java.util.List;
 
-public interface UserService extends IService<User> {
+public interface UserService
+extends IService<User> {
+    public User findByUsername(String var1);
 
-    User findByUsername(String username);
+    public Page<UserVO> pageUsers(Integer var1, Integer var2, String var3);
 
-    Page<UserVO> pageUsers(Integer current, Integer size, String keyword);
+    public UserVO getUserDetail(Long var1);
 
-    UserVO getUserDetail(Long id);
+    public UserVO createUser(UserManageRequest var1);
 
-    UserVO createUser(UserManageRequest request);
+    public UserVO updateUser(Long var1, UserManageRequest var2);
 
-    UserVO updateUser(Long id, UserManageRequest request);
+    public void deleteUser(Long var1);
 
-    void deleteUser(Long id);
-
-    void assignRoles(Long userId, List<Long> roleIds);
+    public void assignRoles(Long var1, List<Long> var2);
 }
+

@@ -1,10 +1,13 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
 package com.vrd.access.service;
 
 import com.vrd.access.dto.EcuLogRecord;
 
 public interface EcuLogIngestService {
+    public void insertRecord(EcuLogRecord var1);
 
-    void insertRecord(EcuLogRecord record);
-
-    boolean existsByMd5(String fileMd5);
+    public boolean existsByMd5(String var1);
 }
+

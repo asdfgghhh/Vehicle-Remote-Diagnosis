@@ -1,20 +1,23 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  org.springframework.web.multipart.MultipartFile
+ */
 package com.vrd.access.service;
 
 import com.vrd.access.dto.EcuLogRecord;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface VehicleLogUploadService {
+    public String initUpload(String var1, String var2, String var3, Long var4, String var5, LocalDateTime var6, LocalDateTime var7);
 
-    String initUpload(String vin, String ecuType, String fileName, Long fileSize, String fileMd5,
-                      LocalDateTime logStartTime, LocalDateTime logEndTime);
+    public void uploadChunk(String var1, Integer var2, InputStream var3, Long var4);
 
-    void uploadChunk(String uploadId, Integer chunkNumber, InputStream inputStream, Long chunkSize);
+    public EcuLogRecord completeUpload(String var1);
 
-    EcuLogRecord completeUpload(String uploadId);
-
-    EcuLogRecord reportLog(MultipartFile file, String vin, String ecuType,
-                           LocalDateTime logStartTime, LocalDateTime logEndTime, String fileMd5);
+    public EcuLogRecord reportLog(MultipartFile var1, String var2, String var3, LocalDateTime var4, LocalDateTime var5, String var6);
 }
+

@@ -1,90 +1,90 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  io.jsonwebtoken.Claims
+ *  io.jsonwebtoken.Jwts
+ *  io.jsonwebtoken.security.Keys
+ *  org.springframework.beans.factory.annotation.Value
+ *  org.springframework.stereotype.Component
+ */
 package com.vrd.auth.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtil {
-
-    @Value("${jwt.secret}")
+    @Value(value="${jwt.secret}")
     private String secret;
-
-    @Value("${jwt.expiration}")
+    @Value(value="${jwt.expiration}")
     private Long expiration;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor((byte[])this.secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String username, Long userId) {
-        Map<String, Object> claims = new HashMap<>();
+        HashMap<String, Object> claims = new HashMap<String, Object>();
         claims.put("userId", userId);
         claims.put("username", username);
-        return createToken(claims, username);
+        return this.createToken(claims, username);
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + expiration);
-        
-        return Jwts.builder()
-                .claims(claims)
-                .subject(subject)
-                .issuedAt(now)
-                .expiration(expirationDate)
-                .signWith(getSigningKey())
-                .compact();
+        Date expirationDate = new Date(now.getTime() + this.expiration);
+        return Jwts.builder().claims(claims).subject(subject).issuedAt(now).expiration(expirationDate).signWith((Key)this.getSigningKey()).compact();
     }
 
     public Long getExpiration() {
-        return expiration;
+        return this.expiration;
     }
 
     public String getUsernameFromToken(String token) {
-        return getClaimsFromToken(token).getSubject();
+        return this.getClaimsFromToken(token).getSubject();
     }
 
     public Long getUserIdFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.get("userId", Long.class);
+        Claims claims = this.getClaimsFromToken(token);
+        return (Long)claims.get("userId", Long.class);
     }
 
     public Date getExpirationDateFromToken(String token) {
-        return getClaimsFromToken(token).getExpiration();
+        return this.getClaimsFromToken(token).getExpiration();
     }
 
     private Claims getClaimsFromToken(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        return (Claims)Jwts.parser().verifyWith(this.getSigningKey()).build().parseSignedClaims((CharSequence)token).getPayload();
     }
 
     public Boolean validateToken(String token) {
         try {
-            Date expiration = getExpirationDateFromToken(token);
+            Date expiration = this.getExpirationDateFromToken(token);
             return !expiration.before(new Date());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             return false;
         }
     }
 
     public Boolean isTokenExpired(String token) {
         try {
-            Date expiration = getExpirationDateFromToken(token);
+            Date expiration = this.getExpirationDateFromToken(token);
             return expiration.before(new Date());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             return true;
         }
     }
 }
+

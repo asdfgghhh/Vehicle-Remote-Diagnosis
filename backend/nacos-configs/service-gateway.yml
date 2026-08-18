@@ -51,6 +51,12 @@ spring:
             - Path=/api/signal/**
           filters:
             - StripPrefix=1
+        - id: service-diagnosis
+          uri: lb://service-diagnosis
+          predicates:
+            - Path=/api/diagnosis/**
+          filters:
+            - StripPrefix=1
       globalcors:
         cors-configurations:
           '[/**]':
@@ -69,7 +75,7 @@ spring:
     port: ${REDIS_PORT:6379}
     database: ${REDIS_DATABASE:0}
     timeout: ${REDIS_TIMEOUT:3000ms}
-    password: ${REDIS_PASSWORD:}
+    password: ${REDIS_PASSWORD:change-me}
 
 logging:
   level:

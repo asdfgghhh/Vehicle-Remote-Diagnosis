@@ -1,3 +1,17 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.vrd.common.storage.config.StorageAutoConfiguration
+ *  org.springframework.boot.SpringApplication
+ *  org.springframework.boot.autoconfigure.SpringBootApplication
+ *  org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+ *  org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration
+ *  org.springframework.cloud.client.discovery.EnableDiscoveryClient
+ *  org.springframework.context.annotation.Import
+ *  org.springframework.integration.annotation.IntegrationComponentScan
+ *  org.springframework.kafka.annotation.EnableKafka
+ */
 package com.vrd.access;
 
 import com.vrd.common.storage.config.StorageAutoConfiguration;
@@ -10,17 +24,14 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IntegrationComponentScan;
 import org.springframework.kafka.annotation.EnableKafka;
 
-@SpringBootApplication(exclude = {
-        DataSourceAutoConfiguration.class,
-        SqlInitializationAutoConfiguration.class
-})
+@SpringBootApplication(exclude={DataSourceAutoConfiguration.class, SqlInitializationAutoConfiguration.class})
 @EnableDiscoveryClient
 @EnableKafka
 @IntegrationComponentScan
-@Import(StorageAutoConfiguration.class)
+@Import(value={StorageAutoConfiguration.class})
 public class ServiceAccessApplication {
-
     public static void main(String[] args) {
-        SpringApplication.run(ServiceAccessApplication.class, args);
+        SpringApplication.run(ServiceAccessApplication.class, (String[])args);
     }
 }
+

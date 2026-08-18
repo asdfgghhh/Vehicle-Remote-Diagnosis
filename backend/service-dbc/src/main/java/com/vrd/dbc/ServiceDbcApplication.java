@@ -1,3 +1,14 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.vrd.common.storage.config.StorageAutoConfiguration
+ *  org.mybatis.spring.annotation.MapperScan
+ *  org.springframework.boot.SpringApplication
+ *  org.springframework.boot.autoconfigure.SpringBootApplication
+ *  org.springframework.cloud.client.discovery.EnableDiscoveryClient
+ *  org.springframework.context.annotation.Import
+ */
 package com.vrd.dbc;
 
 import com.vrd.common.storage.config.StorageAutoConfiguration;
@@ -9,11 +20,11 @@ import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@MapperScan("com.vrd.dbc.mapper")
-@Import(StorageAutoConfiguration.class)
+@MapperScan(value={"com.vrd.dbc.mapper"})
+@Import(value={StorageAutoConfiguration.class})
 public class ServiceDbcApplication {
-
     public static void main(String[] args) {
-        SpringApplication.run(ServiceDbcApplication.class, args);
+        SpringApplication.run(ServiceDbcApplication.class, (String[])args);
     }
 }
+

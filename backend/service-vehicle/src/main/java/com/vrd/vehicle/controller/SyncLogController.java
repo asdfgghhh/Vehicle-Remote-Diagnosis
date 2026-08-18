@@ -1,3 +1,16 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.baomidou.mybatisplus.extension.plugins.pagination.Page
+ *  com.vrd.common.result.Result
+ *  org.springframework.beans.factory.annotation.Autowired
+ *  org.springframework.web.bind.annotation.GetMapping
+ *  org.springframework.web.bind.annotation.PathVariable
+ *  org.springframework.web.bind.annotation.RequestMapping
+ *  org.springframework.web.bind.annotation.RequestParam
+ *  org.springframework.web.bind.annotation.RestController
+ */
 package com.vrd.vehicle.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -12,26 +25,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/vehicle/sync-record")
+@RequestMapping(value={"/vehicle/sync-record"})
 public class SyncLogController {
-
     @Autowired
     private SyncLogService syncLogService;
 
-    @GetMapping("/page")
-    public Result<Page<SyncLog>> page(
-            @RequestParam(value = "current", defaultValue = "1") Integer current,
-            @RequestParam(value = "size", defaultValue = "10") Integer size,
-            @RequestParam(value = "syncType", required = false) String syncType,
-            @RequestParam(value = "status", required = false) String status,
-            @RequestParam(value = "keyword", required = false) String keyword) {
-        Page<SyncLog> page = syncLogService.page(current, size, syncType, status, keyword);
+    @GetMapping(value={"/page"})
+    public Result<Page<SyncLog>> page(@RequestParam(value="current", defaultValue="1") Integer current, @RequestParam(value="size", defaultValue="10") Integer size, @RequestParam(value="syncType", required=false) String syncType, @RequestParam(value="status", required=false) String status, @RequestParam(value="keyword", required=false) String keyword) {
+        Page<SyncLog> page = this.syncLogService.page(current, size, syncType, status, keyword);
         return Result.success(page);
     }
 
-    @GetMapping("/{id}")
-    public Result<SyncLog> getById(@PathVariable("id") Long id) {
-        SyncLog syncLog = syncLogService.getById(id);
-        return Result.success(syncLog);
+    @GetMapping(value={"/{id}"})
+    public Result<SyncLog> getById(@PathVariable(value="id") Long id) {
+        SyncLog syncLog = (SyncLog)this.syncLogService.getById(id);
+        return Result.success((Object)syncLog);
     }
 }
+

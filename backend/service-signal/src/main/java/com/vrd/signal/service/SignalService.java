@@ -1,20 +1,20 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
 package com.vrd.signal.service;
 
 import com.vrd.signal.dto.SignalPageResult;
 import com.vrd.signal.entity.VehicleSignal;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SignalService {
+    public List<VehicleSignal> queryByTimeRange(String var1, Long var2, LocalDateTime var3, LocalDateTime var4);
 
-    List<VehicleSignal> queryByTimeRange(String vin, Long vehicleId, LocalDateTime startTime, LocalDateTime endTime);
+    public SignalPageResult queryByTimeRangePaged(String var1, Long var2, LocalDateTime var3, LocalDateTime var4, Integer var5, Integer var6);
 
-    SignalPageResult queryByTimeRangePaged(String vin, Long vehicleId, LocalDateTime startTime, LocalDateTime endTime,
-                                           Integer current, Integer size);
+    public List<VehicleSignal> queryBySignalName(String var1, Long var2, String var3, LocalDateTime var4, LocalDateTime var5);
 
-    List<VehicleSignal> queryBySignalName(String vin, Long vehicleId, String signalName,
-                                          LocalDateTime startTime, LocalDateTime endTime);
-
-    VehicleSignal getById(Long id);
+    public VehicleSignal getById(Long var1);
 }
+

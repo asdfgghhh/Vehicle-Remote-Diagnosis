@@ -20,6 +20,7 @@
         <module>service-dbc</module>
         <module>service-signal</module>
         <module>service-access</module>
+        <module>service-diagnosis</module>
         <module>common</module>
     </modules>
 

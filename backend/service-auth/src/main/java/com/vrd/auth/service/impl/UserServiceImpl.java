@@ -1,6 +1,26 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.baomidou.mybatisplus.core.conditions.Wrapper
+ *  com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper
+ *  com.baomidou.mybatisplus.core.metadata.IPage
+ *  com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper
+ *  com.baomidou.mybatisplus.extension.plugins.pagination.Page
+ *  com.baomidou.mybatisplus.extension.service.impl.ServiceImpl
+ *  org.springframework.beans.factory.annotation.Autowired
+ *  org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+ *  org.springframework.stereotype.Service
+ *  org.springframework.transaction.annotation.Transactional
+ *  org.springframework.util.CollectionUtils
+ *  org.springframework.util.StringUtils
+ */
 package com.vrd.auth.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.vrd.auth.dto.UserManageRequest;
@@ -12,6 +32,13 @@ import com.vrd.auth.mapper.UserMapper;
 import com.vrd.auth.mapper.UserRoleMapper;
 import com.vrd.auth.service.RoleService;
 import com.vrd.auth.service.UserService;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,69 +46,55 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 @Service
-public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
-
+public class UserServiceImpl
+extends ServiceImpl<UserMapper, User>
+implements UserService {
     @Autowired
     private UserRoleMapper userRoleMapper;
-
     @Autowired
     private RoleService roleService;
-
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public User findByUsername(String username) {
-        return lambdaQuery()
-                .eq(User::getUsername, username)
-                .one();
+        return (User)((LambdaQueryChainWrapper)this.lambdaQuery().eq(User::getUsername, (Object)username)).one();
     }
 
     @Override
     public Page<UserVO> pageUsers(Integer current, Integer size, String keyword) {
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
-                .eq(User::getDeleted, 0)
-                .orderByDesc(User::getCreateTime);
-        if (StringUtils.hasText(keyword)) {
-            wrapper.and(w -> w.like(User::getUsername, keyword)
-                    .or().like(User::getRealName, keyword)
-                    .or().like(User::getPhone, keyword));
+        LambdaQueryWrapper wrapper = (LambdaQueryWrapper)((LambdaQueryWrapper)new LambdaQueryWrapper().eq(User::getDeleted, (Object)0)).orderByDesc(User::getCreateTime);
+        if (StringUtils.hasText((String)keyword)) {
+            wrapper.and(w -> ((LambdaQueryWrapper)((LambdaQueryWrapper)((LambdaQueryWrapper)((LambdaQueryWrapper)w.like(User::getUsername, (Object)keyword)).or()).like(User::getRealName, (Object)keyword)).or()).like(User::getPhone, (Object)keyword));
         }
-        Page<User> userPage = page(new Page<>(current, size), wrapper);
-        Page<UserVO> voPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        Page userPage = (Page)this.page((IPage)new Page((long)current.intValue(), (long)size.intValue()), (Wrapper)wrapper);
+        Page voPage = new Page(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
         voPage.setRecords(userPage.getRecords().stream().map(this::toUserVO).collect(Collectors.toList()));
         return voPage;
     }
 
     @Override
     public UserVO getUserDetail(Long id) {
-        User user = getById(id);
+        User user = (User)this.getById(id);
         if (user == null || user.getDeleted() == 1) {
-            throw new IllegalArgumentException("用户不存在");
+            throw new IllegalArgumentException("\u7528\u6237\u4e0d\u5b58\u5728");
         }
-        return toUserVO(user);
+        return this.toUserVO(user);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor={Exception.class})
     public UserVO createUser(UserManageRequest request) {
-        if (findByUsername(request.getUsername()) != null) {
-            throw new IllegalArgumentException("用户名已存在");
+        if (this.findByUsername(request.getUsername()) != null) {
+            throw new IllegalArgumentException("\u7528\u6237\u540d\u5df2\u5b58\u5728");
         }
-        if (!StringUtils.hasText(request.getPassword())) {
-            throw new IllegalArgumentException("密码不能为空");
+        if (!StringUtils.hasText((String)request.getPassword())) {
+            throw new IllegalArgumentException("\u5bc6\u7801\u4e0d\u80fd\u4e3a\u7a7a");
         }
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPassword(this.passwordEncoder.encode((CharSequence)request.getPassword()));
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setRealName(request.getRealName());
@@ -89,25 +102,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setDeleted(0);
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
-        save(user);
-        assignRoles(user.getId(), request.getRoleIds());
-        return getUserDetail(user.getId());
+        this.save(user);
+        this.assignRoles(user.getId(), request.getRoleIds());
+        return this.getUserDetail(user.getId());
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor={Exception.class})
     public UserVO updateUser(Long id, UserManageRequest request) {
-        User user = getById(id);
+        User user = (User)this.getById(id);
         if (user == null || user.getDeleted() == 1) {
-            throw new IllegalArgumentException("用户不存在");
+            throw new IllegalArgumentException("\u7528\u6237\u4e0d\u5b58\u5728");
         }
-        User existing = findByUsername(request.getUsername());
+        User existing = this.findByUsername(request.getUsername());
         if (existing != null && !existing.getId().equals(id)) {
-            throw new IllegalArgumentException("用户名已存在");
+            throw new IllegalArgumentException("\u7528\u6237\u540d\u5df2\u5b58\u5728");
         }
         user.setUsername(request.getUsername());
-        if (StringUtils.hasText(request.getPassword())) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (StringUtils.hasText((String)request.getPassword())) {
+            user.setPassword(this.passwordEncoder.encode((CharSequence)request.getPassword()));
         }
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
@@ -116,27 +129,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setStatus(request.getStatus());
         }
         user.setUpdateTime(LocalDateTime.now());
-        updateById(user);
-        assignRoles(id, request.getRoleIds());
-        return getUserDetail(id);
+        this.updateById(user);
+        this.assignRoles(id, request.getRoleIds());
+        return this.getUserDetail(id);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor={Exception.class})
     public void deleteUser(Long id) {
-        User user = getById(id);
+        User user = (User)this.getById(id);
         if (user != null) {
             user.setDeleted(1);
             user.setUpdateTime(LocalDateTime.now());
-            updateById(user);
-            userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, id));
+            this.updateById(user);
+            this.userRoleMapper.delete((Wrapper)new LambdaQueryWrapper().eq(UserRole::getUserId, (Object)id));
         }
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor={Exception.class})
     public void assignRoles(Long userId, List<Long> roleIds) {
-        userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
+        this.userRoleMapper.delete((Wrapper)new LambdaQueryWrapper().eq(UserRole::getUserId, (Object)userId));
         if (CollectionUtils.isEmpty(roleIds)) {
             return;
         }
@@ -146,7 +159,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             userRole.setUserId(userId);
             userRole.setRoleId(roleId);
             userRole.setCreateTime(now);
-            userRoleMapper.insert(userRole);
+            this.userRoleMapper.insert(userRole);
         }
     }
 
@@ -160,27 +173,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         vo.setStatus(user.getStatus());
         vo.setCreateTime(user.getCreateTime());
         vo.setUpdateTime(user.getUpdateTime());
-
-        List<UserRole> userRoles = userRoleMapper.selectList(
-                new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, user.getId()));
-        if (CollectionUtils.isEmpty(userRoles)) {
+        List userRoles = this.userRoleMapper.selectList((Wrapper)new LambdaQueryWrapper().eq(UserRole::getUserId, (Object)user.getId()));
+        if (CollectionUtils.isEmpty((Collection)userRoles)) {
             vo.setRoleIds(Collections.emptyList());
             vo.setRoleNames(Collections.emptyList());
             return vo;
         }
         List<Long> roleIds = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toList());
-        Map<Long, Role> roleMap = roleService.listByIds(roleIds).stream()
-                .filter(role -> role.getDeleted() == 0)
-                .collect(Collectors.toMap(Role::getId, role -> role));
-        List<String> roleNames = new ArrayList<>();
+        Map<Long, Role> roleMap = this.roleService.listByIds(roleIds).stream().filter(role -> role.getDeleted() == 0).collect(Collectors.toMap(Role::getId, role -> role));
+        ArrayList<String> roleNames = new ArrayList<String>();
         for (Long roleId : roleIds) {
-            Role role = roleMap.get(roleId);
-            if (role != null) {
-                roleNames.add(role.getRoleName());
-            }
+            Role role2 = roleMap.get(roleId);
+            if (role2 == null) continue;
+            roleNames.add(role2.getRoleName());
         }
         vo.setRoleIds(roleIds);
         vo.setRoleNames(roleNames);
         return vo;
     }
 }
+

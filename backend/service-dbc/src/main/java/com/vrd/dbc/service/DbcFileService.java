@@ -1,35 +1,44 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.baomidou.mybatisplus.extension.plugins.pagination.Page
+ *  com.baomidou.mybatisplus.extension.service.IService
+ *  org.springframework.web.multipart.MultipartFile
+ */
 package com.vrd.dbc.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.vrd.dbc.entity.DbcFile;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
 
-public interface DbcFileService extends IService<DbcFile> {
-    Page<DbcFile> page(Integer current, Integer size, String keyword, Long modelId);
-    
-    DbcFile uploadAndParse(MultipartFile file, Long modelId, String modelName, String version, String description);
-    
-    String parseDbcFile(String filePath);
-    
-    List<String> getMessageNames(String parseResult);
+public interface DbcFileService
+extends IService<DbcFile> {
+    public Page<DbcFile> page(Integer var1, Integer var2, String var3, Long var4);
 
-    List<Map<String, String>> getSignalDefinitions(String parseResult);
+    public DbcFile uploadAndParse(MultipartFile var1, Long var2, String var3, String var4, String var5);
 
-    List<Map<String, String>> getSignalDetails(String parseResult);
+    public String parseDbcFile(String var1);
 
-    void updateMetadata(Long id, String version, String description);
+    public List<String> getMessageNames(String var1);
 
-    void publish(Long id);
+    public List<Map<String, String>> getSignalDefinitions(String var1);
 
-    void revoke(Long id);
+    public List<Map<String, String>> getSignalDetails(String var1);
 
-    List<Map<String, String>> getSignalDetailsByFileId(Long id);
-    
-    void dispatchToVehicle(Long dbcFileId, Long vehicleId);
-    
-    void dispatchToVehicles(Long dbcFileId, List<Long> vehicleIds);
+    public void updateMetadata(Long var1, String var2, String var3);
+
+    public void publish(Long var1);
+
+    public void revoke(Long var1);
+
+    public List<Map<String, String>> getSignalDetailsByFileId(Long var1);
+
+    public void dispatchToVehicle(Long var1, Long var2);
+
+    public void dispatchToVehicles(Long var1, List<Long> var2);
 }
+

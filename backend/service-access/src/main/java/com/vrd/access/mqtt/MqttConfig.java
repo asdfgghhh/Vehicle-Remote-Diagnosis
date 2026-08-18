@@ -1,3 +1,17 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  org.eclipse.paho.client.mqttv3.MqttConnectOptions
+ *  org.springframework.beans.factory.annotation.Value
+ *  org.springframework.context.annotation.Bean
+ *  org.springframework.context.annotation.Configuration
+ *  org.springframework.integration.channel.DirectChannel
+ *  org.springframework.integration.mqtt.core.DefaultMqttPahoClientFactory
+ *  org.springframework.integration.mqtt.core.MqttPahoClientFactory
+ *  org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter
+ *  org.springframework.messaging.MessageChannel
+ */
 package com.vrd.access.mqtt;
 
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -12,32 +26,26 @@ import org.springframework.messaging.MessageChannel;
 
 @Configuration
 public class MqttConfig {
-
-    @Value("${mqtt.url}")
+    @Value(value="${mqtt.url}")
     private String url;
-
-    @Value("${mqtt.username}")
+    @Value(value="${mqtt.username}")
     private String username;
-
-    @Value("${mqtt.password}")
+    @Value(value="${mqtt.password}")
     private String password;
-
-    @Value("${mqtt.client-id}")
+    @Value(value="${mqtt.client-id}")
     private String clientId;
-
-    @Value("${mqtt.topic}")
+    @Value(value="${mqtt.topic}")
     private String topic;
-
-    @Value("${mqtt.qos}")
+    @Value(value="${mqtt.qos}")
     private int qos;
 
     @Bean
     public MqttPahoClientFactory mqttClientFactory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
-        options.setServerURIs(new String[]{url});
-        options.setUserName(username);
-        options.setPassword(password.toCharArray());
+        options.setServerURIs(new String[]{this.url});
+        options.setUserName(this.username);
+        options.setPassword(this.password.toCharArray());
         options.setCleanSession(true);
         options.setAutomaticReconnect(true);
         factory.setConnectionOptions(options);
@@ -51,10 +59,10 @@ public class MqttConfig {
 
     @Bean
     public MqttPahoMessageDrivenChannelAdapter mqttAdapter() {
-        MqttPahoMessageDrivenChannelAdapter adapter =
-                new MqttPahoMessageDrivenChannelAdapter(clientId, mqttClientFactory(), topic);
-        adapter.setOutputChannel(mqttInputChannel());
-        adapter.setQos(qos);
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(this.clientId, this.mqttClientFactory(), new String[]{this.topic});
+        adapter.setOutputChannel(this.mqttInputChannel());
+        adapter.setQos(new int[]{this.qos});
         return adapter;
     }
 }
+
