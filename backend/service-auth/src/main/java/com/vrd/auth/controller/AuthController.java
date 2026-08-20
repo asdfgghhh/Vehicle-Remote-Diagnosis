@@ -107,16 +107,22 @@ public class AuthController {
     }
 
     @GetMapping("/userinfo")
-    public Result<UserInfoResponse> userInfo(@RequestHeader(value = "Authorization", required = false) String authorization) {
+    public Result<UserInfoResponse> userInfo(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestHeader(value = "X-User-Id", required = false) Long xUserId) {
         try {
-            if (authorization == null || !authorization.startsWith("Bearer ")) {
+            Long userId;
+            if (xUserId != null) {
+                // 经网关转发: 网关已完成 JWT 校验并通过 X-User-Id 传递用户标识
+                userId = xUserId;
+            } else if (authorization != null && authorization.startsWith("Bearer ")) {
+                // 直连场景: 自行解析 JWT
+                String jwt = authorization.substring(7);
+                if (!this.jwtUtil.validateToken(jwt)) {
+                    return Result.error(401, "token 已过期");
+                }
+                userId = this.jwtUtil.getUserIdFromToken(jwt);
+            } else {
                 return Result.error(401, "未登录或 token 无效");
             }
-            String jwt = authorization.substring(7);
-            if (!this.jwtUtil.validateToken(jwt)) {
-                return Result.error(401, "token 已过期");
-            }
-            Long userId = this.jwtUtil.getUserIdFromToken(jwt);
             User user = this.userService.getById(userId);
             if (user == null || user.getDeleted() == 1) {
                 return Result.error(404, "用户不存在");
