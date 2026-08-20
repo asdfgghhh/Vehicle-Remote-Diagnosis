@@ -1,5 +1,8 @@
 <template>
   <div class="vehicle-list">
+    <!-- 页面头部 -->
+    <div class="page-title">车辆管理</div>
+    <div class="page-desc">管理接入车辆 · VHR 健康度与电池 SOH 实时评估 · 风险车辆主动识别</div>
     <el-card>
       <template #header>
         <div class="header-actions">

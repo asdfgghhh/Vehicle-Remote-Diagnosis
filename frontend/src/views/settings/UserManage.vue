@@ -1,5 +1,8 @@
 <template>
   <div class="user-manage">
+    <!-- 页面头部 -->
+    <div class="page-title">用户管理</div>
+    <div class="page-desc">管理平台用户账号 · 分配角色与权限</div>
     <el-card>
       <template #header>
         <div class="header-actions">

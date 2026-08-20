@@ -1,5 +1,8 @@
 <template>
   <div class="can-model">
+    <!-- 页面头部 -->
+    <div class="page-title">DBC 管理</div>
+    <div class="page-desc">DBC 文件上传、解析、信号矩阵管理 · 关联车型与 CAN 消息</div>
     <el-card>
       <template #header>
         <div class="header-actions">

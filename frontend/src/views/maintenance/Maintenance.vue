@@ -1,5 +1,8 @@
 <template>
   <div class="maintenance">
+    <!-- 页面头部 -->
+    <div class="page-title">智能维保</div>
+    <div class="page-desc">基于 VHR 数据的预测性维护 · 从「坏了再修」到「提前预防」</div>
     <!-- 车辆选择 -->
     <el-card style="margin-bottom: 16px">
       <div class="maint-head">

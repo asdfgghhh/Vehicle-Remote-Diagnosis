@@ -1,5 +1,8 @@
 <template>
   <div class="uds-diagnosis">
+    <!-- 页面头部 -->
+    <div class="page-title">远程诊断</div>
+    <div class="page-desc">VHR 整车 / 域 / 部件三级诊断 · UDS 协议 (ISO 14229) · 320+ 故障树场景驱动</div>
     <el-tabs v-model="activeTab">
       <!-- Tab1: 三级智能诊断 -->
       <el-tab-pane label="三级智能诊断" name="level">

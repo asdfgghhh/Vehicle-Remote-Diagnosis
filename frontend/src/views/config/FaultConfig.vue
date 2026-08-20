@@ -1,5 +1,8 @@
 <template>
   <div class="fault-config">
+    <!-- 页面头部 -->
+    <div class="page-title">故障配置</div>
+    <div class="page-desc">故障码字典与场景映射管理 · 支撑 VHR 故障树诊断</div>
     <el-card>
       <template #header>
         <div class="header-actions">

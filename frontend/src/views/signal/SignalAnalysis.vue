@@ -1,5 +1,8 @@
 <template>
   <div class="signal-analysis">
+    <!-- 页面头部 -->
+    <div class="page-title">信号分析</div>
+    <div class="page-desc">VHR 部件信号洞察 · 健康阈值预警 · 多维趋势对比与大数据分析</div>
     <el-card style="margin-bottom: 16px">
       <el-form inline :model="query" label-width="80px">
         <el-form-item label="车辆 VIN">

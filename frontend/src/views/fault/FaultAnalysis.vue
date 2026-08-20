@@ -1,5 +1,8 @@
 <template>
   <div class="fault-analysis">
+    <!-- 页面头部 -->
+    <div class="page-title">故障分析</div>
+    <div class="page-desc">VHR 趋势分析与风险预测 · 故障码排名 · AI 根因定位 · 改进闭环</div>
     <!-- 故障趋势 -->
     <el-card style="margin-bottom: 16px">
       <template #header>

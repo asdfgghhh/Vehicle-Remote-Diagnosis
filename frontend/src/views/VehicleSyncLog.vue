@@ -1,5 +1,8 @@
 <template>
   <div class="vehicle-sync-log">
+    <!-- 页面头部 -->
+    <div class="page-title">同步记录</div>
+    <div class="page-desc">车辆与 ECU 数据同步任务执行历史 · 异常任务快速定位</div>
     <el-card>
       <template #header>
         <span>车辆同步记录</span>

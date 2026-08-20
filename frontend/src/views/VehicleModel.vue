@@ -1,5 +1,8 @@
 <template>
   <div class="vehicle-model">
+    <!-- 页面头部 -->
+    <div class="page-title">车型管理</div>
+    <div class="page-desc">管理车辆型号、CAN 通信矩阵、DBC 文件关联 · 对标 VHR 数字孪生基础数据</div>
     <el-card>
       <template #header>
         <div class="header-actions">

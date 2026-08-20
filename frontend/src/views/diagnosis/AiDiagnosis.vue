@@ -1,9 +1,12 @@
 <template>
   <div class="ai-diagnosis">
+    <!-- 页面头部 -->
+    <div class="page-title">AI 诊断</div>
+    <div class="page-desc">智能诊断助手 · 即问即答，自动调用诊断算法生成结论与维修建议</div>
     <el-row :gutter="16">
       <!-- 左侧：会话历史 -->
       <el-col :span="6">
-        <el-card style="height: calc(100vh - 140px)">
+        <el-card style="height: calc(100vh - 200px)">
           <template #header>
             <div class="card-head">
               <span>💬 诊断会话</span>
@@ -32,7 +35,7 @@
 
       <!-- 右侧：聊天区 -->
       <el-col :span="18">
-        <el-card style="height: calc(100vh - 140px); display: flex; flex-direction: column">
+        <el-card style="height: calc(100vh - 200px); display: flex; flex-direction: column">
           <template #header>
             <div class="card-head">
               <span>🤖 AI 智能诊断助手</span>
@@ -288,7 +291,7 @@ onMounted(async () => {
 
 .session-list {
   overflow-y: auto;
-  max-height: calc(100vh - 320px);
+  max-height: calc(100vh - 380px);
 }
 
 .session-item {

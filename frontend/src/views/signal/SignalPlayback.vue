@@ -1,6 +1,7 @@
 <template>
   <div class="signal-playback">
     <div class="page-title">信号回放</div>
+    <div class="page-desc">历史信号时间序列回放 · 多信号对比分析 · AI 异常检测</div>
 
     <div class="top-bar">
       <el-form ref="queryFormRef" :inline="true" :model="queryForm" :rules="queryRules" class="top-form">

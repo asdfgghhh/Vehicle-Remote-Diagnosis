@@ -1,5 +1,8 @@
 <template>
   <div class="ecu-log">
+    <!-- 页面头部 -->
+    <div class="page-title">日志分析</div>
+    <div class="page-desc">ECU 日志采集与管理 · AI 异常自动标注 · 日志与故障健康关联</div>
     <el-card>
       <template #header>
         <span>日志分析</span>

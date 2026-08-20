@@ -1,5 +1,8 @@
 <template>
   <div class="fault-monitor">
+    <!-- 页面头部 -->
+    <div class="page-title">主动监控</div>
+    <div class="page-desc">七大域实时守护 · 分钟级风险预警 · WebSocket 推送 · 异常告警</div>
     <el-row :gutter="20">
       <el-col :span="16">
         <el-card>

@@ -1,5 +1,8 @@
 <template>
   <div class="role-manage">
+    <!-- 页面头部 -->
+    <div class="page-title">权限管理</div>
+    <div class="page-desc">角色定义与菜单权限分配 · RBAC 权限模型</div>
     <el-card>
       <template #header>
         <div class="header-actions">

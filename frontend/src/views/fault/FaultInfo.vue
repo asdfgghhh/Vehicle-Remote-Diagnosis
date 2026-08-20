@@ -1,5 +1,8 @@
 <template>
   <div class="fault-info">
+    <!-- 页面头部 -->
+    <div class="page-title">故障信息</div>
+    <div class="page-desc">VHR 故障树场景化诊断 · 智能值守上下文关联 · 按级别/车型/VIN 筛选</div>
     <!-- 智能值守上下文 -->
     <el-card style="margin-bottom: 16px">
       <template #header>

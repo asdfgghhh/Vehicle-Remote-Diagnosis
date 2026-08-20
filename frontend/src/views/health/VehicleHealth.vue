@@ -1,5 +1,8 @@
 <template>
   <div class="vehicle-health">
+    <!-- 页面头部 -->
+    <div class="page-title">车辆健康</div>
+    <div class="page-desc">VHR 数字孪生 · 七大域核心部件状态实时可视，数据驱动守护车辆健康</div>
     <!-- 车辆选择 + 概览 -->
     <el-card style="margin-bottom: 16px">
       <div class="health-header">
