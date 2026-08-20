@@ -40,6 +40,12 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="最后登录" width="170">
+          <template #default="{ row }">
+            <span v-if="row.lastLoginTime">{{ fmtTime(row.lastLoginTime) }}</span>
+            <span v-else style="color: #c0c4cc">从未登录</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
@@ -262,6 +268,11 @@ const handleSizeChange = (size) => {
 const handleCurrentChange = (current) => {
   pagination.current = current
   loadData()
+}
+
+const fmtTime = (t) => {
+  if (!t) return '-'
+  return new Date(t).toLocaleString('zh-CN', { hour12: false })
 }
 
 onMounted(async () => {

@@ -15,6 +15,7 @@ public class UserVO {
     private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private LocalDateTime lastLoginTime;
     private List<Long> roleIds;
     private List<String> roleNames;
 
@@ -48,6 +49,10 @@ public class UserVO {
 
     public LocalDateTime getUpdateTime() {
         return this.updateTime;
+    }
+
+    public LocalDateTime getLastLoginTime() {
+        return this.lastLoginTime;
     }
 
     public List<Long> getRoleIds() {
@@ -88,6 +93,10 @@ public class UserVO {
 
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public void setLastLoginTime(LocalDateTime lastLoginTime) {
+        this.lastLoginTime = lastLoginTime;
     }
 
     public void setRoleIds(List<Long> roleIds) {

@@ -4,6 +4,7 @@ import com.vrd.auth.dto.LoginRequest;
 import com.vrd.auth.dto.LoginResponse;
 import com.vrd.auth.dto.RegisterRequest;
 import com.vrd.auth.dto.TokenIntrospectResponse;
+import com.vrd.auth.dto.UserInfoResponse;
 import com.vrd.auth.entity.User;
 import com.vrd.auth.service.RoleService;
 import com.vrd.auth.service.UserService;
@@ -39,6 +40,8 @@ public class AuthController {
             return Result.error(403, "账号已被禁用");
         }
         String token = this.jwtUtil.generateToken(user.getUsername(), user.getId());
+        user.setLastLoginTime(LocalDateTime.now());
+        userService.updateById(user);
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         response.setUsername(user.getUsername());
@@ -100,6 +103,35 @@ public class AuthController {
         } catch (Exception e) {
             response.setActive(false);
             return Result.success(response);
+        }
+    }
+
+    @GetMapping("/userinfo")
+    public Result<UserInfoResponse> userInfo(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        try {
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                return Result.error(401, "未登录或 token 无效");
+            }
+            String jwt = authorization.substring(7);
+            if (!this.jwtUtil.validateToken(jwt)) {
+                return Result.error(401, "token 已过期");
+            }
+            Long userId = this.jwtUtil.getUserIdFromToken(jwt);
+            User user = this.userService.getById(userId);
+            if (user == null || user.getDeleted() == 1) {
+                return Result.error(404, "用户不存在");
+            }
+            UserInfoResponse response = new UserInfoResponse();
+            response.setUserId(user.getId());
+            response.setUsername(user.getUsername());
+            response.setRealName(user.getRealName());
+            response.setEmail(user.getEmail());
+            response.setPhone(user.getPhone());
+            response.setRoles(this.roleService.getRoleNamesByUserId(userId));
+            response.setPermissions(this.userService.getPermissionCodesByUserId(userId));
+            return Result.success(response);
+        } catch (Exception e) {
+            return Result.error(401, "token 解析失败");
         }
     }
 }

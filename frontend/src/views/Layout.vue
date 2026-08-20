@@ -24,9 +24,33 @@
             </template>
             <el-menu-item index="/vehicle/model">车型管理</el-menu-item>
             <el-menu-item index="/vehicle/list">车辆列表</el-menu-item>
+            <el-menu-item index="/vehicle/health">车辆健康</el-menu-item>
             <el-menu-item index="/vehicle/sync-record">同步记录</el-menu-item>
           </el-sub-menu>
-          
+
+          <el-sub-menu index="/fault">
+            <template #title>
+              <el-icon><Warning /></el-icon>
+              <span>故障管理</span>
+            </template>
+            <el-menu-item index="/fault/info">故障信息</el-menu-item>
+            <el-menu-item index="/fault/analysis">故障分析</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="/diagnosis">
+            <template #title>
+              <el-icon><Tools /></el-icon>
+              <span>远程诊断</span>
+            </template>
+            <el-menu-item index="/diagnosis">三级诊断</el-menu-item>
+            <el-menu-item index="/diagnosis/ai">AI 诊断</el-menu-item>
+          </el-sub-menu>
+
+          <el-menu-item index="/maintenance">
+            <el-icon><SetUp /></el-icon>
+            <span>智能维保</span>
+          </el-menu-item>
+
           <el-menu-item index="/ecu-log">
             <el-icon><Document /></el-icon>
             <span>日志分析</span>
@@ -47,6 +71,7 @@
               <span>主动监控</span>
             </template>
             <el-menu-item index="/signal/fault">故障监控</el-menu-item>
+            <el-menu-item index="/signal/analysis">信号分析</el-menu-item>
             <el-menu-item index="/signal/playback">信号回放</el-menu-item>
           </el-sub-menu>
 
@@ -104,7 +129,10 @@ import {
   FolderOpened,
   DataLine,
   Setting,
-  User
+  User,
+  Warning,
+  Tools,
+  SetUp
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -124,11 +152,18 @@ const currentRoute = computed(() => {
     '/dashboard': '仪表盘',
     '/vehicle/model': '车辆管理 / 车型管理',
     '/vehicle/list': '车辆管理 / 车辆列表',
+    '/vehicle/health': '车辆管理 / 车辆健康',
     '/vehicle/sync-record': '车辆管理 / 同步记录',
+    '/fault/info': '故障管理 / 故障信息',
+    '/fault/analysis': '故障管理 / 故障分析',
+    '/diagnosis': '远程诊断 / 三级诊断',
+    '/diagnosis/ai': '远程诊断 / AI 诊断',
+    '/maintenance': '智能维保',
     '/ecu-log': '日志分析',
     '/config/can-model': '配置管理 / 车辆 CAN 模型',
     '/config/fault': '配置管理 / 故障配置',
     '/signal/fault': '主动监控 / 故障监控',
+    '/signal/analysis': '主动监控 / 信号分析',
     '/signal/playback': '主动监控 / 信号回放',
     '/settings/user': '账号管理',
     '/settings/role': '权限管理'

@@ -42,6 +42,7 @@ vrd:
       consumer-topic: vehicle-data
       producer-topic: vehicle-data
       consumer-group-id: vehicle-processor
+  diagnosis-service-url: http://service-diagnosis:9087
 
 file:
   upload:

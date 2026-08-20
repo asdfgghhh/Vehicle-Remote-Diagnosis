@@ -26,6 +26,7 @@ public class User {
     private Integer deleted;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private LocalDateTime lastLoginTime;
 
     public Long getId() {
         return this.id;
@@ -67,6 +68,10 @@ public class User {
         return this.updateTime;
     }
 
+    public LocalDateTime getLastLoginTime() {
+        return this.lastLoginTime;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -105,6 +110,10 @@ public class User {
 
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public void setLastLoginTime(LocalDateTime lastLoginTime) {
+        this.lastLoginTime = lastLoginTime;
     }
 
     public boolean equals(Object o) {

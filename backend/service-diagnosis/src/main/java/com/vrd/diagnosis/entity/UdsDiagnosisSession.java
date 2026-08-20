@@ -20,6 +20,9 @@ public class UdsDiagnosisSession {
     private Integer success;
     private Integer negativeResponseCode;
     private String sessionStatus;
+    private String diagLevel;
+    private Long sceneId;
+    private String faultTreeResult;
     private Long responseTimeMs;
     private String operator;
     private String remark;
@@ -73,6 +76,18 @@ public class UdsDiagnosisSession {
 
     public String getSessionStatus() {
         return this.sessionStatus;
+    }
+
+    public String getDiagLevel() {
+        return this.diagLevel;
+    }
+
+    public Long getSceneId() {
+        return this.sceneId;
+    }
+
+    public String getFaultTreeResult() {
+        return this.faultTreeResult;
     }
 
     public Long getResponseTimeMs() {
@@ -145,6 +160,18 @@ public class UdsDiagnosisSession {
 
     public void setSessionStatus(String sessionStatus) {
         this.sessionStatus = sessionStatus;
+    }
+
+    public void setDiagLevel(String diagLevel) {
+        this.diagLevel = diagLevel;
+    }
+
+    public void setSceneId(Long sceneId) {
+        this.sceneId = sceneId;
+    }
+
+    public void setFaultTreeResult(String faultTreeResult) {
+        this.faultTreeResult = faultTreeResult;
     }
 
     public void setResponseTimeMs(Long responseTimeMs) {

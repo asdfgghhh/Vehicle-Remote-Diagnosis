@@ -42,6 +42,36 @@ const routes = [
         component: () => import('@/views/VehicleSyncLog.vue')
       },
       {
+        path: 'vehicle/health',
+        name: 'VehicleHealth',
+        component: () => import('@/views/health/VehicleHealth.vue')
+      },
+      {
+        path: 'fault/info',
+        name: 'FaultInfo',
+        component: () => import('@/views/fault/FaultInfo.vue')
+      },
+      {
+        path: 'fault/analysis',
+        name: 'FaultAnalysis',
+        component: () => import('@/views/fault/FaultAnalysis.vue')
+      },
+      {
+        path: 'diagnosis',
+        name: 'UdsDiagnosis',
+        component: () => import('@/views/UdsDiagnosis.vue')
+      },
+      {
+        path: 'diagnosis/ai',
+        name: 'AiDiagnosis',
+        component: () => import('@/views/diagnosis/AiDiagnosis.vue')
+      },
+      {
+        path: 'maintenance',
+        name: 'Maintenance',
+        component: () => import('@/views/maintenance/Maintenance.vue')
+      },
+      {
         path: 'ecu-log',
         name: 'EcuLog',
         component: () => import('@/views/EcuLog.vue')
@@ -73,6 +103,11 @@ const routes = [
         path: 'signal/fault',
         name: 'FaultMonitor',
         component: () => import('@/views/signal/FaultMonitor.vue')
+      },
+      {
+        path: 'signal/analysis',
+        name: 'SignalAnalysis',
+        component: () => import('@/views/signal/SignalAnalysis.vue')
       },
       {
         path: 'signal/playback',

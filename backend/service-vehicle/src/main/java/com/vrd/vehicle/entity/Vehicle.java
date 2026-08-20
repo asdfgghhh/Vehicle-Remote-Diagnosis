@@ -11,6 +11,7 @@ package com.vrd.vehicle.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @TableName(value="vehicle")
@@ -29,6 +30,10 @@ public class Vehicle {
     private String currentEcuVersion;
     private Integer dataSource;
     private String externalId;
+    private Integer healthScore;
+    private String riskLevel;
+    private BigDecimal batterySoh;
+    private LocalDateTime lastOnlineTime;
     private Integer deleted;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
@@ -83,6 +88,22 @@ public class Vehicle {
 
     public String getExternalId() {
         return this.externalId;
+    }
+
+    public Integer getHealthScore() {
+        return this.healthScore;
+    }
+
+    public String getRiskLevel() {
+        return this.riskLevel;
+    }
+
+    public BigDecimal getBatterySoh() {
+        return this.batterySoh;
+    }
+
+    public LocalDateTime getLastOnlineTime() {
+        return this.lastOnlineTime;
     }
 
     public Integer getDeleted() {
@@ -147,6 +168,22 @@ public class Vehicle {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public void setHealthScore(Integer healthScore) {
+        this.healthScore = healthScore;
+    }
+
+    public void setRiskLevel(String riskLevel) {
+        this.riskLevel = riskLevel;
+    }
+
+    public void setBatterySoh(BigDecimal batterySoh) {
+        this.batterySoh = batterySoh;
+    }
+
+    public void setLastOnlineTime(LocalDateTime lastOnlineTime) {
+        this.lastOnlineTime = lastOnlineTime;
     }
 
     public void setDeleted(Integer deleted) {

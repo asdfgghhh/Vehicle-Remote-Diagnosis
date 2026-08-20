@@ -35,6 +35,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private RoleService roleService;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    private com.vrd.auth.mapper.SysRolePermissionMapper sysRolePermissionMapper;
+    @Autowired
+    private com.vrd.auth.mapper.SysPermissionMapper sysPermissionMapper;
 
     @Override
     public User findByUsername(String username) {
@@ -131,8 +135,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void assignRoles(Long userId, List<Long> roleIds) {
-        this.userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
+    public void assignRoles(Long userId, List<Long> roleIds) {        this.userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
         if (CollectionUtils.isEmpty(roleIds)) {
             return;
         }
@@ -146,6 +149,35 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
     }
 
+    @Override
+    public List<String> getPermissionCodesByUserId(Long userId) {
+        if (userId == null) {
+            return Collections.emptyList();
+        }
+        List<UserRole> userRoles = this.userRoleMapper.selectList(
+                new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
+        if (CollectionUtils.isEmpty(userRoles)) {
+            return Collections.emptyList();
+        }
+        List<Long> roleIds = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toList());
+        List<com.vrd.auth.entity.SysRolePermission> rolePerms = this.sysRolePermissionMapper.selectList(
+                new LambdaQueryWrapper<com.vrd.auth.entity.SysRolePermission>()
+                        .in(com.vrd.auth.entity.SysRolePermission::getRoleId, roleIds));
+        if (CollectionUtils.isEmpty(rolePerms)) {
+            return Collections.emptyList();
+        }
+        List<Long> permIds = rolePerms.stream()
+                .map(com.vrd.auth.entity.SysRolePermission::getPermissionId)
+                .distinct()
+                .collect(Collectors.toList());
+        List<com.vrd.auth.entity.SysPermission> perms = this.sysPermissionMapper.selectList(
+                new LambdaQueryWrapper<com.vrd.auth.entity.SysPermission>()
+                        .in(com.vrd.auth.entity.SysPermission::getId, permIds)
+                        .eq(com.vrd.auth.entity.SysPermission::getStatus, 1)
+                        .eq(com.vrd.auth.entity.SysPermission::getDeleted, 0));
+        return perms.stream().map(com.vrd.auth.entity.SysPermission::getPermCode).collect(Collectors.toList());
+    }
+
     private UserVO toUserVO(User user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
@@ -156,6 +188,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         vo.setStatus(user.getStatus());
         vo.setCreateTime(user.getCreateTime());
         vo.setUpdateTime(user.getUpdateTime());
+        vo.setLastLoginTime(user.getLastLoginTime());
         List<UserRole> userRoles = this.userRoleMapper.selectList(
                 new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, user.getId()));
         if (CollectionUtils.isEmpty(userRoles)) {

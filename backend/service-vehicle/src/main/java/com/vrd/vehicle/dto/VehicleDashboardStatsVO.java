@@ -15,6 +15,16 @@ public class VehicleDashboardStatsVO {
     private List<RecentAlert> recentAlerts;
     private Long totalFaultCount;
     private List<FaultByCode> faultByCode;
+    private Integer fleetHealthScore;
+    private List<DomainHealthStat> domainHealth;
+
+    public Integer getFleetHealthScore() {
+        return this.fleetHealthScore;
+    }
+
+    public List<DomainHealthStat> getDomainHealth() {
+        return this.domainHealth;
+    }
 
     public Long getConnectedModelCount() {
         return this.connectedModelCount;
@@ -88,6 +98,14 @@ public class VehicleDashboardStatsVO {
         this.faultByCode = faultByCode;
     }
 
+    public void setFleetHealthScore(Integer fleetHealthScore) {
+        this.fleetHealthScore = fleetHealthScore;
+    }
+
+    public void setDomainHealth(List<DomainHealthStat> domainHealth) {
+        this.domainHealth = domainHealth;
+    }
+
     public boolean equals(Object o) {
         if (o == this) {
             return true;
@@ -141,7 +159,17 @@ public class VehicleDashboardStatsVO {
         }
         List<FaultByCode> this$faultByCode = this.getFaultByCode();
         List<FaultByCode> other$faultByCode = other.getFaultByCode();
-        return !(this$faultByCode == null ? other$faultByCode != null : !((Object)this$faultByCode).equals(other$faultByCode));
+        if (this$faultByCode == null ? other$faultByCode != null : !((Object)this$faultByCode).equals(other$faultByCode)) {
+            return false;
+        }
+        Integer this$fleetHealthScore = this.getFleetHealthScore();
+        Integer other$fleetHealthScore = other.getFleetHealthScore();
+        if (this$fleetHealthScore == null ? other$fleetHealthScore != null : !((Object)this$fleetHealthScore).equals(other$fleetHealthScore)) {
+            return false;
+        }
+        List<DomainHealthStat> this$domainHealth = this.getDomainHealth();
+        List<DomainHealthStat> other$domainHealth = other.getDomainHealth();
+        return !(this$domainHealth == null ? other$domainHealth != null : !((Object)this$domainHealth).equals(other$domainHealth));
     }
 
     protected boolean canEqual(Object other) {
@@ -169,11 +197,15 @@ public class VehicleDashboardStatsVO {
         result = result * 59 + ($recentAlerts == null ? 43 : ((Object)$recentAlerts).hashCode());
         List<FaultByCode> $faultByCode = this.getFaultByCode();
         result = result * 59 + ($faultByCode == null ? 43 : ((Object)$faultByCode).hashCode());
+        Integer $fleetHealthScore = this.getFleetHealthScore();
+        result = result * 59 + ($fleetHealthScore == null ? 43 : ((Object)$fleetHealthScore).hashCode());
+        List<DomainHealthStat> $domainHealth = this.getDomainHealth();
+        result = result * 59 + ($domainHealth == null ? 43 : ((Object)$domainHealth).hashCode());
         return result;
     }
 
     public String toString() {
-        return "VehicleDashboardStatsVO(connectedModelCount=" + this.getConnectedModelCount() + ", totalVehicles=" + this.getTotalVehicles() + ", onlineVehicles=" + this.getOnlineVehicles() + ", totalAlertCount=" + this.getTotalAlertCount() + ", modelStats=" + String.valueOf(this.getModelStats()) + ", alertByComponent=" + String.valueOf(this.getAlertByComponent()) + ", recentAlerts=" + String.valueOf(this.getRecentAlerts()) + ", totalFaultCount=" + this.getTotalFaultCount() + ", faultByCode=" + String.valueOf(this.getFaultByCode()) + ")";
+        return "VehicleDashboardStatsVO(connectedModelCount=" + this.getConnectedModelCount() + ", totalVehicles=" + this.getTotalVehicles() + ", onlineVehicles=" + this.getOnlineVehicles() + ", totalAlertCount=" + this.getTotalAlertCount() + ", modelStats=" + String.valueOf(this.getModelStats()) + ", alertByComponent=" + String.valueOf(this.getAlertByComponent()) + ", recentAlerts=" + String.valueOf(this.getRecentAlerts()) + ", totalFaultCount=" + this.getTotalFaultCount() + ", faultByCode=" + String.valueOf(this.getFaultByCode()) + ", fleetHealthScore=" + this.getFleetHealthScore() + ", domainHealth=" + String.valueOf(this.getDomainHealth()) + ")";
     }
 
     public static class ModelVehicleStat {
@@ -541,6 +573,98 @@ public class VehicleDashboardStatsVO {
 
         public String toString() {
             return "VehicleDashboardStatsVO.FaultByCode(faultCode=" + this.getFaultCode() + ", componentCode=" + this.getComponentCode() + ", faultName=" + this.getFaultName() + ", faultCount=" + this.getFaultCount() + ")";
+        }
+    }
+
+    public static class DomainHealthStat {
+        private String domainCode;
+        private String domainName;
+        private Integer healthScore;
+        private String status;
+
+        public String getDomainCode() {
+            return this.domainCode;
+        }
+
+        public String getDomainName() {
+            return this.domainName;
+        }
+
+        public Integer getHealthScore() {
+            return this.healthScore;
+        }
+
+        public String getStatus() {
+            return this.status;
+        }
+
+        public void setDomainCode(String domainCode) {
+            this.domainCode = domainCode;
+        }
+
+        public void setDomainName(String domainName) {
+            this.domainName = domainName;
+        }
+
+        public void setHealthScore(Integer healthScore) {
+            this.healthScore = healthScore;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof DomainHealthStat)) {
+                return false;
+            }
+            DomainHealthStat other = (DomainHealthStat)o;
+            if (!other.canEqual(this)) {
+                return false;
+            }
+            Integer this$healthScore = this.getHealthScore();
+            Integer other$healthScore = other.getHealthScore();
+            if (this$healthScore == null ? other$healthScore != null : !((Object)this$healthScore).equals(other$healthScore)) {
+                return false;
+            }
+            String this$domainCode = this.getDomainCode();
+            String other$domainCode = other.getDomainCode();
+            if (this$domainCode == null ? other$domainCode != null : !this$domainCode.equals(other$domainCode)) {
+                return false;
+            }
+            String this$domainName = this.getDomainName();
+            String other$domainName = other.getDomainName();
+            if (this$domainName == null ? other$domainName != null : !this$domainName.equals(other$domainName)) {
+                return false;
+            }
+            String this$status = this.getStatus();
+            String other$status = other.getStatus();
+            return !(this$status == null ? other$status != null : !this$status.equals(other$status));
+        }
+
+        protected boolean canEqual(Object other) {
+            return other instanceof DomainHealthStat;
+        }
+
+        public int hashCode() {
+            int PRIME = 59;
+            int result = 1;
+            Integer $healthScore = this.getHealthScore();
+            result = result * 59 + ($healthScore == null ? 43 : ((Object)$healthScore).hashCode());
+            String $domainCode = this.getDomainCode();
+            result = result * 59 + ($domainCode == null ? 43 : $domainCode.hashCode());
+            String $domainName = this.getDomainName();
+            result = result * 59 + ($domainName == null ? 43 : $domainName.hashCode());
+            String $status = this.getStatus();
+            result = result * 59 + ($status == null ? 43 : $status.hashCode());
+            return result;
+        }
+
+        public String toString() {
+            return "VehicleDashboardStatsVO.DomainHealthStat(domainCode=" + this.getDomainCode() + ", domainName=" + this.getDomainName() + ", healthScore=" + this.getHealthScore() + ", status=" + this.getStatus() + ")";
         }
     }
 }

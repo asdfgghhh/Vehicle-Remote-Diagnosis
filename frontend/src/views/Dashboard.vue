@@ -1,5 +1,26 @@
 <template>
   <div class="dashboard">
+    <!-- 车队健康总览横幅 -->
+    <el-card class="fleet-health-card" style="margin-bottom: 20px">
+      <div class="fleet-health">
+        <div class="fleet-score">
+          <el-progress type="dashboard" :percentage="stats.fleetHealthScore || 0" :width="120" :color="scoreColor(stats.fleetHealthScore)" />
+          <div class="fleet-score-label">车队健康指数</div>
+        </div>
+        <div class="fleet-domains">
+          <div class="fd-title">七大域健康</div>
+          <div class="fd-grid">
+            <div v-for="d in stats.domainHealth" :key="d.domainCode" class="fd-item" :title="d.domainName">
+              <span class="fd-name">{{ d.domainName }}</span>
+              <el-progress :percentage="d.healthScore || 0" :stroke-width="8" :color="scoreColor(d.healthScore)" style="flex: 1" />
+              <span class="fd-score" :style="{ color: scoreTextColor(d.healthScore) }">{{ d.healthScore }}</span>
+            </div>
+            <div v-if="!(stats.domainHealth || []).length" class="fd-empty">暂无健康数据</div>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
     <!-- WebSocket 实时推送面板（保留实时推送更新） -->
     <el-card class="ws-card" style="margin-bottom: 20px">
       <template #header>
@@ -279,8 +300,26 @@ const stats = ref({
   totalVehicles: 0,
   onlineVehicles: 0,
   alerts: 0,
-  faults: 0
+  faults: 0,
+  fleetHealthScore: 0,
+  domainHealth: []
 })
+
+const scoreColor = (score) => {
+  if (score == null) return '#909399'
+  if (score >= 90) return '#67C23A'
+  if (score >= 75) return '#409EFF'
+  if (score >= 60) return '#E6A23C'
+  return '#F56C6C'
+}
+
+const scoreTextColor = (score) => {
+  if (score == null) return '#909399'
+  if (score >= 90) return '#67C23A'
+  if (score >= 75) return '#409EFF'
+  if (score >= 60) return '#E6A23C'
+  return '#F56C6C'
+}
 
 const alertByComponent = ref([])
 const faultByCode = ref([])
@@ -296,6 +335,8 @@ const loadStats = async () => {
     stats.value.onlineVehicles = data.onlineVehicles ?? 0
     stats.value.alerts = data.totalAlertCount ?? 0
     stats.value.faults = data.totalFaultCount ?? 0
+    stats.value.fleetHealthScore = data.fleetHealthScore ?? 0
+    stats.value.domainHealth = data.domainHealth || []
     alertByComponent.value = data.alertByComponent || []
     faultByCode.value = data.faultByCode || []
     alerts.value = data.recentAlerts || []
@@ -685,5 +726,66 @@ const handleResize = () => {
 .trend-chart {
   width: 100%;
   height: 300px;
+}
+
+.fleet-health {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.fleet-score {
+  text-align: center;
+}
+
+.fleet-score-label {
+  font-size: 13px;
+  color: #606266;
+  margin-top: 4px;
+}
+
+.fleet-domains {
+  flex: 1;
+  min-width: 420px;
+}
+
+.fd-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.fd-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 24px;
+}
+
+.fd-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fd-name {
+  width: 52px;
+  font-size: 12px;
+  color: #606266;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fd-score {
+  width: 34px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.fd-empty {
+  color: #c0c4cc;
+  font-size: 13px;
 }
 </style>

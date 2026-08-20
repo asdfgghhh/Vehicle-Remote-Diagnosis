@@ -23,4 +23,6 @@ public interface UserService extends IService<User> {
     void deleteUser(Long id);
 
     void assignRoles(Long userId, List<Long> roleIds);
+
+    List<String> getPermissionCodesByUserId(Long userId);
 }

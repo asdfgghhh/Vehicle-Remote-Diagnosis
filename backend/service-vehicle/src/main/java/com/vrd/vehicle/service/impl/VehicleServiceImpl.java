@@ -15,12 +15,14 @@ import com.vrd.vehicle.entity.Vehicle;
 import com.vrd.vehicle.entity.VehicleAlert;
 import com.vrd.vehicle.entity.VehicleEcu;
 import com.vrd.vehicle.entity.VehicleFault;
+import com.vrd.vehicle.entity.VehicleHealth;
 import com.vrd.vehicle.entity.VehicleModel;
 import com.vrd.vehicle.mapper.SyncLogMapper;
 import com.vrd.vehicle.mapper.VehicleAlertMapper;
 import com.vrd.vehicle.mapper.VehicleAlertTrendStatMapper;
 import com.vrd.vehicle.mapper.VehicleEcuMapper;
 import com.vrd.vehicle.mapper.VehicleFaultMapper;
+import com.vrd.vehicle.mapper.VehicleHealthMapper;
 import com.vrd.vehicle.mapper.VehicleMapper;
 import com.vrd.vehicle.mapper.VehicleOnlineStatMapper;
 import com.vrd.vehicle.service.VehicleModelService;
@@ -31,6 +33,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -60,6 +64,8 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
     private VehicleOnlineStatMapper vehicleOnlineStatMapper;
     @Autowired
     private VehicleAlertTrendStatMapper vehicleAlertTrendStatMapper;
+    @Autowired
+    private VehicleHealthMapper vehicleHealthMapper;
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
     @Autowired
@@ -114,7 +120,61 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
         stats.setTotalFaultCount(this.vehicleFaultMapper.selectCount(
                 new LambdaQueryWrapper<VehicleFault>().eq(VehicleFault::getDeleted, 0)));
         stats.setFaultByCode(this.buildFaultByCode());
+        this.fillHealthStats(stats);
         return stats;
+    }
+
+    private void fillHealthStats(VehicleDashboardStatsVO stats) {
+        List<VehicleHealth> rows = this.vehicleHealthMapper.selectList(
+                new LambdaQueryWrapper<VehicleHealth>().isNotNull(VehicleHealth::getHealthScore));
+        if (rows == null || rows.isEmpty()) {
+            stats.setFleetHealthScore(100);
+            stats.setDomainHealth(new ArrayList<>());
+            return;
+        }
+        Map<String, long[]> agg = new LinkedHashMap<>();
+        Map<String, String> names = new HashMap<>();
+        for (VehicleHealth row : rows) {
+            long[] acc = agg.computeIfAbsent(row.getDomainCode(), k -> new long[2]);
+            acc[0] += row.getHealthScore().longValue();
+            acc[1]++;
+            if (row.getDomainName() != null) {
+                names.putIfAbsent(row.getDomainCode(), row.getDomainName());
+            }
+        }
+        List<VehicleDashboardStatsVO.DomainHealthStat> domainStats = new ArrayList<>();
+        String[] domainOrder = {"ADAS", "COCKPIT", "POWERTRAIN", "CHASSIS", "BODY", "BATTERY", "TELEMATICS"};
+        for (String code : domainOrder) {
+            long[] acc = agg.get(code);
+            if (acc == null) continue;
+            VehicleDashboardStatsVO.DomainHealthStat item = new VehicleDashboardStatsVO.DomainHealthStat();
+            item.setDomainCode(code);
+            item.setDomainName(names.getOrDefault(code, code));
+            item.setHealthScore((int) Math.round((double) acc[0] / (double) acc[1]));
+            item.setStatus(this.resolveHealthStatus(item.getHealthScore()));
+            domainStats.add(item);
+        }
+        long totalScore = 0L;
+        long totalCount = 0L;
+        for (long[] acc : agg.values()) {
+            totalScore += acc[0];
+            totalCount += acc[1];
+        }
+        stats.setFleetHealthScore(totalCount > 0L ? (int) Math.round((double) totalScore / (double) totalCount) : 100);
+        stats.setDomainHealth(domainStats);
+    }
+
+    private String resolveHealthStatus(int score) {
+        if (score >= 90) {
+            return "NORMAL";
+        }
+        if (score >= 75) {
+            return "ATTENTION";
+        }
+        if (score >= 60) {
+            return "WARNING";
+        }
+        return "DANGER";
     }
 
     @Override

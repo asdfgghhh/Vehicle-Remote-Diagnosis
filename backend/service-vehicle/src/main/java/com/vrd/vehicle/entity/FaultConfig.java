@@ -28,11 +28,15 @@ public class FaultConfig {
     private Integer alarmLevel;
     private String description;
     private Integer status;
+    private Long faultSceneId;
+    private Integer aiBadge;
     private Integer deleted;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     @TableField(exist=false)
     private String modelName;
+    @TableField(exist=false)
+    private String faultSceneName;
 
     public Long getId() {
         return this.id;
@@ -74,6 +78,14 @@ public class FaultConfig {
         return this.status;
     }
 
+    public Long getFaultSceneId() {
+        return this.faultSceneId;
+    }
+
+    public Integer getAiBadge() {
+        return this.aiBadge;
+    }
+
     public Integer getDeleted() {
         return this.deleted;
     }
@@ -88,6 +100,10 @@ public class FaultConfig {
 
     public String getModelName() {
         return this.modelName;
+    }
+
+    public String getFaultSceneName() {
+        return this.faultSceneName;
     }
 
     public void setId(Long id) {
@@ -130,6 +146,14 @@ public class FaultConfig {
         this.status = status;
     }
 
+    public void setFaultSceneId(Long faultSceneId) {
+        this.faultSceneId = faultSceneId;
+    }
+
+    public void setAiBadge(Integer aiBadge) {
+        this.aiBadge = aiBadge;
+    }
+
     public void setDeleted(Integer deleted) {
         this.deleted = deleted;
     }
@@ -144,6 +168,10 @@ public class FaultConfig {
 
     public void setModelName(String modelName) {
         this.modelName = modelName;
+    }
+
+    public void setFaultSceneName(String faultSceneName) {
+        this.faultSceneName = faultSceneName;
     }
 
     public boolean equals(Object o) {
