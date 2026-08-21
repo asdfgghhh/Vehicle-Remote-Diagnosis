@@ -23,6 +23,11 @@ kafka:
     uds-commands: uds-commands
     uds-responses: uds-responses
 
+vrd:
+  uds:
+    mock-enabled: ${UDS_MOCK_ENABLED:true}
+    response-timeout-ms: ${UDS_RESPONSE_TIMEOUT_MS:8000}
+
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   global-config:

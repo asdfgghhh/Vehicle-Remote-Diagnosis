@@ -13,13 +13,18 @@ import com.vrd.diagnosis.kafka.UdsCommandProducer;
 import com.vrd.diagnosis.mapper.UdsDiagnosisSessionMapper;
 import com.vrd.diagnosis.mapper.UdsDtcRecordMapper;
 import com.vrd.diagnosis.service.UdsDiagnosisService;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +38,14 @@ implements UdsDiagnosisService {
     private final UdsCommandProducer udsCommandProducer;
     private final Map<String, String> securitySeedCache = new ConcurrentHashMap<String, String>();
     private final Map<String, Integer> ecuSessionState = new ConcurrentHashMap<String, Integer>();
+    private final Map<String, CompletableFuture<UdsResponse>> pendingResponses = new ConcurrentHashMap<String, CompletableFuture<UdsResponse>>();
+    private final SecureRandom secureRandom = new SecureRandom();
+
+    @Value("${vrd.uds.mock-enabled:true}")
+    private boolean mockEnabled;
+
+    @Value("${vrd.uds.response-timeout-ms:8000}")
+    private long responseTimeoutMs;
 
     public UdsDiagnosisServiceImpl(UdsDiagnosisSessionMapper sessionMapper, UdsDtcRecordMapper dtcRecordMapper, UdsCommandProducer udsCommandProducer) {
         this.sessionMapper = sessionMapper;
@@ -47,7 +60,11 @@ implements UdsDiagnosisService {
         String ecuKey = request.getVin() + ":" + request.getEcuType();
         this.ecuSessionState.put(ecuKey, sessionType);
         byte[] udaRequest = new byte[]{16, (byte)sessionType};
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 16, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 16, sessionType, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 16, "DIAGNOSTIC_SESSION_CONTROL_ACK", System.currentTimeMillis());
         response.setSessionStatus(this.getSessionTypeName(sessionType));
         this.saveSession(request, traceId, 16, sessionType, "SESSION_ACK", 1, null, System.currentTimeMillis());
@@ -59,7 +76,11 @@ implements UdsDiagnosisService {
         String traceId = this.generateTraceId();
         int resetType = request.getResetType() != null ? request.getResetType() : 3;
         byte[] udaRequest = new byte[]{17, (byte)resetType};
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 17, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 17, resetType, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 17, "ECU_RESET_ACK", System.currentTimeMillis());
         this.saveSession(request, traceId, 17, resetType, "RESET_ACK", 1, null, System.currentTimeMillis());
         return response;
@@ -72,8 +93,13 @@ implements UdsDiagnosisService {
         int subFunction = securityLevel << 1 | 1;
         byte[] udaRequest = new byte[]{39, (byte)subFunction};
         String seed = this.generateSeed();
-        this.securitySeedCache.put(traceId, seed);
+        String cacheKey = this.securityCacheKey(request, securityLevel);
+        this.securitySeedCache.put(cacheKey, seed);
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 39, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 39, subFunction, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 39, "SEED:" + seed, System.currentTimeMillis());
         response.setSecurityStatus("SEED_RECEIVED");
         response.setParsedData(Map.of("seed", seed, "traceId", traceId));
@@ -83,21 +109,26 @@ implements UdsDiagnosisService {
 
     @Override
     public UdsResponse securityAccessSendKey(UdsRequest request) {
-        String traceId = request.getVin() + "_" + System.currentTimeMillis();
+        String traceId = this.generateTraceId();
         int securityLevel = request.getSecurityLevel() != null ? request.getSecurityLevel() : 1;
         int subFunction = securityLevel << 1 | 2;
-        String cachedSeed = this.securitySeedCache.get(traceId);
+        String cacheKey = this.securityCacheKey(request, securityLevel);
+        String cachedSeed = this.securitySeedCache.get(cacheKey);
         boolean keyValid = this.validateKey(cachedSeed, request.getSecurityKey());
         byte[] udaRequest = this.buildKeySendFrame(securityLevel, request.getSecurityKey());
         if (!keyValid) {
-            this.securitySeedCache.remove(traceId);
+            this.securitySeedCache.remove(cacheKey);
             UdsResponse nrc = UdsResponse.negativeResponse(traceId, request.getVin(), 39, 53, "\u5bc6\u94a5\u9a8c\u8bc1\u5931\u8d25", System.currentTimeMillis());
             nrc.setSecurityStatus("ACCESS_DENIED");
             this.saveSession(request, traceId, 39, subFunction, "KEY_INVALID", 0, 53, System.currentTimeMillis());
             return nrc;
         }
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 39, udaRequest);
-        this.securitySeedCache.remove(traceId);
+        this.securitySeedCache.remove(cacheKey);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 39, subFunction, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 39, "SECURITY_ACCESS_GRANTED", System.currentTimeMillis());
         response.setSecurityStatus("ACCESS_GRANTED");
         this.saveSession(request, traceId, 39, subFunction, "ACCESS_GRANTED", 1, null, System.currentTimeMillis());
@@ -109,7 +140,11 @@ implements UdsDiagnosisService {
         String traceId = this.generateTraceId();
         int did = request.getDataIdentifier() != null ? request.getDataIdentifier() : 61840;
         byte[] udaRequest = new byte[]{34, (byte)(did >> 8 & 0xFF), (byte)(did & 0xFF)};
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 34, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 34, did, startMs);
+        }
         String mockData = "DID_" + String.format("%04X", did) + "_DATA";
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 34, mockData, System.currentTimeMillis());
         this.saveSession(request, traceId, 34, did, mockData, 1, null, System.currentTimeMillis());
@@ -121,7 +156,11 @@ implements UdsDiagnosisService {
         String traceId = this.generateTraceId();
         int did = request.getDataIdentifier() != null ? request.getDataIdentifier() : 1;
         byte[] udaRequest = this.buildWriteDidFrame(did, request.getRequestData());
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 46, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 46, did, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 46, "WRITE_ACK", System.currentTimeMillis());
         this.saveSession(request, traceId, 46, did, "WRITE_ACK", 1, null, System.currentTimeMillis());
         return response;
@@ -132,7 +171,11 @@ implements UdsDiagnosisService {
         String traceId = this.generateTraceId();
         int subFunction = 1;
         byte[] udaRequest = new byte[]{25, (byte)subFunction, (byte)(request.getDtcStatusMask() != null ? request.getDtcStatusMask() : 255)};
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 25, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 25, subFunction, startMs);
+        }
         String dtcData = "DTC_COUNT:3|P0300:Confirmed|U0100:Pending|C1201:Permanent";
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 25, dtcData, System.currentTimeMillis());
         this.saveDtcRecords(request, dtcData, traceId);
@@ -144,7 +187,11 @@ implements UdsDiagnosisService {
     public UdsResponse clearDiagnosticInformation(UdsRequest request) {
         String traceId = this.generateTraceId();
         byte[] udaRequest = new byte[]{20, -1, -1, -1};
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 20, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 20, null, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 20, "CLEAR_ACK", System.currentTimeMillis());
         this.saveSession(request, traceId, 20, null, "CLEAR_ACK", 1, null, System.currentTimeMillis());
         return response;
@@ -155,7 +202,11 @@ implements UdsDiagnosisService {
         String traceId = this.generateTraceId();
         int routineId = request.getRoutineId() != null ? request.getRoutineId() : 57345;
         byte[] udaRequest = new byte[]{49, 1, (byte)(routineId >> 8 & 0xFF), (byte)(routineId & 0xFF)};
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 49, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 49, routineId, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 49, "ROUTINE_STARTED:" + String.format("%04X", routineId), System.currentTimeMillis());
         this.saveSession(request, traceId, 49, routineId, "ROUTINE_STARTED", 1, null, System.currentTimeMillis());
         return response;
@@ -165,7 +216,11 @@ implements UdsDiagnosisService {
     public UdsResponse readMemoryByAddress(UdsRequest request) {
         String traceId = this.generateTraceId();
         byte[] udaRequest = this.buildMemoryReadFrame(request.getMemoryAddress(), request.getMemorySize());
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 35, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 35, null, startMs);
+        }
         String mockData = "MEM_0x" + Long.toHexString(request.getMemoryAddress()) + "_SIZE_" + request.getMemorySize();
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 35, mockData, System.currentTimeMillis());
         this.saveSession(request, traceId, 35, null, mockData, 1, null, System.currentTimeMillis());
@@ -176,7 +231,11 @@ implements UdsDiagnosisService {
     public UdsResponse writeMemoryByAddress(UdsRequest request) {
         String traceId = this.generateTraceId();
         byte[] udaRequest = this.buildMemoryWriteFrame(request.getMemoryAddress(), request.getRequestData());
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 61, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 61, null, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 61, "MEM_WRITE_ACK", System.currentTimeMillis());
         this.saveSession(request, traceId, 61, null, "MEM_WRITE_ACK", 1, null, System.currentTimeMillis());
         return response;
@@ -186,7 +245,11 @@ implements UdsDiagnosisService {
     public UdsResponse inputOutputControl(UdsRequest request) {
         String traceId = this.generateTraceId();
         byte[] udaRequest = new byte[]{47, (byte)(request.getDataIdentifier() != null ? request.getDataIdentifier() >> 8 & 0xFF : 0), (byte)(request.getDataIdentifier() != null ? request.getDataIdentifier() & 0xFF : 1), 3};
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 47, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 47, null, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 47, "IO_CONTROL_ACK", System.currentTimeMillis());
         this.saveSession(request, traceId, 47, null, "IO_CONTROL_ACK", 1, null, System.currentTimeMillis());
         return response;
@@ -196,7 +259,11 @@ implements UdsDiagnosisService {
     public UdsResponse testerPresent(UdsRequest request) {
         String traceId = this.generateTraceId();
         byte[] udaRequest = new byte[]{62, 0};
+        long startMs = System.currentTimeMillis();
         this.sendUdsCommand(request, traceId, 62, udaRequest);
+        if (!this.mockEnabled) {
+            return this.awaitResponse(request, traceId, 62, null, startMs);
+        }
         UdsResponse response = UdsResponse.success(traceId, request.getVin(), 62, "TESTER_PRESENT_ACK", System.currentTimeMillis());
         this.saveSession(request, traceId, 62, null, "ACK", 1, null, System.currentTimeMillis());
         return response;
@@ -239,6 +306,66 @@ implements UdsDiagnosisService {
         }
         wrapper.orderByDesc(UdsDiagnosisSession::getRequestTime);
         return this.page(pageParam, wrapper);
+    }
+
+    @Override
+    public void completeResponse(UdsResponse response) {
+        if (response == null || response.getTraceId() == null) {
+            log.warn("Ignore invalid UDS response: {}", response);
+            return;
+        }
+        CompletableFuture<UdsResponse> future = this.pendingResponses.remove(response.getTraceId());
+        if (future == null) {
+            log.warn("No pending request for UDS response traceId={}, serviceId=0x{}", response.getTraceId(),
+                    response.getServiceId() != null ? Integer.toHexString(response.getServiceId()) : "?");
+            return;
+        }
+        future.complete(response);
+        log.info("UDS response matched: traceId={}, serviceId=0x{}, success={}", response.getTraceId(),
+                response.getServiceId() != null ? Integer.toHexString(response.getServiceId()) : "?",
+                response.getSuccess());
+    }
+
+    private UdsResponse awaitResponse(UdsRequest request, String traceId, int serviceId, Integer subFunction, long startMs) {
+        CompletableFuture<UdsResponse> future = new CompletableFuture<>();
+        this.pendingResponses.put(traceId, future);
+        try {
+            UdsResponse response = future.get(this.responseTimeoutMs, TimeUnit.MILLISECONDS);
+            if (response.getResponseTimeMs() == null) {
+                response.setResponseTimeMs(System.currentTimeMillis() - startMs);
+            }
+            String responseData = response.getResponseData();
+            boolean ok = Boolean.TRUE.equals(response.getSuccess());
+            this.saveSession(request, traceId, serviceId, subFunction, responseData, ok ? 1 : 0,
+                    response.getNegativeResponseCode(), System.currentTimeMillis() - startMs);
+            if (serviceId == 25 && responseData != null) {
+                this.saveDtcRecords(request, responseData, traceId);
+            }
+            return response;
+        }
+        catch (TimeoutException e) {
+            log.warn("UDS response timeout: traceId={}, serviceId=0x{}, timeout={}ms", traceId, Integer.toHexString(serviceId), this.responseTimeoutMs);
+            UdsResponse err = UdsResponse.error(traceId, request.getVin(), serviceId, "\u8f66\u7aef\u54cd\u5e94\u8d85\u65f6(" + this.responseTimeoutMs + "ms)\uff0c\u8bf7\u786e\u8ba4\u8f66\u8f86\u5728\u7ebf");
+            err.setResponseTimeMs(System.currentTimeMillis() - startMs);
+            this.saveSession(request, traceId, serviceId, subFunction, err.getNegativeResponseDesc(), 0, null, System.currentTimeMillis() - startMs);
+            return err;
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("UDS response wait interrupted: traceId={}", traceId, e);
+            return UdsResponse.error(traceId, request.getVin(), serviceId, "\u7b49\u5f85\u8f66\u7aef\u54cd\u5e94\u88ab\u4e2d\u65ad");
+        }
+        catch (Exception e) {
+            log.error("UDS response wait failed: traceId={}", traceId, e);
+            return UdsResponse.error(traceId, request.getVin(), serviceId, "\u7b49\u5f85\u8f66\u7aef\u54cd\u5e94\u5f02\u5e38: " + e.getMessage());
+        }
+        finally {
+            this.pendingResponses.remove(traceId);
+        }
+    }
+
+    private String securityCacheKey(UdsRequest request, int securityLevel) {
+        return (request.getVin() == null ? "UNKNOWN" : request.getVin()) + ":" + securityLevel;
     }
 
     @Async
@@ -317,7 +444,7 @@ implements UdsDiagnosisService {
     }
 
     private String generateSeed() {
-        long seed = (long)(Math.random() * 4.294967295E9);
+        long seed = this.secureRandom.nextLong() & 0xFFFFFFFFL;
         return String.format("%08X", seed);
     }
 

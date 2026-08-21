@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix="kafka.topics")
 public class KafkaTopicProperties {
     private String vehicleSignals = "vehicle-signals";
+    private String udsCommands = "uds-commands";
+    private String udsResponses = "uds-responses";
 
     public String getVehicleSignals() {
         return this.vehicleSignals;
@@ -21,6 +23,22 @@ public class KafkaTopicProperties {
 
     public void setVehicleSignals(String vehicleSignals) {
         this.vehicleSignals = vehicleSignals;
+    }
+
+    public String getUdsCommands() {
+        return this.udsCommands;
+    }
+
+    public void setUdsCommands(String udsCommands) {
+        this.udsCommands = udsCommands;
+    }
+
+    public String getUdsResponses() {
+        return this.udsResponses;
+    }
+
+    public void setUdsResponses(String udsResponses) {
+        this.udsResponses = udsResponses;
     }
 
     public boolean equals(Object o) {

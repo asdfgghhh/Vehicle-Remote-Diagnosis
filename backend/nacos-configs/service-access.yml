@@ -35,11 +35,15 @@ mqtt:
   password: ${MQTT_PASSWORD:public}
   client-id: ${MQTT_CLIENT_ID:vrd-access-client}
   topic: ${MQTT_TOPIC:vehicle/signal/+}
+  uds-response-topic: ${MQTT_UDS_RESPONSE_TOPIC:vrd/+/uds/response}
+  uds-request-topic-prefix: ${MQTT_UDS_REQUEST_PREFIX:vrd}
   qos: 1
 
 kafka:
   topics:
     vehicle-signals: vehicle-signals
+    uds-commands: uds-commands
+    uds-responses: uds-responses
 
 clickhouse:
   enabled: ${CLICKHOUSE_ENABLED:true}

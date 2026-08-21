@@ -36,5 +36,7 @@ extends IService<UdsDiagnosisSession> {
     public UdsResponse executeRequest(UdsRequest var1);
 
     public Object querySessions(String var1, Integer var2, Integer var3);
+
+    public void completeResponse(UdsResponse var1);
 }
 

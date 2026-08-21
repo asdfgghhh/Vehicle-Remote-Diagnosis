@@ -39,5 +39,15 @@ public class KafkaMessageProducer {
         this.kafkaTemplate.send(this.topicProperties.getVehicleSignals(), vin, message);
         log.debug("Published signal message to Kafka, vin={}", vin);
     }
+
+    public void publishUdsResponse(String vin, String payload) {
+        JSONObject envelope = new JSONObject();
+        envelope.put("vin", vin);
+        envelope.put("source", "mqtt");
+        envelope.put("payload", payload);
+        String message = envelope.toJSONString(new JSONWriter.Feature[0]);
+        this.kafkaTemplate.send(this.topicProperties.getUdsResponses(), vin, message);
+        log.debug("Published UDS response to Kafka topic={}, vin={}", this.topicProperties.getUdsResponses(), vin);
+    }
 }
 
