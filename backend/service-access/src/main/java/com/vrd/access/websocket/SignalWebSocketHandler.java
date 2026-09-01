@@ -31,6 +31,22 @@ import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+/**
+ * 车辆信号实时推送 WebSocket 处理器（service-access，端口 9086）
+ * <p>
+ * 对外 WebSocket 端点（经网关/Nginx 反向代理路径为 /ws/signal[/&lt;vin&gt;]）：
+ * <ul>
+ *   <li>连接 /ws/signal/{vin}：VIN 订阅模式，仅接收该车的信号与告警推送</li>
+ *   <li>连接 /ws/signal：全局广播模式，接收全部车辆的告警推送</li>
+ * </ul>
+ * 客户端可在连接后发送 JSON 消息动态切换模式：
+ * <pre>
+ * {"action": "subscribe",   "vin": "LSV123..."}  // 切换到指定车辆订阅
+ * {"action": "unsubscribe"}                        // 切回全局广播
+ * {"action": "ping"}                               // 心跳，服务端回 {"type":"pong"}
+ * </pre>
+ * 服务端推送的消息类型：connected（欢迎）、signal（实时信号）、alert（告警）等。
+ */
 @Component
 public class SignalWebSocketHandler
 extends TextWebSocketHandler {
@@ -41,6 +57,10 @@ extends TextWebSocketHandler {
         this.sessionManager = sessionManager;
     }
 
+    /**
+     * 连接建立回调：从 URI 提取 VIN 注册会话并发送欢迎消息
+     * <p>路径末段为 VIN 则注册为 VIN 订阅会话，否则注册为全局广播会话。
+     */
     public void afterConnectionEstablished(WebSocketSession session) {
         String vin = this.extractVinFromUri(session);
         if (vin != null) {
@@ -53,11 +73,18 @@ extends TextWebSocketHandler {
         log.info("WebSocket connected: sessionId={}, vin={}", session.getId(), vin);
     }
 
+    /**
+     * 连接关闭回调：注销会话并记录日志
+     */
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         this.sessionManager.removeSession(session);
         log.info("WebSocket disconnected: sessionId={}, status={}", session.getId(), status);
     }
 
+    /**
+     * 处理客户端下行 JSON 消息
+     * <p>支持 action：subscribe（订阅指定 VIN）、unsubscribe（切回全局广播）、ping（心跳）。
+     */
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         String payload = (String)message.getPayload();
         log.debug("Received WebSocket message from {}: {}", session.getId(), payload);
@@ -84,23 +111,43 @@ extends TextWebSocketHandler {
         }
     }
 
+    /**
+     * 传输层异常回调：注销异常会话
+     */
     public void handleTransportError(WebSocketSession session, Throwable exception) {
         log.error("WebSocket transport error: sessionId={}", session.getId(), exception);
         this.sessionManager.removeSession(session);
     }
 
+    /**
+     * 向订阅指定 VIN 的客户端推送实时信号消息
+     *
+     * @param vin        车架号
+     * @param signalJson 信号 JSON 报文
+     */
     public void broadcastSignal(String vin, String signalJson) {
         for (WebSocketSession session : this.sessionManager.getSessionsByVin(vin)) {
             this.sendMessage(session, signalJson);
         }
     }
 
+    /**
+     * 向全部全局广播会话推送消息
+     *
+     * @param message JSON 报文
+     */
     public void broadcastToAll(String message) {
         for (WebSocketSession session : this.sessionManager.getAllSessions()) {
             this.sendMessage(session, message);
         }
     }
 
+    /**
+     * 推送告警消息：VIN 订阅会话与全局广播会话均会收到
+     *
+     * @param vin       车架号
+     * @param alertJson 告警 JSON 报文
+     */
     public void broadcastAlert(String vin, String alertJson) {
         for (WebSocketSession session : this.sessionManager.getSessionsByVin(vin)) {
             this.sendMessage(session, alertJson);

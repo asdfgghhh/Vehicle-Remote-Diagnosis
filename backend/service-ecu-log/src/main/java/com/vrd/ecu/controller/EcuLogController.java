@@ -15,6 +15,12 @@ import org.springframework.web.bind.annotation.*;
 import java.io.File;
 import java.time.LocalDateTime;
 
+/**
+ * ECU 日志接口（服务端口 9083，网关路由前缀 /api/ecu-log）
+ * <p>
+ * 提供车端 ECU 日志记录的分页查询与原始日志文件下载能力。
+ * 日志文件由车端上传后经对象存储/本地磁盘管理。
+ */
 @RestController
 @RequestMapping("/ecu-log")
 public class EcuLogController {
@@ -22,6 +28,18 @@ public class EcuLogController {
     @Autowired
     private EcuLogService ecuLogService;
 
+    /**
+     * 分页查询 ECU 日志记录
+     * <p>GET /ecu-log/page
+     *
+     * @param current   当前页码，默认 1
+     * @param size      每页条数，默认 10
+     * @param vin       可选，按车架号过滤
+     * @param ecuType   可选，按 ECU 类型过滤
+     * @param startTime 可选，采集时间范围起点（格式 yyyy-MM-dd HH:mm:ss）
+     * @param endTime   可选，采集时间范围终点（格式 yyyy-MM-dd HH:mm:ss）
+     * @return 分页结果 PageResult&lt;EcuLogRecord&gt;
+     */
     @GetMapping("/page")
     public Result<PageResult<EcuLogRecord>> page(@RequestParam(value = "current", defaultValue = "1") Integer current,
                                                  @RequestParam(value = "size", defaultValue = "10") Integer size,
@@ -35,6 +53,13 @@ public class EcuLogController {
         return Result.success(page);
     }
 
+    /**
+     * 下载 ECU 原始日志文件
+     * <p>GET /ecu-log/download/{id}
+     *
+     * @param id 日志记录 ID
+     * @return 二进制文件流（attachment）；记录不存在或文件缺失返回 404
+     */
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> download(@PathVariable("id") Long id) {
         try {

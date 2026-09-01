@@ -18,6 +18,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
 
+/**
+ * WebSocket 会话管理器
+ * <p>
+ * 维护两类会话集合（均为线程安全）：
+ * <ul>
+ *   <li>全局广播会话（allSessions）：接收全部车辆的告警推送</li>
+ *   <li>VIN 订阅会话（vinSessions）：按车架号分组，接收对应车辆的信号/告警推送</li>
+ * </ul>
+ * sessionVinMap 记录会话当前订阅的 VIN，用于会话断开或切换模式时正确注销。
+ */
 @Component
 public class WebSocketSessionManager {
     private static final Logger log = LoggerFactory.getLogger(WebSocketSessionManager.class);

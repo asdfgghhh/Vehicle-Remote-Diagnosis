@@ -24,6 +24,10 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  task:
+    scheduling:
+      pool:
+        size: 4
 
 mybatis-plus:
   configuration:
@@ -42,6 +46,30 @@ vrd:
       consumer-topic: vehicle-data
       producer-topic: vehicle-data
       consumer-group-id: vehicle-processor
+    # ===== 车辆在线状态管理 =====
+    online:
+      # Kafka：在线状态事件 Topic + 消费组
+      status-event-topic: vehicle-online-status
+      status-event-group-id: vehicle-online-status-processor
+      stats-snapshot-topic: vehicle-online-stats
+      # 离线超时：超过该分钟数无任何上报视为离线
+      timeout-minutes: 5
+      # 开启兜底超时扫描（生产必须 true）
+      timeout-scan-enabled: true
+      # Cron 表达式
+      scan-cron: "0 * * * * ?"
+      hourly-stat-cron: "0 0 * * * ?"
+      daily-stat-cron: "0 0 0 * * ?"
+      # Redis Key
+      redis-key-ttl-seconds: 86400
+      redis-hash-prefix: "vehicle:online:"
+      redis-online-set-key: "vehicle:online:all"
+      # 日志写入
+      big-data-table-name: "vehicle_online_log"
+      tdengine-stable-name: "stb_vehicle_online_log"
+      log-write-batch-size: 500
+      # 写入失败仅告警，不影响主流程
+      log-write-degrade-on-error: true
   diagnosis-service-url: http://service-diagnosis:9087
 
 file:

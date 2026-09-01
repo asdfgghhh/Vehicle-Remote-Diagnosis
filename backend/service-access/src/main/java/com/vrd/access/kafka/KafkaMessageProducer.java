@@ -49,5 +49,30 @@ public class KafkaMessageProducer {
         this.kafkaTemplate.send(this.topicProperties.getUdsResponses(), vin, message);
         log.debug("Published UDS response to Kafka topic={}, vin={}", this.topicProperties.getUdsResponses(), vin);
     }
+
+    /**
+     * 发布车辆在线状态事件（Kafka -> service-vehicle 消费者）
+     *
+     * @param eventPayload 已组装好的事件 JSON（包含 vin / event / timestamp / source / ext...）
+     */
+    public void publishVehicleOnlineStatus(JSONObject eventPayload) {
+        if (eventPayload == null || !eventPayload.containsKey("vin")) {
+            log.warn("Skip invalid online-status payload: {}", eventPayload);
+            return;
+        }
+        if (!eventPayload.containsKey("source")) {
+            eventPayload.put("source", "MQTT");
+        }
+        if (!eventPayload.containsKey("timestamp")) {
+            eventPayload.put("timestamp", System.currentTimeMillis());
+        }
+        String vin = eventPayload.getString("vin");
+        this.kafkaTemplate.send(
+                this.topicProperties.getVehicleOnlineStatus(),
+                vin,
+                eventPayload.toJSONString(new JSONWriter.Feature[0]));
+        log.debug("Published vehicle online status event to Kafka: vin={}, event={}",
+                vin, eventPayload.getString("event"));
+    }
 }
 

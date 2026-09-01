@@ -34,24 +34,54 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 车型管理接口（服务端口 9082，网关路由前缀 /api/vehicle/model）
+ * <p>
+ * 维护车型主数据（品牌、厂商、动力、变速器、燃料类型、排放标准等），
+ * 车辆档案通过 modelId 关联车型。
+ */
 @RestController
 @RequestMapping(value={"/vehicle/model"})
 public class VehicleModelController {
     @Autowired
     private VehicleModelService vehicleModelService;
 
+    /**
+     * 分页查询车型列表
+     * <p>GET /vehicle/model/page
+     *
+     * @param current 当前页码，默认 1
+     * @param size    每页条数，默认 10
+     * @param keyword 可选，按车型名称/编码模糊过滤
+     * @return 分页结果 Page&lt;VehicleModel&gt;
+     */
     @GetMapping(value={"/page"})
     public Result<Page<VehicleModel>> page(@RequestParam(value="current", defaultValue="1") Integer current, @RequestParam(value="size", defaultValue="10") Integer size, @RequestParam(value="keyword", required=false) String keyword) {
         Page<VehicleModel> page = this.vehicleModelService.page(current, size, keyword);
         return Result.success(page);
     }
 
+    /**
+     * 按 ID 查询车型详情
+     * <p>GET /vehicle/model/{id}
+     *
+     * @param id 车型 ID
+     * @return VehicleModel 车型详情；不存在时 data 为 null
+     */
     @GetMapping(value={"/{id}"})
     public Result<VehicleModel> getById(@PathVariable(value="id") Long id) {
         VehicleModel model = this.vehicleModelService.getById(id);
         return Result.success(model);
     }
 
+    /**
+     * 新增车型
+     * <p>POST /vehicle/model
+     *
+     * @param dto 车型信息（modelCode、modelName、brand、manufacturer、vehicleType、
+     *            enginePower、transmissionType、fuelType、emissionStandard、year、description）
+     * @return 创建成功后的 VehicleModel（状态默认启用）
+     */
     @PostMapping
     public Result<VehicleModel> create(@RequestBody VehicleModelDTO dto) {
         VehicleModel model = new VehicleModel();
@@ -74,6 +104,14 @@ public class VehicleModelController {
         return Result.success(model);
     }
 
+    /**
+     * 更新车型信息
+     * <p>PUT /vehicle/model/{id}
+     *
+     * @param id  车型 ID
+     * @param dto 待更新的车型字段
+     * @return 更新后的 VehicleModel；车型不存在时返回错误
+     */
     @PutMapping(value={"/{id}"})
     public Result<VehicleModel> update(@PathVariable(value="id") Long id, @RequestBody VehicleModelDTO dto) {
         VehicleModel model = this.vehicleModelService.getById(id);
@@ -96,6 +134,13 @@ public class VehicleModelController {
         return Result.success(model);
     }
 
+    /**
+     * 删除车型（逻辑删除，置 deleted=1）
+     * <p>DELETE /vehicle/model/{id}
+     *
+     * @param id 车型 ID
+     * @return 空结果；车型不存在时静默成功
+     */
     @DeleteMapping(value={"/{id}"})
     public Result<Void> delete(@PathVariable(value="id") Long id) {
         VehicleModel model = this.vehicleModelService.getById(id);

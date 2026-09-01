@@ -8,6 +8,7 @@
  *  org.springframework.cloud.client.discovery.EnableDiscoveryClient
  *  org.springframework.kafka.annotation.EnableKafka
  *  org.springframework.scheduling.annotation.EnableAsync
+ *  org.springframework.scheduling.annotation.EnableScheduling
  */
 package com.vrd.vehicle;
 
@@ -17,11 +18,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableKafka
 @EnableAsync
+@EnableScheduling
 @MapperScan(value={"com.vrd.vehicle.mapper", "com.vrd.vehicle.rule.mapper"})
 public class ServiceVehicleApplication {
     public static void main(String[] args) {

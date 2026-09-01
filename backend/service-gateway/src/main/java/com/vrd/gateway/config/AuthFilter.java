@@ -67,6 +67,7 @@ Ordered {
         this.webClient = WebClient.builder().codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(0x1000000)).build();
     }
 
+    @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
@@ -152,6 +153,7 @@ Ordered {
         });
     }
 
+    @Override
     public int getOrder() {
         return -100;
     }

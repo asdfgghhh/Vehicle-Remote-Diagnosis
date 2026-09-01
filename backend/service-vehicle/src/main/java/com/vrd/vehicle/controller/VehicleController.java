@@ -40,45 +40,104 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 车辆管理接口（服务端口 9082，网关路由前缀 /api/vehicle）
+ * <p>
+ * 提供车辆档案 CRUD、车辆 ECU 信息管理、Dashboard 统计趋势、
+ * 以及从 Kafka / 外部 API 同步车辆数据的能力。
+ */
 @RestController
 @RequestMapping(value={"/vehicle"})
 public class VehicleController {
     @Autowired
     private VehicleService vehicleService;
 
+    /**
+     * 获取车辆 Dashboard 统计汇总
+     * <p>GET /vehicle/stats
+     * <p>用于系统首页：车辆总数、在线数、告警数等概览指标。
+     *
+     * @return VehicleDashboardStatsVO 统计汇总数据
+     */
     @GetMapping(value={"/stats"})
     public Result<VehicleDashboardStatsVO> stats() {
         return Result.success(this.vehicleService.getDashboardStats());
     }
 
+    /**
+     * 获取车辆在线数趋势
+     * <p>GET /vehicle/stats/online-trend
+     *
+     * @param granularity 粒度，可选 hour / day / month，默认 hour
+     * @return VehicleOnlineTrendVO 在线趋势时序数据
+     */
     @GetMapping(value={"/stats/online-trend"})
     public Result<VehicleOnlineTrendVO> onlineTrend(@RequestParam(value="granularity", defaultValue="hour") String granularity) {
         return Result.success(this.vehicleService.getOnlineTrend(granularity));
     }
 
+    /**
+     * 获取告警/故障长期趋势
+     * <p>GET /vehicle/stats/alert-long-trend
+     *
+     * @param granularity 粒度，可选 hour / day / month，默认 hour
+     * @param metric      指标名，默认 faultCount（故障数）
+     * @return VehicleAlertLongTrendVO 告警趋势时序数据
+     */
     @GetMapping(value={"/stats/alert-long-trend"})
     public Result<VehicleAlertLongTrendVO> alertLongTrend(@RequestParam(value="granularity", defaultValue="hour") String granularity, @RequestParam(value="metric", defaultValue="faultCount") String metric) {
         return Result.success(this.vehicleService.getAlertLongTrend(granularity, metric));
     }
 
+    /**
+     * 分页查询车辆列表
+     * <p>GET /vehicle/page
+     *
+     * @param current 当前页码，默认 1
+     * @param size    每页条数，默认 10
+     * @param keyword 可选，按 VIN / 车牌号模糊过滤
+     * @param modelId 可选，按车型 ID 过滤
+     * @return 分页结果 Page&lt;Vehicle&gt;
+     */
     @GetMapping(value={"/page"})
     public Result<Page<Vehicle>> page(@RequestParam(value="current", defaultValue="1") Integer current, @RequestParam(value="size", defaultValue="10") Integer size, @RequestParam(value="keyword", required=false) String keyword, @RequestParam(value="modelId", required=false) Long modelId) {
         Page<Vehicle> page = this.vehicleService.page(current, size, keyword, modelId);
         return Result.success(page);
     }
 
+    /**
+     * 按 ID 查询车辆详情
+     * <p>GET /vehicle/{id}
+     *
+     * @param id 车辆 ID
+     * @return Vehicle 车辆档案；不存在时 data 为 null
+     */
     @GetMapping(value={"/{id}"})
     public Result<Vehicle> getById(@PathVariable(value="id") Long id) {
         Vehicle vehicle = this.vehicleService.getById(id);
         return Result.success(vehicle);
     }
 
+    /**
+     * 按 VIN 查询车辆详情
+     * <p>GET /vehicle/vin/{vin}
+     *
+     * @param vin 车架号（17 位 VIN 码）
+     * @return Vehicle 车辆档案；不存在时 data 为 null
+     */
     @GetMapping(value={"/vin/{vin}"})
     public Result<Vehicle> getByVin(@PathVariable(value="vin") String vin) {
         Vehicle vehicle = this.vehicleService.lambdaQuery().eq(Vehicle::getVin, vin).one();
         return Result.success(vehicle);
     }
 
+    /**
+     * 新增车辆档案
+     * <p>POST /vehicle
+     *
+     * @param dto 车辆信息（VIN、车型、车牌、颜色、生产年份、发动机号、车身号、配置字、ECU 版本等）
+     * @return 创建成功后的 Vehicle（含生成的 ID）
+     */
     @PostMapping
     public Result<Vehicle> create(@RequestBody VehicleDTO dto) {
         Vehicle vehicle = new Vehicle();
@@ -95,6 +154,14 @@ public class VehicleController {
         return Result.success(result);
     }
 
+    /**
+     * 更新车辆档案
+     * <p>PUT /vehicle/{id}
+     *
+     * @param id  车辆 ID
+     * @param dto 待更新的车辆字段
+     * @return 更新后的 Vehicle
+     */
     @PutMapping(value={"/{id}"})
     public Result<Vehicle> update(@PathVariable(value="id") Long id, @RequestBody VehicleDTO dto) {
         Vehicle vehicle = new Vehicle();
@@ -112,6 +179,13 @@ public class VehicleController {
         return Result.success(result);
     }
 
+    /**
+     * 删除车辆（逻辑删除，置 deleted=1）
+     * <p>DELETE /vehicle/{id}
+     *
+     * @param id 车辆 ID
+     * @return 空结果；车辆不存在时静默成功
+     */
     @DeleteMapping(value={"/{id}"})
     public Result<Void> delete(@PathVariable(value="id") Long id) {
         Vehicle vehicle = this.vehicleService.getById(id);
@@ -122,24 +196,53 @@ public class VehicleController {
         return Result.success();
     }
 
+    /**
+     * 触发从 Kafka 同步车辆数据
+     * <p>POST /vehicle/sync/kafka
+     * <p>手动触发消费车辆同步 Topic，异步执行，接口立即返回。
+     *
+     * @return 空结果
+     */
     @PostMapping(value={"/sync/kafka"})
     public Result<Void> syncFromKafka() {
         this.vehicleService.syncFromKafka();
         return Result.success();
     }
 
+    /**
+     * 触发从外部 API 同步车辆数据
+     * <p>POST /vehicle/sync/api?apiUrl={url}
+     *
+     * @param apiUrl 外部数据源接口地址
+     * @return 空结果
+     */
     @PostMapping(value={"/sync/api"})
     public Result<Void> syncFromApi(@RequestParam(value="apiUrl") String apiUrl) {
         this.vehicleService.syncFromApi(apiUrl);
         return Result.success();
     }
 
+    /**
+     * 查询车辆下的 ECU 列表
+     * <p>GET /vehicle/{id}/ecu
+     *
+     * @param id 车辆 ID
+     * @return List&lt;VehicleEcu&gt; 该车全部 ECU 信息
+     */
     @GetMapping(value={"/{id}/ecu"})
     public Result<List<VehicleEcu>> getEcus(@PathVariable(value="id") Long id) {
         List<VehicleEcu> ecus = this.vehicleService.getEcusByVehicleId(id);
         return Result.success(ecus);
     }
 
+    /**
+     * 为车辆新增 ECU 记录
+     * <p>POST /vehicle/{id}/ecu
+     *
+     * @param id  车辆 ID
+     * @param dto ECU 信息（ecuType、零件号、软硬件版本、供应商、序列号、安装日期）
+     * @return 空结果（新增记录状态默认启用）
+     */
     @PostMapping(value={"/{id}/ecu"})
     public Result<Void> addEcu(@PathVariable(value="id") Long id, @RequestBody VehicleEcuDTO dto) {
         VehicleEcu ecu = new VehicleEcu();
@@ -158,6 +261,14 @@ public class VehicleController {
         return Result.success();
     }
 
+    /**
+     * 更新车辆 ECU 信息
+     * <p>PUT /vehicle/ecu/{ecuId}
+     *
+     * @param ecuId ECU 记录 ID
+     * @param dto   待更新的 ECU 字段
+     * @return 空结果
+     */
     @PutMapping(value={"/ecu/{ecuId}"})
     public Result<Void> updateEcu(@PathVariable(value="ecuId") Long ecuId, @RequestBody VehicleEcuDTO dto) {
         VehicleEcu ecu = new VehicleEcu();

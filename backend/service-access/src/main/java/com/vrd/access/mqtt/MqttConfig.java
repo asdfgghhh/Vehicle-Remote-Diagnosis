@@ -41,6 +41,8 @@ public class MqttConfig {
     private String topic;
     @Value(value="${mqtt.uds-response-topic:vrd/+/uds/response}")
     private String udsResponseTopic;
+    @Value(value="${mqtt.status-topic:vrd/+/status}")
+    private String statusTopic;
     @Value(value="${mqtt.qos}")
     private int qos;
 
@@ -79,6 +81,20 @@ public class MqttConfig {
     public MqttPahoMessageDrivenChannelAdapter mqttUdsAdapter() {
         MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(this.clientId + "-uds", this.mqttClientFactory(), new String[]{this.udsResponseTopic});
         adapter.setOutputChannel(this.mqttUdsInputChannel());
+        adapter.setQos(new int[]{this.qos});
+        return adapter;
+    }
+
+    @Bean
+    public MessageChannel mqttStatusInputChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    public MqttPahoMessageDrivenChannelAdapter mqttStatusAdapter() {
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
+                this.clientId + "-status", this.mqttClientFactory(), new String[]{this.statusTopic});
+        adapter.setOutputChannel(this.mqttStatusInputChannel());
         adapter.setQos(new int[]{this.qos});
         return adapter;
     }

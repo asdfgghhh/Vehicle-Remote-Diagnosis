@@ -17,6 +17,13 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * 认证授权接口（服务端口 9081，网关路由前缀 /api/auth）
+ * <p>
+ * 提供用户登录注册、JWT 令牌校验/内省、当前用户信息查询等基础认证能力。
+ * 生产环境经 service-gateway 的 AuthFilter 完成 JWT 校验后，通过 X-User-Id 信任头传递用户身份；
+ * 直连本服务的场景下才自行解析 Authorization 头中的 JWT。
+ */
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -30,6 +37,17 @@ public class AuthController {
     @Autowired
     private RoleService roleService;
 
+    /**
+     * 用户登录
+     * <p>POST /auth/login
+     *
+     * @param request 登录请求体（username 用户名、password 明文密码）
+     * @return LoginResponse：token（JWT）、username、userId、expiresIn（有效期，秒）
+     * <ul>
+     *   <li>用户名或密码错误返回 code=401</li>
+     *   <li>账号被禁用（status != 1）返回 code=403</li>
+     * </ul>
+     */
     @PostMapping("/login")
     public Result<LoginResponse> login(@RequestBody LoginRequest request) {
         User user = this.userService.findByUsername(request.getUsername());
@@ -50,6 +68,13 @@ public class AuthController {
         return Result.success(response);
     }
 
+    /**
+     * 用户注册
+     * <p>POST /auth/register
+     *
+     * @param request 注册请求体（username、password、email、phone、realName）
+     * @return 注册结果消息；用户名已存在时返回错误
+     */
     @PostMapping("/register")
     public Result<String> register(@RequestBody RegisterRequest request) {
         if (this.userService.findByUsername(request.getUsername()) != null) {
@@ -69,6 +94,13 @@ public class AuthController {
         return Result.success("注册成功");
     }
 
+    /**
+     * 校验 JWT 令牌有效性
+     * <p>GET /auth/validate
+     *
+     * @param token Authorization 请求头，格式 "Bearer {jwt}"
+     * @return Boolean：true=令牌有效；false=缺失或无效
+     */
     @GetMapping("/validate")
     public Result<Boolean> validateToken(@RequestHeader(value = "Authorization") String token) {
         if (token == null || !token.startsWith("Bearer ")) {
@@ -78,6 +110,14 @@ public class AuthController {
         return Result.success(this.jwtUtil.validateToken(jwt));
     }
 
+    /**
+     * 令牌内省（Token Introspection）
+     * <p>POST /auth/introspect?token={jwt}
+     * <p>解析令牌并返回用户身份与角色信息，供网关或下游服务鉴权使用。
+     *
+     * @param token JWT 令牌（可带或不带 "Bearer " 前缀）
+     * @return TokenIntrospectResponse：active、userId、username、roles、expiresAt（毫秒时间戳）
+     */
     @PostMapping("/introspect")
     public Result<TokenIntrospectResponse> introspectToken(@RequestParam(value = "token") String token) {
         TokenIntrospectResponse response = new TokenIntrospectResponse();
@@ -106,6 +146,15 @@ public class AuthController {
         }
     }
 
+    /**
+     * 查询当前登录用户信息
+     * <p>GET /auth/userinfo
+     * <p>优先读取网关信任头 X-User-Id；无该头时回退解析 Authorization 中的 JWT（直连场景）。
+     *
+     * @param authorization Authorization 请求头（直连时必填）
+     * @param xUserId       网关注入的用户 ID 信任头
+     * @return UserInfoResponse：userId、username、realName、email、phone、roles（角色名列表）、permissions（权限码列表）
+     */
     @GetMapping("/userinfo")
     public Result<UserInfoResponse> userInfo(@RequestHeader(value = "Authorization", required = false) String authorization, @RequestHeader(value = "X-User-Id", required = false) Long xUserId) {
         try {
