@@ -4,7 +4,9 @@ import com.vrd.vehicle.dto.VehicleOnlineLogRecord;
 import com.vrd.vehicle.entity.Vehicle;
 import com.vrd.vehicle.service.VehicleOnlineLogService;
 import com.vrd.vehicle.service.VehicleService;
+import com.vrd.vehicle.websocket.OnlineStatusWebSocketHandler;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -13,11 +15,8 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 /**
  * 车辆在线状态管理器（核心业务类）
@@ -25,11 +24,12 @@ import java.util.function.BiConsumer;
  * 职责：
  * <ol>
  *   <li>处理一条「状态变更事件」：Redis 更新 → MySQL vehicle.status / last_online_time
- *       → 写 BigData 日志 → 调用推送回调（WebSocket）</li>
+ *       → 写 BigData 日志 → 直接 WebSocket 推送前端</li>
  *   <li>业务信号隐含刷新：touchLastSeen(vin) 仅更新 lastSeen，不翻转状态</li>
  *   <li>兜底扫描：获取所有在线 VIN，判定超时并强制离线</li>
  * </ol>
- * 该类不直接依赖 Kafka / MQTT / WebSocket 实现，通过回调/模板方式解耦。
+ * 数据流：MQTT → service-access(网关) → Kafka → service-vehicle(本类)
+ *         → 更新DB + 直接 WebSocket 推送前端
  * <p>
  * 经验 #1531640：状态变更必须以「时间戳最后写入」为准，禁止乱序导致 ONLINE 被 OFFLINE 覆盖；
  *                通过 eventTime 与 lastSeen 对比执行"乐观更新"。
@@ -43,13 +43,8 @@ public class VehicleOnlineStateManager {
     private final VehicleService vehicleService;
     private final VehicleOnlineLogService onlineLogService;
     private final StringRedisTemplate redisTemplate;
-
-    /** WebSocket 推送回调：(vin, jsonPayload) -> void */
-    private final Map<String, BiConsumer<String, String>> pushCallbacks = new ConcurrentHashMap<>();
-
-    public void registerPushCallback(String name, BiConsumer<String, String> callback) {
-        pushCallbacks.put(name, callback);
-    }
+    private final OnlineStatusWebSocketHandler webSocketHandler;
+    private final DashboardCacheManager dashboardCacheManager;
 
     // ========================================================================
     // 对外 API
@@ -118,7 +113,18 @@ public class VehicleOnlineStateManager {
             throw e;
         }
 
-        // 7) 写 BigData 日志
+        // 7) 更新首页仪表盘 Redis 计数器（在线数增减）
+        try {
+            if (newStatus == VehicleOnlineStatus.ONLINE.getCode()) {
+                dashboardCacheManager.incrementOnline();
+            } else if (newStatus == VehicleOnlineStatus.OFFLINE.getCode()) {
+                dashboardCacheManager.decrementOnline();
+            }
+        } catch (Exception e) {
+            log.warn("Dashboard counter update failed for vin={}", vin, e);
+        }
+
+        // 8) 写 BigData 日志
         try {
             VehicleOnlineLogRecord logRecord = new VehicleOnlineLogRecord();
             logRecord.setVin(vin);
@@ -287,26 +293,23 @@ public class VehicleOnlineStateManager {
         }
     }
 
+    /**
+     * 状态变更后直接通过 service-vehicle 的 WebSocket 推送前端
+     */
     private void dispatchPush(String vin, int statusFrom, int statusTo, String reason, LocalDateTime evt) {
-        if (pushCallbacks.isEmpty()) return;
-
-        com.alibaba.fastjson2.JSONObject payload = new com.alibaba.fastjson2.JSONObject();
-        payload.put("type", "onlineStatus");
-        payload.put("vin", vin);
-        payload.put("status", statusTo);
-        payload.put("statusFrom", statusFrom);
-        payload.put("statusLabel", VehicleOnlineStatus.fromCode(statusTo).getLabel());
-        payload.put("reason", reason);
-        payload.put("eventTime", evt == null ? null : evt.toString());
-        payload.put("timestamp", toEpochMs(evt == null ? LocalDateTime.now() : evt));
-        String json = JSON.toJSONString(payload);
-
-        for (Map.Entry<String, BiConsumer<String, String>> entry : pushCallbacks.entrySet()) {
-            try {
-                entry.getValue().accept(vin, json);
-            } catch (Exception e) {
-                log.warn("push callback {} failed for vin={}", entry.getKey(), vin, e);
-            }
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("type", "onlineStatus");
+            payload.put("vin", vin);
+            payload.put("status", statusTo);
+            payload.put("statusFrom", statusFrom);
+            payload.put("statusLabel", VehicleOnlineStatus.fromCode(statusTo).getLabel());
+            payload.put("reason", reason);
+            payload.put("eventTime", evt == null ? null : evt.toString());
+            payload.put("timestamp", toEpochMs(evt == null ? LocalDateTime.now() : evt));
+            webSocketHandler.broadcast(vin, payload.toJSONString());
+        } catch (Exception e) {
+            log.warn("dispatchPush (WebSocket) failed for vin={}", vin, e);
         }
     }
 

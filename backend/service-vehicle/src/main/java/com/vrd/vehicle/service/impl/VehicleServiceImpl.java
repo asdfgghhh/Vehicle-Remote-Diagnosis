@@ -97,19 +97,17 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
                 .eq(VehicleModel::getDeleted, 0)
                 .orderByAsc(VehicleModel::getModelName)
                 .list();
-        List<Vehicle> vehicles = this.lambdaQuery()
-                .eq(Vehicle::getDeleted, 0)
-                .isNotNull(Vehicle::getModelId)
-                .list();
-        Map<Long, Long> countByModelId = vehicles.stream()
-                .collect(Collectors.groupingBy(Vehicle::getModelId, Collectors.counting()));
         List<VehicleDashboardStatsVO.ModelVehicleStat> modelStats = new ArrayList<>();
         for (VehicleModel model : models) {
+            long count = this.lambdaQuery()
+                    .eq(Vehicle::getDeleted, 0)
+                    .eq(Vehicle::getModelId, model.getId())
+                    .count();
             VehicleDashboardStatsVO.ModelVehicleStat item = new VehicleDashboardStatsVO.ModelVehicleStat();
             item.setModelId(model.getId());
             item.setModelName(model.getModelName());
             item.setModelCode(model.getModelCode());
-            item.setVehicleCount(countByModelId.getOrDefault(model.getId(), 0L));
+            item.setVehicleCount(count);
             modelStats.add(item);
         }
         stats.setModelStats(modelStats);
@@ -120,61 +118,7 @@ public class VehicleServiceImpl extends ServiceImpl<VehicleMapper, Vehicle> impl
         stats.setTotalFaultCount(this.vehicleFaultMapper.selectCount(
                 new LambdaQueryWrapper<VehicleFault>().eq(VehicleFault::getDeleted, 0)));
         stats.setFaultByCode(this.buildFaultByCode());
-        this.fillHealthStats(stats);
         return stats;
-    }
-
-    private void fillHealthStats(VehicleDashboardStatsVO stats) {
-        List<VehicleHealth> rows = this.vehicleHealthMapper.selectList(
-                new LambdaQueryWrapper<VehicleHealth>().isNotNull(VehicleHealth::getHealthScore));
-        if (rows == null || rows.isEmpty()) {
-            stats.setFleetHealthScore(100);
-            stats.setDomainHealth(new ArrayList<>());
-            return;
-        }
-        Map<String, long[]> agg = new LinkedHashMap<>();
-        Map<String, String> names = new HashMap<>();
-        for (VehicleHealth row : rows) {
-            long[] acc = agg.computeIfAbsent(row.getDomainCode(), k -> new long[2]);
-            acc[0] += row.getHealthScore().longValue();
-            acc[1]++;
-            if (row.getDomainName() != null) {
-                names.putIfAbsent(row.getDomainCode(), row.getDomainName());
-            }
-        }
-        List<VehicleDashboardStatsVO.DomainHealthStat> domainStats = new ArrayList<>();
-        String[] domainOrder = {"ADAS", "COCKPIT", "POWERTRAIN", "CHASSIS", "BODY", "BATTERY", "TELEMATICS"};
-        for (String code : domainOrder) {
-            long[] acc = agg.get(code);
-            if (acc == null) continue;
-            VehicleDashboardStatsVO.DomainHealthStat item = new VehicleDashboardStatsVO.DomainHealthStat();
-            item.setDomainCode(code);
-            item.setDomainName(names.getOrDefault(code, code));
-            item.setHealthScore((int) Math.round((double) acc[0] / (double) acc[1]));
-            item.setStatus(this.resolveHealthStatus(item.getHealthScore()));
-            domainStats.add(item);
-        }
-        long totalScore = 0L;
-        long totalCount = 0L;
-        for (long[] acc : agg.values()) {
-            totalScore += acc[0];
-            totalCount += acc[1];
-        }
-        stats.setFleetHealthScore(totalCount > 0L ? (int) Math.round((double) totalScore / (double) totalCount) : 100);
-        stats.setDomainHealth(domainStats);
-    }
-
-    private String resolveHealthStatus(int score) {
-        if (score >= 90) {
-            return "NORMAL";
-        }
-        if (score >= 75) {
-            return "ATTENTION";
-        }
-        if (score >= 60) {
-            return "WARNING";
-        }
-        return "DANGER";
     }
 
     @Override

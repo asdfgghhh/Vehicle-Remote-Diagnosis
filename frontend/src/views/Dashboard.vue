@@ -3,41 +3,7 @@
     <!-- 页面标题 -->
     <div class="page-title">系统首页</div>
     <div class="page-desc">
-      车辆远程诊断平台总览 · VHR 数据驱动 · 实时监控全量车辆健康状态 ·
-      <span class="ws-live-badge" style="display:inline-flex;align-items:center;gap:4px">
-        <span class="dot"></span>WebSocket 实时推送 · 数据自动刷新
-      </span>
-    </div>
-
-    <!-- 车队健康总览横幅 -->
-    <div class="health-banner">
-      <div>
-        <div class="hb-title">🚗 车队健康总览</div>
-        <div class="hb-sub">VHR 数据闭环 · 覆盖七大域核心部件 · 实时更新</div>
-      </div>
-      <div class="hb-divider"></div>
-      <div class="hb-stat">
-        <div class="hb-num">{{ stats.fleetHealthScore || 0 }}<small>/100</small></div>
-        <div class="hb-label">车队健康指数</div>
-      </div>
-      <div class="hb-stat">
-        <div class="hb-num">{{ stats.totalVehicles }}</div>
-        <div class="hb-label">接入车辆</div>
-      </div>
-      <div class="hb-stat">
-        <div class="hb-num" style="color:#4ade80">{{ stats.onlineVehicles }}</div>
-        <div class="hb-label">在线车辆</div>
-      </div>
-      <div class="hb-stat">
-        <div class="hb-num" style="color:#fbbf24">{{ stats.alerts }}</div>
-        <div class="hb-label">活跃告警</div>
-      </div>
-      <div class="hb-domains">
-        <div v-for="d in domainList" :key="d.code" class="hb-domain" :class="hbDomainClass(d.score)" :title="d.name">
-          <span class="hd-name">{{ d.name }}</span>
-          <span class="hd-val">{{ d.score }}</span>
-        </div>
-      </div>
+      车辆远程诊断平台总览 · VHR 数据驱动 · 实时监控全量车辆状态
     </div>
 
     <!-- 统计卡 -->
@@ -71,7 +37,7 @@
         <div class="stat-info">
           <div class="stat-value">{{ stats.alerts }}</div>
           <div class="stat-label">活跃告警</div>
-          <div class="stat-trend down">↓ 实时推送</div>
+          <div class="stat-trend down">↓ 实时监控</div>
         </div>
       </div>
     </div>
@@ -119,7 +85,6 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">实时告警列表</div>
-          <span class="ws-live-badge"><span class="dot"></span>实时推送</span>
         </div>
         <div class="card-body" style="padding:14px 16px 16px">
           <div class="alert-list-stack">
@@ -144,43 +109,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- WebSocket 实时推送（保留功能） -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">🔌 WebSocket 实时推送</div>
-        <div>
-          <el-tag :type="wsConnected ? 'success' : 'danger'" size="small">
-            {{ wsConnected ? '已连接' : '已断开' }}
-          </el-tag>
-          <el-button size="small" style="margin-left:8px" @click="wsReconnect" :disabled="wsConnected">重新连接</el-button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-          <el-input v-model="wsVin" placeholder="输入 VIN 订阅（留空为全局广播）" size="small" style="width:280px" clearable>
-            <template #append>
-              <el-button @click="wsSubscribe" :disabled="!wsConnected">订阅</el-button>
-            </template>
-          </el-input>
-          <span style="font-size:12px;color:var(--text-secondary)">已接收推送：<b style="color:var(--primary)">{{ wsCount }}</b></span>
-          <span style="font-size:12px;color:var(--text-secondary)">当前订阅：<b style="color:var(--primary)">{{ wsSubscribedVin || '全局广播' }}</b></span>
-        </div>
-        <el-table :data="wsSignals" size="small" max-height="240" stripe>
-          <el-table-column prop="time" label="时间" width="170" />
-          <el-table-column prop="vin" label="VIN" width="160" />
-          <el-table-column prop="messageName" label="消息" width="140" />
-          <el-table-column label="信号">
-            <template #default="{ row }">
-              <el-tag v-for="(s, i) in row.signals.slice(0, 5)" :key="i" size="small" style="margin-right:6px">
-                {{ s.name }}={{ s.value }}{{ s.unit || '' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-empty v-if="wsSignals.length === 0" description="等待实时信号推送..." :image-size="60" style="padding:12px 0" />
       </div>
     </div>
 
@@ -221,42 +149,6 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { getVehicleDashboardStats, getVehicleOnlineTrend, getVehicleAlertLongTrend } from '@/api/vehicle'
-import wsManager from '../utils/websocket'
-
-// ---- WebSocket ----
-const wsConnected = ref(false)
-const wsVin = ref('')
-const wsSubscribedVin = ref('')
-const wsCount = ref(0)
-const wsSignals = ref([])
-
-const wsHandleSignal = (data) => {
-  wsCount.value++
-  wsSignals.value.unshift({
-    vin: data.vin,
-    time: data.timestamp
-      ? new Date(data.timestamp).toLocaleString('zh-CN', { hour12: false })
-      : new Date().toLocaleString('zh-CN', { hour12: false }),
-    messageName: data.signals?.[0]?.messageName || '',
-    signals: data.signals || []
-  })
-  if (wsSignals.value.length > 50) {
-    wsSignals.value = wsSignals.value.slice(0, 50)
-  }
-}
-
-const wsSubscribe = () => {
-  const vin = wsVin.value.trim()
-  if (vin) {
-    wsManager.subscribeVin(vin)
-    wsSubscribedVin.value = vin
-  }
-}
-
-const wsReconnect = () => {
-  wsManager.disconnect()
-  wsManager.connect(wsSubscribedVin.value || null)
-}
 
 // ---- 图表 ----
 const chartRef = ref(null)
@@ -267,6 +159,7 @@ let chart = null
 let pieChart = null
 let trendChart = null
 let alertLongTrendChart = null
+let slowTimer = null
 
 const trendGranularity = ref('hour')
 const onlineTrend = ref([])
@@ -287,43 +180,13 @@ const stats = ref({
   totalVehicles: 0,
   onlineVehicles: 0,
   alerts: 0,
-  faults: 0,
-  fleetHealthScore: 0,
-  domainHealth: []
+  faults: 0
 })
 
 const onlineRate = computed(() => {
   if (!stats.value.totalVehicles) return 0
   return Math.round((stats.value.onlineVehicles / stats.value.totalVehicles) * 100)
 })
-
-const domainNames = {
-  ADAS: '智驾域',
-  COCKPIT: '座舱域',
-  POWERTRAIN: '动力域',
-  CHASSIS: '底盘域',
-  BODY: '车身域',
-  BATTERY: '三电域',
-  TELEMATICS: '网联域'
-}
-
-const domainList = computed(() => {
-  const list = (stats.value.domainHealth || []).map(d => ({
-    code: d.domainCode,
-    name: d.domainName || domainNames[d.domainCode] || d.domainCode,
-    score: d.healthScore ?? 0
-  }))
-  if (!list.length) {
-    return Object.entries(domainNames).map(([code, name]) => ({ code, name, score: 0 }))
-  }
-  return list
-})
-
-const hbDomainClass = (score) => {
-  if (score >= 90) return 'ok'
-  if (score >= 75) return 'warn'
-  return 'bad'
-}
 
 const alertSeverity = (a) => {
   if (a.level === 'HIGH' || a.level === 'CRITICAL') return 'critical'
@@ -345,8 +208,6 @@ const loadStats = async () => {
     stats.value.onlineVehicles = data.onlineVehicles ?? 0
     stats.value.alerts = data.totalAlertCount ?? 0
     stats.value.faults = data.totalFaultCount ?? 0
-    stats.value.fleetHealthScore = data.fleetHealthScore ?? 0
-    stats.value.domainHealth = data.domainHealth || []
     alertByComponent.value = data.alertByComponent || []
     faultByCode.value = data.faultByCode || []
     alerts.value = data.recentAlerts || []
@@ -384,36 +245,25 @@ onMounted(async () => {
   await nextTick()
   initCharts()
   window.addEventListener('resize', handleResize)
+
+  // 首次加载所有数据
   await Promise.all([loadStats(), loadOnlineTrend(), loadAlertLongTrend()])
-  wsManager.on('connected', () => {
-    wsConnected.value = true
-  })
-  wsManager.on('disconnected', () => {
-    wsConnected.value = false
-  })
-  wsManager.on('signal', wsHandleSignal)
-  wsManager.connect()
+
+  // 定时刷新（30 秒）：统计计数 + 趋势图
+  slowTimer = setInterval(() => {
+    loadStats()
+    loadOnlineTrend()
+    loadAlertLongTrend()
+  }, 30_000)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
-  wsManager.disconnect()
-  if (chart) {
-    chart.dispose()
-    chart = null
-  }
-  if (pieChart) {
-    pieChart.dispose()
-    pieChart = null
-  }
-  if (trendChart) {
-    trendChart.dispose()
-    trendChart = null
-  }
-  if (alertLongTrendChart) {
-    alertLongTrendChart.dispose()
-    alertLongTrendChart = null
-  }
+  if (slowTimer) clearInterval(slowTimer)
+  if (chart) { chart.dispose(); chart = null }
+  if (pieChart) { pieChart.dispose(); pieChart = null }
+  if (trendChart) { trendChart.dispose(); trendChart = null }
+  if (alertLongTrendChart) { alertLongTrendChart.dispose(); alertLongTrendChart = null }
 })
 
 const updateComponentChart = () => {

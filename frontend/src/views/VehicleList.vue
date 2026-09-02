@@ -61,6 +61,18 @@
             <el-tag v-else type="info">API</el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="status" label="在线状态" width="110" align="center">
+          <template #default="{ row }">
+            <span class="online-dot" :class="row.status === 1 ? 'online' : 'offline'" />
+            <el-tag
+              :type="row.status === 1 ? 'success' : 'info'"
+              size="small"
+              style="margin-left: 6px"
+            >
+              {{ row.status === 1 ? '在线' : row.status === 2 ? '未知' : '离线' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
@@ -150,11 +162,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getVehiclePage, getVehicle, createVehicle, updateVehicle, deleteVehicle, getVehicleModelPage, getVehicleEcus } from '@/api/vehicle'
+import wsManager from '@/utils/onlineStatusWebSocket'
 
 const route = useRoute()
 const router = useRouter()
@@ -325,12 +338,29 @@ const handleCurrentChange = (current) => {
   loadData()
 }
 
+// ---- 实时在线状态 ----
+const onOnlineStatus = (data) => {
+  const row = tableData.value.find(r => r.vin === data.vin)
+  if (row) {
+    row.status = data.status
+    row.lastOnlineTime = data.eventTime
+  }
+}
+
 onMounted(() => {
   loadData()
   loadVehicleModels()
   if (route.query.editId) {
     openEditById(route.query.editId)
   }
+  // 连接全局实时推送，接收所有车辆在线状态变更广播
+  wsManager.on('onlineStatus', onOnlineStatus)
+  wsManager.connect(null)
+})
+
+onBeforeUnmount(() => {
+  wsManager.off('onlineStatus', onOnlineStatus)
+  wsManager.disconnect()
 })
 </script>
 
@@ -355,5 +385,26 @@ onMounted(() => {
 
 .model-select-full {
   width: 100%;
+}
+
+.online-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.online-dot.online {
+  background: #67c23a;
+  box-shadow: 0 0 6px #67c23a;
+  animation: pulse 2s infinite;
+}
+.online-dot.offline {
+  background: #909399;
+}
+@keyframes pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
 }
 </style>

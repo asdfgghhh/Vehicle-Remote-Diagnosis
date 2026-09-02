@@ -2,10 +2,7 @@
   <div>
     <el-card style="margin-bottom: 16px">
       <template #header>
-        <span>🔌 WebSocket 实时信号监控</span>
-        <el-tag :type="wsStatus === 'connected' ? 'success' : 'danger'" style="margin-left: 12px">
-          {{ wsStatusText }}
-        </el-tag>
+        <span>🔌 实时信号监控</span>
       </template>
 
       <el-row :gutter="16">
@@ -18,7 +15,6 @@
         </el-col>
         <el-col :span="6">
           <el-button @click="unsubscribeVin" :disabled="!subscribedVin">取消订阅</el-button>
-          <el-button @click="reconnect">重新连接</el-button>
         </el-col>
         <el-col :span="6" style="text-align: right">
           <el-statistic title="已接收信号数" :value="signalCount" />

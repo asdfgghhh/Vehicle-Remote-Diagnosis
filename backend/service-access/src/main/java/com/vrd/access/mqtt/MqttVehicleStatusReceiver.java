@@ -15,7 +15,6 @@ package com.vrd.access.mqtt;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.vrd.access.kafka.KafkaMessageProducer;
-import com.vrd.access.websocket.SignalWebSocketHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.integration.annotation.ServiceActivator;
@@ -23,39 +22,27 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
 /**
- * MQTT 车辆在线状态接收器（service-access）
+ * MQTT 车辆在线状态接收器（service-access 网关层）
  * <p>
  * 订阅 topic 格式：vrd/{vin}/status ，示例 payload：
  * <pre>
  * {"event":"online","accStatus":1,"signalStrength":-75,"batteryVoltage":12.8,"reason":"ignition_on"}
  * {"event":"offline","reason":"graceful_shutdown"}
  * </pre>
- * 处理逻辑：
- * <ol>
- *   <li>从 topic 中提取 VIN</li>
- *   <li>组装在线状态事件 JSON</li>
- *   <li>发送 Kafka (vehicle-online-status) → 由 service-vehicle 消费者落库+写日志</li>
- *   <li><b>低延迟路径</b>：直接通过本地 {@link SignalWebSocketHandler} 推送 onlineStatus 消息，
- *       前端无需等 Kafka 消费链路即可感知状态变更</li>
+ * service-access 仅作为网关：解析 MQTT 消息 → 转发 Kafka(vehicle-online-status)。
+ * 不直接推送前端，前端通知由 service-vehicle 更新数据库后通过 Kafka 回传。
  * </ol>
  */
 @Component
 public class MqttVehicleStatusReceiver {
     private static final Logger log = LoggerFactory.getLogger(MqttVehicleStatusReceiver.class);
     private static final String MQTT_TOPIC_HEADER = "mqtt_receivedTopic";
-    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     private final KafkaMessageProducer kafkaMessageProducer;
-    private final SignalWebSocketHandler signalWebSocketHandler;
 
-    public MqttVehicleStatusReceiver(KafkaMessageProducer kafkaMessageProducer,
-                                     SignalWebSocketHandler signalWebSocketHandler) {
+    public MqttVehicleStatusReceiver(KafkaMessageProducer kafkaMessageProducer) {
         this.kafkaMessageProducer = kafkaMessageProducer;
-        this.signalWebSocketHandler = signalWebSocketHandler;
     }
 
     @ServiceActivator(inputChannel = "mqttStatusInputChannel")
@@ -95,30 +82,10 @@ public class MqttVehicleStatusReceiver {
                 event.put("timestamp", System.currentTimeMillis());
             }
 
-            // 1) 发 Kafka → service-vehicle 消费落库
+            // 网关职责：仅转发到 Kafka，由 service-vehicle 消费后更新数据库并通知前端
             kafkaMessageProducer.publishVehicleOnlineStatus(event);
 
-            // 2) 直接 WebSocket 推送（低延迟路径），
-            //    即使 service-vehicle 暂时挂掉，前端也能先看到状态变化。
-            String ev = event.getString("event");
-            Integer status = "online".equalsIgnoreCase(ev) ? 1 : "offline".equalsIgnoreCase(ev) ? 0 : null;
-            if (status != null) {
-                JSONObject pushPayload = new JSONObject();
-                pushPayload.put("type", "onlineStatus");
-                pushPayload.put("vin", vin);
-                pushPayload.put("status", status);
-                pushPayload.put("statusLabel", status == 1 ? "在线" : "离线");
-                pushPayload.put("reason", event.getString("reason"));
-                pushPayload.put("eventTime", LocalDateTime.now().format(DTF));
-                pushPayload.put("timestamp", event.getLong("timestamp"));
-                String json = pushPayload.toJSONString();
-                // VIN 订阅会话推送
-                signalWebSocketHandler.broadcastSignal(vin, json);
-                // 全局广播会话推送（车辆列表页常用）
-                signalWebSocketHandler.broadcastToAll(json);
-            }
-
-            log.info("MQTT vehicle status received: vin={}, event={}", vin, ev);
+            log.info("MQTT vehicle status forwarded to Kafka: vin={}, event={}", vin, event.getString("event"));
         } catch (Exception e) {
             log.error("Failed to process MQTT vehicle status event", e);
         }
