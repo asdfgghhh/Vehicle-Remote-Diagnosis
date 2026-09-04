@@ -12,11 +12,16 @@
  *             执行 git ls-remote 获取远程分支，新增分支立即可见，无需预刷新
  *   SERVICE : 要构建/部署的服务（all = 全部 9 个；或单服务；或 frontend）
  *   ACTION  : build-deploy(默认) / deploy-only / build-only
- *   TAG     : 镜像标签（默认 latest，AUTO_TAG=true 时按 <branch>-<sha7>-<yyyyMMddHHmm> 生成）
+ *   TAG     : 镜像标签（默认 latest，AUTO_TAG=true 时按 <分支>-<sha7>-<commitDate> 生成）
+ *             时间戳使用 git commit author date（UTC，格式 yyyyMMddHHmm），不是构建时刻；
+ *             因此同一 commit 重构建会得到同样的 tag，便于溯源。
  *   AUTO_TAG: 为 true 时 TAG 参数被忽略
  *
- * 前提:
- *   - 已安装 git-parameter 插件（2026-09-04 安装，版本 462.463.v496a_59f698e5）
+ * 备注:
+ *   - tag 时间戳采用 git commit author date（UTC，%Y%m%d%H%M），保证同 commit 重构建得到
+ *     同一 tag，便于通过 tag 精确定位代码版本。如需改为构建时刻，改用
+ *     `new Date().format('yyyyMMddHHmm')` 并设置 TZ='Asia/Shanghai'。
+ *   - 已安装 git-parameter 插件（2026-09-04，462.463.v496a_59f698e5）
  *   - Job 的 SCM (Git) "Branches to build" 保持 main 即可，本 Jenkinsfile 内部
  *     会按 params.BRANCH 动态 checkout 到目标分支
  *   - Jenkins 凭据 harbor-credentials（用户名/密码）已配置
