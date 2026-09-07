@@ -93,11 +93,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import api from '../utils/api'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import {
+  getDbcFilePage,
+  getDbcSignals,
+  publishDbcFile,
+  deleteDbcFile
+} from '../api/dbc'
 
-const uploadUrl = '/api/dbc/file/upload'
-const uploadHeaders = ref({})
+// 上传地址与鉴权 header
+const uploadUrl = '/api/dbc/upload'
+const uploadHeaders = computed(() => {
+  const token = localStorage.getItem('token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+})
+
 const cantoolsAvailable = ref(false)
 const loading = ref(false)
 const dbcFiles = ref([])
@@ -116,7 +127,7 @@ onMounted(() => {
 
 async function checkCantoolsHealth() {
   try {
-    const res = await fetch('http://localhost:8090/health')
+    const res = await fetch('/api/dbc/health')
     const data = await res.json()
     cantoolsAvailable.value = data?.status === 'ok'
   } catch {
@@ -127,13 +138,17 @@ async function checkCantoolsHealth() {
 async function fetchDbcFiles() {
   loading.value = true
   try {
-    const res = await api.get('/dbc/file/page', {
-      params: { current: currentPage.value, size: pageSize.value, keyword: searchKeyword.value }
+    const res = await getDbcFilePage({
+      current: currentPage.value,
+      size: pageSize.value,
+      keyword: searchKeyword.value
     })
     if (res?.code === 200) {
       dbcFiles.value = res.data?.records || []
       total.value = res.data?.total || 0
     }
+  } catch (e) {
+    console.error('Failed to load DBC files:', e)
   } finally {
     loading.value = false
   }
@@ -142,7 +157,7 @@ async function fetchDbcFiles() {
 function beforeUpload(file) {
   const isDbc = file.name.toLowerCase().endsWith('.dbc')
   if (!isDbc) {
-    this.$message?.error?.('仅支持 .dbc 文件')
+    ElMessage.error('仅支持 .dbc 文件')
     return false
   }
   return true
@@ -159,7 +174,7 @@ function onUploadError() {
 
 async function viewDetails(row) {
   try {
-    const res = await api.get(`/dbc/file/${row.id}/signals`)
+    const res = await getDbcSignals(row.id)
     signalDetails.value = res?.data || []
     detailVisible.value = true
   } catch (e) {
@@ -168,13 +183,13 @@ async function viewDetails(row) {
 }
 
 async function publishDbc(row) {
-  await api.put(`/dbc/file/${row.id}/publish`)
+  await publishDbcFile(row.id)
   ElMessage.success('发布成功')
   fetchDbcFiles()
 }
 
 async function deleteDbc(row) {
-  await api.delete(`/dbc/file/${row.id}`)
+  await deleteDbcFile(row.id)
   ElMessage.success('删除成功')
   fetchDbcFiles()
 }
@@ -192,10 +207,5 @@ function statusType(status) {
 
 function statusText(status) {
   return { 0: '草稿', 1: '就绪', 2: '已发布' }[status] || '未知'
-}
-
-const ElMessage = {
-  success(msg) { /* global ElMessage */ if (window.$message) window.$message.success(msg) },
-  error(msg) { if (window.$message) window.$message.error(msg) }
 }
 </script>
