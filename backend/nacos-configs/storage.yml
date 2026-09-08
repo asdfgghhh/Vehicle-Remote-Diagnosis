@@ -32,8 +32,8 @@ storage:
     base-url: ${TENCENT_COS_BASE_URL:}
 
   minio:
-    endpoint: ${MINIO_ENDPOINT:http://124.221.104.56:9010}
-    access-key: ${MINIO_ACCESS_KEY:minioadmin}
-    secret-key: ${MINIO_SECRET_KEY:Wl123456}
-    bucket-name: ${MINIO_BUCKET:vrd}
-    base-url: ${MINIO_BASE_URL:http://124.221.104.56:9010/vrd}
+    endpoint: ${MINIO_ENDPOINT:http://124.221.104.56:9100}
+    access-key: ${MINIO_ACCESS_KEY:vrd_admin}
+    secret-key: ${MINIO_SECRET_KEY:Vrd@Minio2026}
+    bucket-name: ${MINIO_BUCKET:vrd-dbc}
+    base-url: ${MINIO_BASE_URL:http://124.221.104.56:9100/vrd-dbc}

@@ -17,6 +17,7 @@ import com.vrd.dbc.parser.DbcNode;
 import com.vrd.dbc.parser.DbcSignal;
 import com.vrd.dbc.service.DbcFileService;
 import com.vrd.dbc.service.DbcParserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,6 +44,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@Slf4j
 public class DbcFileServiceImpl extends ServiceImpl<DbcFileMapper, DbcFile> implements DbcFileService {
 
     @Autowired

@@ -10,20 +10,35 @@
 
       <el-row :gutter="16">
         <el-col :span="12">
+          <el-select
+            v-model="selectedModelId"
+            placeholder="请先选择车型（上传必填）"
+            style="width: 260px; margin-right: 12px"
+            filterable
+            clearable
+          >
+            <el-option
+              v-for="m in vehicleModels"
+              :key="m.id"
+              :label="m.modelName"
+              :value="m.id"
+            />
+          </el-select>
           <el-upload
             ref="uploadRef"
             :action="uploadUrl"
             :headers="uploadHeaders"
+            :data="uploadData"
             :before-upload="beforeUpload"
             :on-success="onUploadSuccess"
             :on-error="onUploadError"
             accept=".dbc"
             :limit="1"
           >
-            <el-button type="primary">上传 DBC 文件</el-button>
+            <el-button type="primary" :disabled="!selectedModelId">上传 DBC 文件</el-button>
             <template #tip>
               <div style="color: #999; margin-top: 8px">
-                支持 .dbc 格式文件，优先使用 cantools 专业解析库解析
+                支持 .dbc 格式文件，必须先选择车型后再上传
               </div>
             </template>
           </el-upload>
@@ -101,12 +116,22 @@ import {
   publishDbcFile,
   deleteDbcFile
 } from '../api/dbc'
+import { getVehicleModelPage } from '../api/vehicle'
 
 // 上传地址与鉴权 header
 const uploadUrl = '/api/dbc/upload'
 const uploadHeaders = computed(() => {
   const token = localStorage.getItem('token')
   return token ? { Authorization: `Bearer ${token}` } : {}
+})
+
+// 上传时附带的表单字段（modelId 是后端必填项）
+const uploadData = computed(() => {
+  const model = vehicleModels.value.find(m => m.id === selectedModelId.value)
+  return {
+    modelId: selectedModelId.value || '',
+    modelName: model?.modelName || ''
+  }
 })
 
 const cantoolsAvailable = ref(false)
@@ -120,10 +145,26 @@ const total = ref(0)
 const detailVisible = ref(false)
 const signalDetails = ref([])
 
+// 车型下拉数据
+const selectedModelId = ref(null)
+const vehicleModels = ref([])
+
 onMounted(() => {
+  loadVehicleModels()
   checkCantoolsHealth()
   fetchDbcFiles()
 })
+
+async function loadVehicleModels() {
+  try {
+    const res = await getVehicleModelPage({ current: 1, size: 1000 })
+    if (res?.code === 200) {
+      vehicleModels.value = res.data?.records || []
+    }
+  } catch (e) {
+    console.error('Failed to load vehicle models:', e)
+  }
+}
 
 async function checkCantoolsHealth() {
   try {
@@ -158,6 +199,10 @@ function beforeUpload(file) {
   const isDbc = file.name.toLowerCase().endsWith('.dbc')
   if (!isDbc) {
     ElMessage.error('仅支持 .dbc 文件')
+    return false
+  }
+  if (!selectedModelId.value) {
+    ElMessage.error('请先选择车型后再上传')
     return false
   }
   return true
