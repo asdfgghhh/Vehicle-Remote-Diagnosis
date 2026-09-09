@@ -42,12 +42,8 @@ export const downloadDbcFile = (id) => {
   return request.get(`/dbc/${id}/download`, { responseType: 'blob' })
 }
 
-export const dispatchToVehicle = (dbcId, vehicleId) => {
-  return request.post(`/dbc/${dbcId}/dispatch/${vehicleId}`)
-}
-
-export const dispatchToVehicles = (dbcId, vehicleIds) => {
-  return request.post(`/dbc/${dbcId}/dispatch`, vehicleIds)
+export const dispatchDbc = (dbcId) => {
+  return request.post(`/dbc/${dbcId}/dispatch`)
 }
 
 export const deleteDbcFile = (id) => {

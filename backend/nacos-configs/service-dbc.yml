@@ -6,18 +6,45 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_HOST:124.221.104.56}:${DB_PORT:3306}/vrd_dbc?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:change-me}
+    password: ${DB_PASSWORD:Wl1298236196}
   data:
     redis:
       host: ${REDIS_HOST:124.221.104.56}
       port: ${REDIS_PORT:6379}
       database: ${REDIS_DATABASE:0}
       timeout: ${REDIS_TIMEOUT:3000ms}
-      password: ${REDIS_PASSWORD:change-me}
+      password: ${REDIS_PASSWORD:Wl1298236196}
   servlet:
     multipart:
       max-file-size: 100MB
       max-request-size: 100MB
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:124.221.104.56:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: dbc-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+kafka:
+  topics:
+    dbc-dispatch: dbc-dispatch
+    dbc-dispatch-ack: dbc-dispatch-ack
+    dbc-dispatch-callback: dbc-dispatch-callback
+
+dispatch:
+  retry:
+    timeout-minutes: 5
+    max-count: 5
+    batch-size: 200
+    scan-interval-ms: 60000
+
+mqtt:
+  dispatch:
+    topic-prefix: ${MQTT_DISPATCH_PREFIX:vrd}
 
 mybatis-plus:
   configuration:

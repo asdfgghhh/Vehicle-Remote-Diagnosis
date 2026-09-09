@@ -38,6 +38,8 @@ mqtt:
   uds-response-topic: ${MQTT_UDS_RESPONSE_TOPIC:vrd/+/uds/response}
   uds-request-topic-prefix: ${MQTT_UDS_REQUEST_PREFIX:vrd}
   status-topic: ${MQTT_STATUS_TOPIC:vrd/+/status}
+  dispatch-topic-prefix: ${MQTT_DISPATCH_PREFIX:vrd}
+  dispatch-ack-topic: ${MQTT_DISPATCH_ACK_TOPIC:vrd/+/config/ack}
   qos: 1
 
 kafka:
@@ -46,6 +48,9 @@ kafka:
     uds-commands: uds-commands
     uds-responses: uds-responses
     vehicle-online-status: vehicle-online-status
+    dbc-dispatch: dbc-dispatch
+    dbc-dispatch-ack: dbc-dispatch-ack
+    dbc-dispatch-callback: dbc-dispatch-callback
 
 clickhouse:
   enabled: ${CLICKHOUSE_ENABLED:true}

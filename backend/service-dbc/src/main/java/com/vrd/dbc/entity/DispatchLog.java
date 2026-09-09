@@ -23,8 +23,10 @@ public class DispatchLog {
     private String dispatchType;
     private Integer status;
     private String result;
+    private Integer retryCount;
     private LocalDateTime dispatchTime;
     private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 
     public Long getId() {
         return this.id;
@@ -98,6 +100,22 @@ public class DispatchLog {
         this.createTime = createTime;
     }
 
+    public LocalDateTime getUpdateTime() {
+        return this.updateTime;
+    }
+
+    public void setUpdateTime(LocalDateTime updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Integer getRetryCount() {
+        return this.retryCount;
+    }
+
+    public void setRetryCount(Integer retryCount) {
+        this.retryCount = retryCount;
+    }
+
     public boolean equals(Object o) {
         if (o == this) {
             return true;
@@ -151,7 +169,12 @@ public class DispatchLog {
         }
         LocalDateTime this$createTime = this.getCreateTime();
         LocalDateTime other$createTime = other.getCreateTime();
-        return !(this$createTime == null ? other$createTime != null : !((Object)this$createTime).equals(other$createTime));
+        if (this$createTime == null ? other$createTime != null : !((Object)this$createTime).equals(other$createTime)) {
+            return false;
+        }
+        LocalDateTime this$updateTime = this.getUpdateTime();
+        LocalDateTime other$updateTime = other.getUpdateTime();
+        return !(this$updateTime == null ? other$updateTime != null : !((Object)this$updateTime).equals(other$updateTime));
     }
 
     protected boolean canEqual(Object other) {
@@ -179,11 +202,13 @@ public class DispatchLog {
         result = result * 59 + ($dispatchTime == null ? 43 : ((Object)$dispatchTime).hashCode());
         LocalDateTime $createTime = this.getCreateTime();
         result = result * 59 + ($createTime == null ? 43 : ((Object)$createTime).hashCode());
+        LocalDateTime $updateTime = this.getUpdateTime();
+        result = result * 59 + ($updateTime == null ? 43 : ((Object)$updateTime).hashCode());
         return result;
     }
 
     public String toString() {
-        return "DispatchLog(id=" + this.getId() + ", dbcFileId=" + this.getDbcFileId() + ", vehicleId=" + this.getVehicleId() + ", vin=" + this.getVin() + ", dispatchType=" + this.getDispatchType() + ", status=" + this.getStatus() + ", result=" + this.getResult() + ", dispatchTime=" + String.valueOf(this.getDispatchTime()) + ", createTime=" + String.valueOf(this.getCreateTime()) + ")";
+        return "DispatchLog(id=" + this.getId() + ", dbcFileId=" + this.getDbcFileId() + ", vehicleId=" + this.getVehicleId() + ", vin=" + this.getVin() + ", dispatchType=" + this.getDispatchType() + ", status=" + this.getStatus() + ", result=" + this.getResult() + ", dispatchTime=" + String.valueOf(this.getDispatchTime()) + ", createTime=" + String.valueOf(this.getCreateTime()) + ", updateTime=" + String.valueOf(this.getUpdateTime()) + ")";
     }
 }
 

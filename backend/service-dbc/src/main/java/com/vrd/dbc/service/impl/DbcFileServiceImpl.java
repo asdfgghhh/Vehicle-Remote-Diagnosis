@@ -4,10 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.vrd.common.exception.BusinessException;
+import com.vrd.common.message.DbcDispatchMessage;
+import com.vrd.common.result.Result;
 import com.vrd.common.storage.StorageKeyUtils;
 import com.vrd.common.storage.StorageService;
+import com.vrd.dbc.dto.VehicleInfo;
 import com.vrd.dbc.entity.DbcFile;
 import com.vrd.dbc.entity.DispatchLog;
+import com.vrd.dbc.feign.VehicleFeignClient;
+import com.vrd.dbc.kafka.DbcDispatchKafkaProducer;
 import com.vrd.dbc.mapper.DbcFileMapper;
 import com.vrd.dbc.mapper.DispatchLogMapper;
 import com.vrd.dbc.parser.CanFrameCodec;
@@ -55,6 +60,12 @@ public class DbcFileServiceImpl extends ServiceImpl<DbcFileMapper, DbcFile> impl
 
     @Autowired
     private DbcParserService dbcParserService;
+
+    @Autowired
+    private DbcDispatchKafkaProducer dbcDispatchKafkaProducer;
+
+    @Autowired
+    private VehicleFeignClient vehicleFeignClient;
 
     private static final Pattern MESSAGE_LINE = Pattern.compile("MESSAGE:\\s*BO_\\s*(\\d+)\\s+(\\w+):\\s*(\\d+)\\s+(\\w+)");
     private static final Pattern SIGNAL_LINE = Pattern.compile("SIGNAL:\\s+SG_\\s+(\\w+)\\s*:\\s*(\\d+)\\|(\\d+)@(\\d)([+-])\\s*\\(([^,]+),([^)]+)\\)\\s*\\[([^|]*)\\|([^\\]]*)\\]\\s*\"([^\"]*)\"\\s*(\\w+)");
@@ -549,39 +560,183 @@ public class DbcFileServiceImpl extends ServiceImpl<DbcFileMapper, DbcFile> impl
     }
 
     @Override
-    public void dispatchToVehicle(Long dbcFileId, Long vehicleId) {
+    public Map<String, Object> dispatchByModel(Long dbcFileId) {
         DbcFile dbcFile = this.getById(dbcFileId);
         if (dbcFile == null) {
             throw new BusinessException("DBC文件不存在");
         }
-        DispatchLog dispatchLog = new DispatchLog();
-        dispatchLog.setDbcFileId(dbcFileId);
-        dispatchLog.setVehicleId(vehicleId);
-        dispatchLog.setDispatchType("SINGLE");
-        dispatchLog.setStatus(1);
-        dispatchLog.setDispatchTime(LocalDateTime.now());
-        dispatchLog.setCreateTime(LocalDateTime.now());
+        Long modelId = dbcFile.getModelId();
+        if (modelId == null) {
+            throw new BusinessException("DBC文件未关联车型，无法按车型下发");
+        }
+
+        // 预构建下发指令公共部分（downloadUrl、sha256 等只需算一次）
+        DbcDispatchMessage template;
         try {
-            String objectKey = StorageKeyUtils.resolveObjectKey(dbcFile.getStorageKey(), dbcFile.getFilePath(), dbcFile.getStorageAddress(), this.storageService);
-            String result = this.sendToVehicle(objectKey, vehicleId);
-            dispatchLog.setStatus(2);
-            dispatchLog.setResult(result);
+            template = this.buildDispatchMessage(dbcFile, null);
         } catch (Exception e) {
-            dispatchLog.setStatus(3);
-            dispatchLog.setResult("失败: " + e.getMessage());
+            throw new BusinessException("构建下发指令失败: " + e.getMessage());
         }
-        this.dispatchLogMapper.insert(dispatchLog);
+
+        int total = 0;
+        int pending = 0;
+        int failed = 0;
+        int current = 1;
+        int pageSize = 1000;
+        LocalDateTime now = LocalDateTime.now();
+
+        // 分页拉取该车型下所有车辆
+        while (true) {
+            Result<List<VehicleInfo>> pageResult = this.vehicleFeignClient.listByModel(modelId, current, pageSize);
+            if (pageResult == null || pageResult.getData() == null || pageResult.getData().isEmpty()) {
+                break;
+            }
+
+            // 批量创建 dispatch_log（PENDING）
+            List<DispatchLog> batchLogs = new ArrayList<>();
+            for (VehicleInfo vehicle : pageResult.getData()) {
+                String vin = vehicle.getVin();
+                if (vin == null || vin.isEmpty()) {
+                    continue;
+                }
+                total++;
+
+                DispatchLog dispatchLog = new DispatchLog();
+                dispatchLog.setDbcFileId(dbcFileId);
+                dispatchLog.setVehicleId(vehicle.getId());
+                dispatchLog.setVin(vin);
+                dispatchLog.setDispatchType("MODEL");
+                dispatchLog.setStatus(1); // PENDING
+                dispatchLog.setRetryCount(0);
+                dispatchLog.setDispatchTime(now);
+                dispatchLog.setCreateTime(now);
+                batchLogs.add(dispatchLog);
+            }
+
+            // 批量插入 dispatch_log
+            for (DispatchLog log : batchLogs) {
+                this.dispatchLogMapper.insert(log);
+            }
+
+            // 逐车发送 Kafka 指令（Kafka 异步缓冲，快速返回）
+            for (DispatchLog dispatchLog : batchLogs) {
+                try {
+                    DbcDispatchMessage message = this.buildDispatchMessageFromTemplate(template, dispatchLog.getVin());
+                    this.dbcDispatchKafkaProducer.sendDispatchCommand(message);
+                    // 记录 traceId，回调时匹配
+                    dispatchLog.setResult("PENDING: traceId=" + message.getTraceId());
+                    this.dispatchLogMapper.updateById(dispatchLog);
+                    pending++;
+                } catch (Exception e) {
+                    this.log.error("Failed to dispatch DBC: dbcFileId={}, vin={}", dbcFileId, dispatchLog.getVin(), e);
+                    dispatchLog.setStatus(3);
+                    dispatchLog.setResult("FAILED: " + e.getMessage());
+                    this.dispatchLogMapper.updateById(dispatchLog);
+                    failed++;
+                }
+            }
+
+            if (pageResult.getData().size() < pageSize) {
+                break;
+            }
+            current++;
+        }
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("dbcFileId", dbcFileId);
+        summary.put("modelId", modelId);
+        summary.put("total", total);
+        summary.put("pending", pending);
+        summary.put("failed", failed);
+        this.log.info("DBC dispatch by model completed: dbcFileId={}, modelId={}, total={}, pending={}, failed={}",
+                dbcFileId, modelId, total, pending, failed);
+        return summary;
     }
 
-    @Override
-    public void dispatchToVehicles(Long dbcFileId, List<Long> vehicleIds) {
-        for (Long vehicleId : vehicleIds) {
-            this.dispatchToVehicle(dbcFileId, vehicleId);
+    /**
+     * 构建 DBC 下发指令消息
+     * <p>遵循"MQTT 指令 + HTTPS 下载"分离模式：MQTT 只传小指令，DBC 文件由车端从对象存储下载。
+     * <p>当 vin 为 null 时，生成模板消息（用于批量下发预计算 downloadUrl/sha256），
+     * 调用 {@link #buildDispatchMessageFromTemplate} 填入每车的 vin 和 traceId。
+     */
+    private DbcDispatchMessage buildDispatchMessage(DbcFile dbcFile, String vin) throws Exception {
+        String objectKey = StorageKeyUtils.resolveObjectKey(dbcFile.getStorageKey(), dbcFile.getFilePath(), dbcFile.getStorageAddress(), this.storageService);
+        String downloadUrl = this.storageService.getUrl(objectKey);
+        String sha256 = this.computeSha256(objectKey);
+
+        DbcDispatchMessage message = new DbcDispatchMessage();
+        message.setTraceId(java.util.UUID.randomUUID().toString().replace("-", ""));
+        message.setVin(vin);
+        message.setDbcFileId(dbcFile.getId());
+        message.setVersion(dbcFile.getVersion());
+        message.setDownloadUrl(downloadUrl);
+        message.setFileSize(dbcFile.getFileSize());
+        message.setSha256(sha256);
+        message.setTargetPath("/etc/vrd/dbc/" + (dbcFile.getModelName() != null ? dbcFile.getModelName() : "default") + ".dbc");
+        message.setImmediateApply(Boolean.TRUE);
+        message.setTimestamp(System.currentTimeMillis());
+        return message;
+    }
+
+    /**
+     * 基于模板消息构建单车下发指令
+     * <p>复用模板中已计算的 downloadUrl/sha256/fileSize 等，仅替换 vin 和 traceId，
+     * 避免百万级车辆重复计算 SHA256 和生成预签名 URL。
+     */
+    private DbcDispatchMessage buildDispatchMessageFromTemplate(DbcDispatchMessage template, String vin) {
+        DbcDispatchMessage message = new DbcDispatchMessage();
+        message.setTraceId(java.util.UUID.randomUUID().toString().replace("-", ""));
+        message.setVin(vin);
+        message.setDbcFileId(template.getDbcFileId());
+        message.setVersion(template.getVersion());
+        message.setDownloadUrl(template.getDownloadUrl());
+        message.setFileSize(template.getFileSize());
+        message.setSha256(template.getSha256());
+        message.setTargetPath(template.getTargetPath());
+        message.setImmediateApply(template.getImmediateApply());
+        message.setTimestamp(System.currentTimeMillis());
+        return message;
+    }
+
+    /**
+     * 计算对象存储中 DBC 文件的 SHA256 校验和
+     */
+    private String computeSha256(String objectKey) throws Exception {
+        try (InputStream is = this.storageService.openInputStream(objectKey)) {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[8192];
+            int n;
+            while ((n = is.read(buffer)) != -1) {
+                md.update(buffer, 0, n);
+            }
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
         }
     }
 
-    private String sendToVehicle(String storageKey, Long vehicleId) {
-        return "SUCCESS: DBC文件已下发到车辆 " + vehicleId + ", key=" + storageKey;
+    /**
+     * 根据 vehicleId 查询 VIN
+     * <p>通过 Feign 远程调用 service-vehicle 的 {@code GET /vehicle/{id}} 接口。
+     * <p>按车型批量下发时不使用此方法（直接从 listByModel 获取 VIN），
+     * 保留用于单台查询等场景。
+     */
+    private String resolveVinByVehicleId(Long vehicleId) {
+        if (vehicleId == null) {
+            throw new BusinessException("vehicleId 不能为空");
+        }
+        Result<VehicleInfo> result = this.vehicleFeignClient.getById(vehicleId);
+        if (result == null || result.getData() == null) {
+            throw new BusinessException("未找到车辆信息: vehicleId=" + vehicleId);
+        }
+        VehicleInfo vehicle = result.getData();
+        if (vehicle.getVin() == null || vehicle.getVin().isEmpty()) {
+            throw new BusinessException("车辆 VIN 为空: vehicleId=" + vehicleId);
+        }
+        return vehicle.getVin();
     }
 
     private Map<String, String> buildMessageCycleMap(String parseResult) {

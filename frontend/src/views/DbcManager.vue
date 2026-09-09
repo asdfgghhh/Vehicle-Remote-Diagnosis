@@ -73,7 +73,7 @@
       <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
           <el-button size="small" type="primary" @click="viewDetails(row)">详情</el-button>
-          <el-button size="small" type="success" @click="publishDbc(row)" v-if="row.status !== 2">发布</el-button>
+          <el-button size="small" type="success" @click="publishDbc(row)">下发</el-button>
           <el-button size="small" type="danger" @click="deleteDbc(row)">删除</el-button>
         </template>
       </el-table-column>
@@ -89,19 +89,53 @@
     />
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="detailVisible" title="DBC 信号详情" width="70%">
-      <el-table :data="signalDetails" style="width: 100%" max-height="500" stripe>
-        <el-table-column prop="name" label="信号名" width="150" />
-        <el-table-column prop="messageName" label="所属消息" width="150" />
-        <el-table-column prop="startBit" label="起始位" width="80" />
-        <el-table-column prop="length" label="长度" width="70" />
-        <el-table-column prop="byteOrder" label="字节序" width="80" />
-        <el-table-column prop="factor" label="因子" width="80" />
-        <el-table-column prop="offset" label="偏移" width="80" />
-        <el-table-column prop="min" label="最小值" width="80" />
-        <el-table-column prop="max" label="最大值" width="80" />
-        <el-table-column prop="unit" label="单位" width="70" />
-        <el-table-column prop="comment" label="注释" min-width="150" />
+    <el-dialog v-model="detailVisible" title="DBC 信号详情" width="92%" top="5vh">
+      <el-table
+        :data="signalDetails"
+        style="width: 100%"
+        max-height="600"
+        stripe
+        row-key="name"
+        :default-expand-all="false"
+      >
+        <!-- 展开行：信号值枚举 -->
+        <el-table-column type="expand" width="30">
+          <template #default="{ row }">
+            <div v-if="row.valueList && row.valueList.length > 0" style="padding: 8px 0 8px 48px">
+              <el-table :data="row.valueList" border size="small" style="max-width: 600px">
+                <el-table-column prop="value" label="信号值" width="120" align="center" />
+                <el-table-column prop="desc" label="信号描述" min-width="300" />
+              </el-table>
+            </div>
+            <div v-else style="padding: 12px 0 12px 48px; color: #999">
+              该信号无枚举值定义
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="name" label="信号名" width="160" fixed />
+        <el-table-column prop="comment" label="信号描述" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="messageIdHex" label="CAN/LIN ID" width="110" align="center" />
+        <el-table-column prop="messageName" label="所属消息" width="150" show-overflow-tooltip />
+        <el-table-column prop="signed" label="数值类型" width="90" align="center">
+          <template #default="{ row }">
+            <span :style="{ color: row.signed === '无符号' ? '#67c23a' : '#e6a23c' }">
+              {{ row.signed === '无符号' ? '+' : '±' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="unit" label="单位" width="70" align="center">
+          <template #default="{ row }">
+            {{ row.unit || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="min" label="最小值" width="80" align="center" />
+        <el-table-column prop="max" label="最大值" width="80" align="center" />
+        <el-table-column prop="receiver" label="ECU" width="100" align="center" show-overflow-tooltip />
+        <el-table-column prop="startBit" label="起始位" width="80" align="center" />
+        <el-table-column prop="length" label="信号长度" width="90" align="center" />
+        <el-table-column prop="factor" label="精度" width="70" align="center" />
+        <el-table-column prop="byteOrder" label="字节序" width="90" align="center" />
       </el-table>
     </el-dialog>
   </div>
@@ -112,8 +146,8 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   getDbcFilePage,
-  getDbcSignals,
-  publishDbcFile,
+  getDbcSignalDetails,
+  dispatchDbc,
   deleteDbcFile
 } from '../api/dbc'
 import { getVehicleModelPage } from '../api/vehicle'
@@ -219,17 +253,42 @@ function onUploadError() {
 
 async function viewDetails(row) {
   try {
-    const res = await getDbcSignals(row.id)
-    signalDetails.value = res?.data || []
+    const res = await getDbcSignalDetails(row.id)
+    const rawSignals = res?.data || []
+    // 解析 valueDesc 字符串为枚举数组
+    signalDetails.value = rawSignals.map(s => ({
+      ...s,
+      // 将 hex messageId 格式化
+      messageIdHex: s.messageId ? '0x' + parseInt(s.messageId).toString(16).toUpperCase() : '',
+      // 解析 "0=Front crash; 1=Side crash" 为 [{value:'0', desc:'Front crash'}, ...]
+      valueList: parseValueDesc(s.valueDesc)
+    }))
     detailVisible.value = true
   } catch (e) {
     console.error('Failed to load signal details:', e)
   }
 }
 
+function parseValueDesc(valueDesc) {
+  if (!valueDesc) return []
+  const pairs = valueDesc.split(';').map(p => p.trim()).filter(Boolean)
+  return pairs.map(pair => {
+    const eqIdx = pair.indexOf('=')
+    if (eqIdx < 0) return { value: pair, desc: '' }
+    return { value: pair.substring(0, eqIdx).trim(), desc: pair.substring(eqIdx + 1).trim() }
+  })
+}
+
 async function publishDbc(row) {
-  await publishDbcFile(row.id)
-  ElMessage.success('发布成功')
+  try {
+    const res = await dispatchDbc(row.id)
+    const summary = res?.data || {}
+    ElMessage.success(
+      `下发完成：总计 ${summary.total || 0} 辆，待确认 ${summary.pending || 0} 辆，失败 ${summary.failed || 0} 辆`
+    )
+  } catch (e) {
+    ElMessage.error('下发失败: ' + (e.message || '未知错误'))
+  }
   fetchDbcFiles()
 }
 

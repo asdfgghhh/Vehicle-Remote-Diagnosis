@@ -74,5 +74,21 @@ public class KafkaMessageProducer {
         log.debug("Published vehicle online status event to Kafka: vin={}, event={}",
                 vin, eventPayload.getString("event"));
     }
+
+    /**
+     * 发布 DBC 下发 ACK 到 Kafka（service-access 生产 -> service-dbc 消费）
+     *
+     * @param vin     车辆 VIN
+     * @param payload 车端上报的 ACK JSON 原文
+     */
+    public void publishDbcDispatchAck(String vin, String payload) {
+        JSONObject envelope = new JSONObject();
+        envelope.put("vin", vin);
+        envelope.put("source", "mqtt");
+        envelope.put("payload", payload);
+        String message = envelope.toJSONString(new JSONWriter.Feature[0]);
+        this.kafkaTemplate.send(this.topicProperties.getDbcDispatchAck(), vin, message);
+        log.debug("Published DBC dispatch ACK to Kafka: vin={}, topic={}", vin, this.topicProperties.getDbcDispatchAck());
+    }
 }
 

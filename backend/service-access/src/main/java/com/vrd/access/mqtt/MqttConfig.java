@@ -43,6 +43,8 @@ public class MqttConfig {
     private String udsResponseTopic;
     @Value(value="${mqtt.status-topic:vrd/+/status}")
     private String statusTopic;
+    @Value(value="${mqtt.dispatch-ack-topic:vrd/+/config/ack}")
+    private String dispatchAckTopic;
     @Value(value="${mqtt.qos}")
     private int qos;
 
@@ -111,6 +113,23 @@ public class MqttConfig {
         handler.setAsync(true);
         handler.setDefaultTopic("vrd/uds/default");
         return handler;
+    }
+
+    /**
+     * DBC 下发 ACK 通道：订阅 vrd/+/config/ack，接收车端下发的结果反馈
+     */
+    @Bean
+    public MessageChannel mqttDispatchAckInputChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    public MqttPahoMessageDrivenChannelAdapter mqttDispatchAckAdapter() {
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
+                this.clientId + "-dispatch-ack", this.mqttClientFactory(), new String[]{this.dispatchAckTopic});
+        adapter.setOutputChannel(this.mqttDispatchAckInputChannel());
+        adapter.setQos(new int[]{this.qos});
+        return adapter;
     }
 }
 

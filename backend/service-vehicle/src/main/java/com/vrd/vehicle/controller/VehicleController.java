@@ -18,6 +18,7 @@
  */
 package com.vrd.vehicle.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.vrd.common.result.Result;
 import com.vrd.vehicle.dto.VehicleAlertLongTrendVO;
@@ -28,7 +29,10 @@ import com.vrd.vehicle.dto.VehicleOnlineTrendVO;
 import com.vrd.vehicle.entity.Vehicle;
 import com.vrd.vehicle.entity.VehicleEcu;
 import com.vrd.vehicle.service.VehicleService;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -129,6 +133,38 @@ public class VehicleController {
     public Result<Vehicle> getByVin(@PathVariable(value="vin") String vin) {
         Vehicle vehicle = this.vehicleService.lambdaQuery().eq(Vehicle::getVin, vin).one();
         return Result.success(vehicle);
+    }
+
+    /**
+     * 按车型分页查询车辆 ID + VIN 列表
+     * <p>GET /vehicle/list-by-model?modelId={modelId}
+     * <p>用于 DBC 按车型下发时批量获取目标车辆，仅返回 id 和 vin 字段，
+     * 避免传输完整 Vehicle 对象。
+     *
+     * @param modelId  车型 ID（必填）
+     * @param current  当前页码，默认 1
+     * @param size     每页条数，默认 500
+     * @return List&lt;Map&gt; 每项含 id 和 vin
+     */
+    @GetMapping(value={"/list-by-model"})
+    public Result<List<Map<String, Object>>> listByModel(
+            @RequestParam(value="modelId") Long modelId,
+            @RequestParam(value="current", defaultValue="1") Integer current,
+            @RequestParam(value="size", defaultValue="500") Integer size) {
+        Page<Vehicle> page = new Page<>(current, size);
+        page.setSearchCount(false);
+        LambdaQueryWrapper<Vehicle> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Vehicle::getModelId, modelId)
+               .eq(Vehicle::getDeleted, 0)
+               .select(Vehicle::getId, Vehicle::getVin);
+        this.vehicleService.page(page, wrapper);
+        List<Map<String, Object>> list = page.getRecords().stream().map(v -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", v.getId());
+            m.put("vin", v.getVin());
+            return m;
+        }).collect(Collectors.toList());
+        return Result.success(list);
     }
 
     /**

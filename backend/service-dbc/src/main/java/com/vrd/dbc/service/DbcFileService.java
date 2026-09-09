@@ -37,8 +37,14 @@ extends IService<DbcFile> {
 
     public List<Map<String, String>> getSignalDetailsByFileId(Long var1);
 
-    public void dispatchToVehicle(Long var1, Long var2);
-
-    public void dispatchToVehicles(Long var1, List<Long> var2);
+    /**
+     * 按 DBC 文件关联的车型批量下发
+     * <p>DBC 文件定义的是车型级别的 CAN 报文格式，
+     * 下发时根据 DbcFile.modelId 查询该车型下所有车辆，逐车创建 dispatch_log 并发送 Kafka 指令。
+     *
+     * @param dbcFileId DBC 文件 ID
+     * @return 下发统计信息（总数、成功数、失败数）
+     */
+    public Map<String, Object> dispatchByModel(Long dbcFileId);
 }
 

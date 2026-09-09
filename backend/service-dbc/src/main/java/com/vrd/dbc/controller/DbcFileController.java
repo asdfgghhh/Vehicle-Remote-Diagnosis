@@ -259,31 +259,18 @@ public class DbcFileController {
     }
 
     /**
-     * 将 DBC 文件下发到指定车辆
-     * <p>POST /dbc/{id}/dispatch/{vehicleId}
-     *
-     * @param id        DBC 文件 ID
-     * @param vehicleId 目标车辆 ID
-     * @return 空结果
-     */
-    @PostMapping("/{id}/dispatch/{vehicleId}")
-    public Result<Void> dispatchToVehicle(@PathVariable Long id, @PathVariable Long vehicleId) {
-        this.dbcFileService.dispatchToVehicle(id, vehicleId);
-        return Result.success();
-    }
-
-    /**
-     * 将 DBC 文件批量下发到多台车辆
+     * 按 DBC 文件关联的车型批量下发
      * <p>POST /dbc/{id}/dispatch
+     * <p>根据 DBC 文件的 modelId 查询该车型下所有车辆，
+     * 逐车创建 dispatch_log 并发送 Kafka 下发指令到车端。
      *
-     * @param id         DBC 文件 ID
-     * @param vehicleIds 目标车辆 ID 列表（JSON 数组请求体）
-     * @return 空结果
+     * @param id DBC 文件 ID
+     * @return Map 下发统计（total、sent、failed）
      */
     @PostMapping("/{id}/dispatch")
-    public Result<Void> dispatchToVehicles(@PathVariable Long id, @RequestBody List<Long> vehicleIds) {
-        this.dbcFileService.dispatchToVehicles(id, vehicleIds);
-        return Result.success();
+    public Result<Map<String, Object>> dispatch(@PathVariable Long id) {
+        Map<String, Object> summary = this.dbcFileService.dispatchByModel(id);
+        return Result.success(summary);
     }
 
     /**
